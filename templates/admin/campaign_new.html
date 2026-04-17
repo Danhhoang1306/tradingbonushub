@@ -1,0 +1,609 @@
+{% extends "base.html" %}
+{% block title %}Create Campaign — Trading Bonus{% endblock %}
+{% block page_title %}Create New Campaign{% endblock %}
+
+{% block head %}
+<style>
+  .step { display: none; }
+  .step.active { display: block; }
+
+  .step-nav {
+    display: flex; gap: 0; margin-bottom: 24px;
+    border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0;
+  }
+  .step-nav span {
+    flex: 1; text-align: center; padding: 10px;
+    font-size: 13px; color: #888; background: #f8f9fa;
+    border-right: 1px solid #e0e0e0;
+  }
+  .step-nav span:last-child { border-right: none; }
+  .step-nav span.active { background: #1a73e8; color: #fff; font-weight: 700; }
+  .step-nav span.done  { background: #e6f4ea; color: #137333; }
+
+  /* Drop zone */
+  .drop-zone {
+    border: 2px dashed #c0c9d8; border-radius: 8px; padding: 36px;
+    text-align: center; cursor: pointer; color: #888; font-size: 14px;
+    transition: border-color .2s, background .2s;
+  }
+  .drop-zone:hover, .drop-zone.over { border-color: #1a73e8; background: #f0f6ff; }
+  .drop-zone.done { border-color: #34a853; background: #f0faf3; color: #137333; }
+
+  /* Preview table */
+  .preview-wrap { overflow-x: auto; max-height: 220px; overflow-y: auto; margin-top: 12px; }
+  .preview-wrap table { font-size: 12px; white-space: nowrap; }
+  .preview-wrap th { background: #f8f9fa; position: sticky; top: 0; }
+
+  /* Mapping table */
+  .map-table { width: 100%; border-collapse: collapse; }
+  .map-table th {
+    background: #f8f9fa; padding: 8px 12px;
+    font-size: 13px; color: #555; border-bottom: 2px solid #e0e0e0; text-align: left;
+  }
+  .map-table td { padding: 8px 12px; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+  .map-table select {
+    width: 100%; padding: 6px 8px; border: 1px solid #ddd;
+    border-radius: 6px; font-size: 13px;
+  }
+  .ph-badge {
+    display: inline-block; background: #e8f0fe; color: #1a73e8;
+    padding: 2px 10px; border-radius: 12px; font-size: 12px;
+    font-family: monospace;
+  }
+  .required-star { color: #c5221f; margin-left: 2px; }
+
+  /* Email preview tabs */
+  .preview-tabs {
+    display: flex; gap: 0; border-bottom: 2px solid #e0e0e0; margin-bottom: 0;
+  }
+  .preview-tabs button {
+    padding: 8px 20px; font-size: 13px; font-weight: 600;
+    border: none; background: none; cursor: pointer; color: #888;
+    border-bottom: 2px solid transparent; margin-bottom: -2px;
+  }
+  .preview-tabs button.active { color: #1a73e8; border-bottom-color: #1a73e8; }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+  .preview-iframe-wrap {
+    border: 1px solid #e0e0e0; border-radius: 0 0 6px 6px;
+    height: 420px; overflow: hidden; position: relative; background: #fff;
+  }
+  .preview-iframe-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
+  #html-raw {
+    width: 100%; height: 420px; padding: 14px;
+    font-family: 'Consolas', monospace; font-size: 12px; line-height: 1.6;
+    background: #282a36; color: #f8f8f2;
+    border: 1px solid #e0e0e0; border-radius: 0 0 6px 6px;
+    resize: none; outline: none; box-sizing: border-box;
+  }
+  .row-selector {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0 12px; font-size: 13px; color: #555;
+  }
+  .row-selector select { padding: 4px 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="content-wrap" style="max-width: 760px;">
+
+  <!-- Step indicator -->
+  <div class="step-nav">
+    <span id="nav-1" class="active">1. Info</span>
+    <span id="nav-2">2. Upload file</span>
+    <span id="nav-3">3. Column Mapping</span>
+    <span id="nav-4">4. Confirm & Send</span>
+  </div>
+
+  <!-- ── STEP 1: Campaign info ── -->
+  <div class="step active" id="step-1">
+    <div class="card">
+      <h2>Campaign Info</h2>
+      <div class="form-group">
+        <label>Campaign Name <span class="required-star">*</span></label>
+        <input id="f-name" placeholder="e.g. March 2025 Newsletter" />
+      </div>
+      <div class="form-group">
+        <label>Email Subject <span class="required-star">*</span></label>
+        <input id="f-subject" placeholder="Enter email subject..." />
+      </div>
+      <div class="form-group">
+        <label>Template email <span class="required-star">*</span></label>
+        <select id="f-template">
+          <option value="">-- Loading list --</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Server Base URL (for tracking links)</label>
+        <input id="f-baseurl" placeholder="https://your-domain.com" />
+      </div>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-primary" onclick="goStep2()">Next →</button>
+      <a href="/admin/campaigns" class="btn btn-secondary">Cancel</a>
+    </div>
+  </div>
+
+  <!-- ── STEP 2: Upload file ── -->
+  <div class="step" id="step-2">
+    <div class="card">
+      <h2>Upload Recipient List</h2>
+      <p style="font-size:13px;color:#555;margin-bottom:14px;">
+        Supports <strong>.xlsx</strong> (Excel) and <strong>.csv</strong> files.
+        First row must be column headers.
+      </p>
+
+      <div class="drop-zone" id="drop-zone"
+           onclick="document.getElementById('file-input').click()"
+           ondragover="event.preventDefault();this.classList.add('over')"
+           ondragleave="this.classList.remove('over')"
+           ondrop="handleDrop(event)">
+        <div id="drop-label">📂 Drag & drop file here or click to browse</div>
+        <input type="file" id="file-input" accept=".xlsx,.xls,.csv"
+               style="display:none" onchange="handleFile(this.files[0])">
+      </div>
+
+      <div id="file-preview" style="display:none;">
+        <p id="file-summary" style="font-size:13px;color:#137333;margin:12px 0 6px;"></p>
+        <div class="preview-wrap">
+          <table id="preview-table">
+            <thead id="preview-head"></thead>
+            <tbody id="preview-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-secondary" onclick="setStep(1)">← Back</button>
+      <button class="btn btn-primary" id="btn-step3" onclick="goStep3()" disabled>Next →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: Mapping ── -->
+  <div class="step" id="step-3">
+    <div class="card">
+      <h2>Column → Placeholder Mapping</h2>
+      <p style="font-size:13px;color:#555;margin-bottom:16px;">
+        Select the Excel column that corresponds to each placeholder in the template.
+        Fields marked with <span class="required-star">*</span> are required.
+      </p>
+
+      <table class="map-table" id="map-table">
+        <thead>
+          <tr>
+            <th style="width:50%">Placeholder in template</th>
+            <th>Excel Column</th>
+          </tr>
+        </thead>
+        <tbody id="map-body">
+          <!-- generated dynamically -->
+        </tbody>
+      </table>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-secondary" onclick="setStep(2)">← Back</button>
+      <button class="btn btn-primary" onclick="goStep4()">Next →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 4: Confirm & Send ── -->
+  <div class="step" id="step-4">
+    <div style="display:grid; grid-template-columns: 280px 1fr; gap:16px; align-items:start;">
+
+      <!-- Left: confirm + buttons -->
+      <div>
+        <div class="card">
+          <h2>Confirm Before Sending</h2>
+          <div id="confirm-summary" style="font-size:13px;line-height:2;color:#333;"></div>
+        </div>
+        <div style="margin-top:14px; display:flex; flex-direction:column; gap:10px;">
+          <button class="btn btn-primary" id="btn-send" onclick="submitCampaign()">
+            🚀 Create & Send Campaign
+          </button>
+          <button class="btn btn-secondary" onclick="setStep(3)">← Back</button>
+          <span id="send-status" style="font-size:13px;"></span>
+        </div>
+      </div>
+
+      <!-- Right: email preview + test send -->
+      <div class="card">
+        <h2>Email Preview</h2>
+        <div class="row-selector">
+          <span>Preview row:</span>
+          <select id="preview-row-sel" onchange="renderEmailPreview(+this.value)"></select>
+        </div>
+        <div class="preview-tabs">
+          <button id="tab-btn-rendered" class="active" onclick="switchTab('rendered')">👁 Preview</button>
+          <button id="tab-btn-html" onclick="switchTab('html')">&lt;/&gt; HTML</button>
+        </div>
+        <div id="tab-rendered" class="tab-pane active">
+          <div class="preview-iframe-wrap">
+            <iframe id="preview-iframe" sandbox="allow-same-origin"></iframe>
+          </div>
+        </div>
+        <div id="tab-html" class="tab-pane">
+          <textarea id="html-raw" readonly></textarea>
+        </div>
+
+        <!-- Test send -->
+        <div style="margin-top:14px; padding-top:14px; border-top:1px solid #eee; display:flex; gap:8px; align-items:center;">
+          <input id="test-email" type="email" placeholder="Enter test emails..."
+            style="flex:1; padding:8px 12px; border:1px solid #ddd; border-radius:6px; font-size:13px;" />
+          <button class="btn btn-secondary" onclick="sendTestEmail()" style="white-space:nowrap;">📨 Send Test</button>
+          <span id="test-status" style="font-size:12px;"></span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let currentStep = 1;
+let uploadedFile = null;
+let fileColumns = [];
+let fileRows = [];
+let placeholders = [];   // from template
+let cachedTemplateHtml = null;
+const EMAIL_SENTINEL = '__email__';
+
+// ── Step nav ───────────────────────────────────────────────────────────────
+function setStep(n) {
+  document.getElementById('step-' + currentStep).classList.remove('active');
+  document.getElementById('nav-' + currentStep).className =
+    currentStep < n ? 'done' : '';
+  currentStep = n;
+  document.getElementById('step-' + n).classList.add('active');
+  document.getElementById('nav-' + n).className = 'active';
+  document.getElementById('content-wrap').style.maxWidth = n === 4 ? '1100px' : '760px';
+}
+
+// ── Step 1 helpers ─────────────────────────────────────────────────────────
+
+async function goStep2() {
+  const name = document.getElementById('f-name').value.trim();
+  const tid  = document.getElementById('f-template').value;
+  if (!name) { alert('Enter campaign name!'); return; }
+  if (!tid)  { alert('Select template!'); return; }
+
+  // Reset cached template HTML when template changes
+  cachedTemplateHtml = null;
+
+  // Load placeholders from template
+  const r = await fetch(`/api/templates/${tid}/placeholders`);
+  const d = await r.json();
+  placeholders = d.placeholders;
+  setStep(2);
+}
+
+// ── Step 2: file upload ────────────────────────────────────────────────────
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('over');
+  const f = e.dataTransfer.files[0];
+  if (f) handleFile(f);
+}
+
+async function handleFile(file) {
+  uploadedFile = file;
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const r = await fetch('/api/parse-file', { method: 'POST', body: formData });
+  if (!r.ok) {
+    const d = await r.json().catch(() => ({}));
+    alert('Error reading file: ' + (d.detail || r.status));
+    return;
+  }
+  const d = await r.json();
+  fileColumns = d.columns;
+  fileRows    = d.preview;
+
+  // Update drop zone
+  const dz = document.getElementById('drop-zone');
+  dz.classList.add('done');
+  document.getElementById('drop-label').textContent =
+    `✅ ${file.name} — ${d.total} rows, ${fileColumns.length} columns`;
+
+  // Preview table
+  const thead = document.getElementById('preview-head');
+  const tbody = document.getElementById('preview-body');
+  thead.innerHTML = '<tr>' + fileColumns.map(c =>
+    `<th style="padding:6px 10px;border-bottom:2px solid #eee;">${esc(c)}</th>`).join('') + '</tr>';
+  tbody.innerHTML = fileRows.map(row =>
+    '<tr>' + fileColumns.map(c =>
+      `<td style="padding:6px 10px;border-bottom:1px solid #f0f0f0;">${esc(row[c] || '')}</td>`
+    ).join('') + '</tr>'
+  ).join('');
+  document.getElementById('file-preview').style.display = 'block';
+  document.getElementById('file-summary').textContent =
+    `${d.total} recipients — preview of first 5 rows:`;
+
+  document.getElementById('btn-step3').disabled = false;
+}
+
+function goStep3() {
+  if (!uploadedFile) { alert('Please upload a file first!'); return; }
+  buildMappingTable();
+  setStep(3);
+}
+
+// ── Step 3: mapping table ──────────────────────────────────────────────────
+function buildMappingTable() {
+  const tbody = document.getElementById('map-body');
+
+  // Create HTML options for column dropdown
+  const colOptions = '<option value="">-- Not used --</option>' +
+    fileColumns.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+
+  const colOptionsReq = '<option value="">-- Select column --</option>' +
+    fileColumns.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+
+  let rows = '';
+
+  // Required row: Email
+  rows += `<tr style="background:#fff8e1;">
+    <td>
+      <span class="ph-badge">Email Address</span>
+      <span class="required-star">*</span>
+      <div style="font-size:11px;color:#888;margin-top:2px;">Column containing recipient email</div>
+    </td>
+    <td><select id="map-email" required>${colOptionsReq}</select></td>
+  </tr>`;
+
+  // Optional: Recipient name (shown on dashboard)
+  rows += `<tr>
+    <td>
+      <span class="ph-badge">Recipient Name</span>
+      <div style="font-size:11px;color:#888;margin-top:2px;">Shown on dashboard (optional)</div>
+    </td>
+    <td><select id="map-name">${colOptions}</select></td>
+  </tr>`;
+
+  // Placeholders in template
+  if (placeholders.length === 0) {
+    rows += `<tr><td colspan="2" style="color:#888;font-size:13px;padding:12px;">
+      Template has no placeholders. Content will be sent as-is.
+    </td></tr>`;
+  } else {
+    placeholders.forEach((ph, i) => {
+      // Try auto-matching columns with similar names
+      const cleanPh = ph.replace(/[\[\]{} ]/g, '').toLowerCase();
+      const autoMatch = fileColumns.find(c =>
+        c.toLowerCase().replace(/[ _]/g, '') === cleanPh
+      ) || '';
+      rows += `<tr>
+        <td><span class="ph-badge">${esc(ph)}</span></td>
+        <td>
+          <select id="map-ph-${i}">
+            ${colOptions.replace(
+              `value="${esc(autoMatch)}"`,
+              `value="${esc(autoMatch)}" selected`
+            )}
+          </select>
+        </td>
+      </tr>`;
+    });
+  }
+
+  tbody.innerHTML = rows;
+
+  // Auto-select email column — try common names
+  const emailSel = document.getElementById('map-email');
+  const emailColNames = ['email', 'e-mail', 'email_address', 'emailaddress', 'địa chỉ email', 'dia chi email', 'mail', 'to'];
+  const autoEmail = fileColumns.find(c => emailColNames.includes(c.toLowerCase()))
+    || fileColumns.find(c => c.toLowerCase().includes('email') || c.toLowerCase().includes('mail'));
+  if (autoEmail) {
+    emailSel.value = autoEmail;
+  } else {
+    const hint = document.createElement('div');
+    hint.style.cssText = 'color:#c5221f;font-size:12px;margin-top:5px;';
+    hint.textContent = '⚠️ Could not auto-detect email column — please select manually above';
+    emailSel.parentNode.appendChild(hint);
+  }
+
+  const nameSel = document.getElementById('map-name');
+  const autoName = fileColumns.find(c =>
+    ['tên', 'ten', 'name', 'họ tên', 'ho ten', 'họ và tên'].includes(c.toLowerCase())
+  );
+  if (autoName) nameSel.value = autoName;
+}
+
+async function goStep4() {
+  const emailCol = document.getElementById('map-email').value;
+  if (!emailCol) { alert('Must select Email column!'); return; }
+  renderConfirm();
+  setStep(4);
+
+  // Populate row selector
+  const sel = document.getElementById('preview-row-sel');
+  sel.innerHTML = fileRows.map((_, i) =>
+    `<option value="${i}">Row ${i + 1}${fileRows[i][emailCol] ? ' — ' + esc(fileRows[i][emailCol]) : ''}</option>`
+  ).join('');
+
+  await renderEmailPreview(0);
+}
+
+// ── Email preview ───────────────────────────────────────────────────────────
+async function renderEmailPreview(rowIdx) {
+  const tid = document.getElementById('f-template').value;
+  if (!tid) return;
+
+  // Fetch template HTML once and cache it
+  if (!cachedTemplateHtml) {
+    const r = await fetch(`/api/templates/${tid}`);
+    const d = await r.json();
+    cachedTemplateHtml = d.html_content || '';
+  }
+
+  const row = fileRows[rowIdx] || {};
+  const mappingObj = buildMapping();
+  const rendered = clientRender(cachedTemplateHtml, row, mappingObj);
+
+  // Rendered tab — write into iframe
+  const iframe = document.getElementById('preview-iframe');
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
+  doc.open(); doc.write(rendered); doc.close();
+
+  // HTML tab
+  document.getElementById('html-raw').value = rendered;
+}
+
+function clientRender(html, row, mappingObj) {
+  for (const [ph, col] of Object.entries(mappingObj)) {
+    // HTML-escape data values to prevent XSS from CSV content
+    const val = row[col] != null ? escHtml(String(row[col])) : '';
+    html = html.split(ph).join(val);
+  }
+  return html;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+          .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function switchTab(name) {
+  const tabs = ['rendered', 'html'];
+  tabs.forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('active', t === name);
+    document.getElementById('tab-btn-' + t).classList.toggle('active', t === name);
+  });
+}
+
+// ── Step 4: confirm ────────────────────────────────────────────────────────
+function renderConfirm() {
+  const emailCol  = document.getElementById('map-email').value;
+  const nameCol   = document.getElementById('map-name').value;
+  const mappingObj = buildMapping();
+
+  let html = `
+    <div><strong>Campaign name:</strong> ${esc(document.getElementById('f-name').value)}</div>
+    <div><strong>Subject:</strong> ${esc(document.getElementById('f-subject').value)}</div>
+    <div><strong>File:</strong> ${esc(uploadedFile?.name || '')} (${fileRows.length}+ preview rows)</div>
+    <div><strong>Email Column:</strong> <span class="ph-badge">${esc(emailCol)}</span></div>
+    <div><strong>Name Column:</strong> ${nameCol ? `<span class="ph-badge">${esc(nameCol)}</span>` : '(not selected)'}</div>
+    <hr style="margin:10px 0;border:none;border-top:1px solid #eee;">
+    <strong>Mapping placeholder:</strong>
+  `;
+  if (Object.keys(mappingObj).length === 0) {
+    html += '<div style="color:#888;font-size:13px;">No placeholders found</div>';
+  } else {
+    html += '<div style="margin-top:6px;">' +
+      Object.entries(mappingObj).map(([ph, col]) =>
+        `<div style="font-size:13px;padding:2px 0;">
+          <span class="ph-badge">${esc(ph)}</span>
+          &nbsp;→&nbsp;
+          <strong>${esc(col)}</strong>
+        </div>`
+      ).join('') + '</div>';
+  }
+  document.getElementById('confirm-summary').innerHTML = html;
+}
+
+function buildMapping() {
+  const obj = {};
+  placeholders.forEach((ph, i) => {
+    const sel = document.getElementById(`map-ph-${i}`);
+    if (sel && sel.value) obj[ph] = sel.value;
+  });
+  return obj;
+}
+
+// ── Submit ─────────────────────────────────────────────────────────────────
+async function submitCampaign() {
+  const btn    = document.getElementById('btn-send');
+  const status = document.getElementById('send-status');
+  btn.disabled = true;
+  status.textContent = '⏳ Creating...';
+
+  const form = new FormData();
+  form.append('name',         document.getElementById('f-name').value.trim());
+  form.append('template_id',  document.getElementById('f-template').value);
+  form.append('subject',      document.getElementById('f-subject').value.trim());
+  form.append('base_url',     document.getElementById('f-baseurl').value.trim() || 'https://tradingbonushub.com');
+  form.append('email_column', document.getElementById('map-email').value);
+  form.append('name_column',  document.getElementById('map-name').value);
+  form.append('mapping_json', JSON.stringify(buildMapping()));
+  form.append('data_file',    uploadedFile);
+
+  const r = await fetch('/api/campaigns', { method: 'POST', body: form });
+  if (r.ok) {
+    const d = await r.json();
+    status.style.color = '#137333';
+    status.textContent = `✅ Created! Sending ${d.total} emails...`;
+    setTimeout(() => location.href = `/admin/campaigns/${d.id}`, 1500);
+  } else {
+    const d = await r.json().catch(() => ({}));
+    status.style.color = '#c5221f';
+    status.textContent = '❌ ' + (d.detail || 'Unknown error');
+    btn.disabled = false;
+  }
+}
+
+async function sendTestEmail() {
+  const toEmail = document.getElementById('test-email').value.trim();
+  const status  = document.getElementById('test-status');
+  if (!toEmail) { status.style.color='#c5221f'; status.textContent='Enter email!'; return; }
+
+  const tid = document.getElementById('f-template').value;
+  const rowIdx = +document.getElementById('preview-row-sel').value;
+  const row = fileRows[rowIdx] || {};
+
+  status.style.color = '#555'; status.textContent = '⏳ Sending...';
+  const r = await fetch('/api/send-test', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      template_id: +tid,
+      to_email: toEmail,
+      subject: document.getElementById('f-subject').value.trim(),
+      row_data: row,
+      mapping: buildMapping(),
+    }),
+  });
+  if (r.ok) {
+    status.style.color = '#137333'; status.textContent = '✅ Sent!';
+  } else {
+    const d = await r.json().catch(() => ({}));
+    status.style.color = '#c5221f'; status.textContent = '❌ ' + (d.detail || 'Error');
+  }
+}
+
+function esc(s) {
+  return String(s || '').replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+async function loadTemplates() {
+  const r = await fetch('/api/templates');
+  const data = await r.json();
+  const sel = document.getElementById('f-template');
+  if (!data.length) {
+    sel.innerHTML = '<option value="">No templates — create one first</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">-- Select template --</option>' +
+    data.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('');
+
+  // Pre-fill if ?clone= exists
+  const cloneId = new URLSearchParams(location.search).get('clone');
+  if (cloneId) {
+    const cr = await fetch(`/api/campaigns/${cloneId}`);
+    if (cr.ok) {
+      const cd = await cr.json();
+      const camp = cd.campaign;
+      document.getElementById('f-name').value = camp.name + ' (copy)';
+      if (camp.subject) document.getElementById('f-subject').value = camp.subject;
+      if (camp.template_id) sel.value = camp.template_id;
+    }
+  }
+}
+
+loadTemplates();
+</script>
+{% endblock %}

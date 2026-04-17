@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="{{ lang|default('en') }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}{{ ps.site_name or 'TradingBonusHub' }}{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
+  <link rel="stylesheet" href="{{ static_url('/static/css/base.css') }}" />
+  <link rel="stylesheet" href="{{ static_url('/static/css/customer.css') }}" />
+  <style>
+    :root {
+      --gold:  {{ ps.primary_color or '#c8972a' }};
+      --gold2: {{ ps.accent_color  or '#f0c040' }};
+      --navy:  #050d1e;
+      --glass: rgba(255,255,255,0.08);
+      --glass-border: rgba(255,255,255,0.18);
+    }
+    {% block head_style %}{% endblock %}
+    {% if edit_mode %}
+    .header a[href], .footer a { pointer-events: none; }
+    [data-edit] { pointer-events: all !important; }
+    form button[type=submit], form button:not([type]) { opacity: .4; pointer-events: none; }
+    {% endif %}
+  </style>
+  <link rel="stylesheet" href="{{ static_url('/static/ux-enhancements.css') }}">
+  {% include "_tracking_head.html" %}
+</head>
+<body>
+{% include "_tracking_body.html" %}
+
+<header class="header">
+  <a class="header-logo" href="{% if not edit_mode %}/{% endif %}">
+    {% if edit_mode %}<span data-edit="site_name">{{ ps.site_name or 'TradingBonusHub' }}</span>
+    {% else %}Trading<span>Bonus</span>{% endif %}
+  </a>
+  <div class="header-right">
+    <a href="/" class="nav-link nav-desktop">{{ t('nav_home', lang|default('en')) }}</a>
+    <a href="/promotions" class="nav-link nav-desktop">{{ t('nav_promotions', lang|default('en')) }}</a>
+    <a href="/#how" class="nav-link nav-desktop">{{ t('nav_guide', lang|default('en')) }}</a>
+    <a href="/brokers" class="nav-link nav-desktop">{{ t('nav_brokers', lang|default('en')) }}</a>
+    <a href="/about" class="nav-link nav-desktop">{{ t('nav_contact', lang|default('en')) }}</a>
+    {% if customer_email %}
+    <span class="header-user nav-desktop">👤 {{ customer_email }}</span>
+    <a href="/portal/logout" class="btn-logout nav-desktop">{{ t('portal_logout', lang|default('en')) }}</a>
+    {% else %}
+    <a href="/portal/login" class="btn-logout nav-desktop">{{ t('portal_login', lang|default('en')) }}</a>
+    {% endif %}
+  </div>
+  <!-- Mobile hamburger -->
+  <button class="portal-hamburger nav-mobile" id="portalHamburger" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</header>
+
+<!-- Mobile drawer -->
+<div class="portal-drawer" id="portalDrawer">
+  <a href="/">{{ t('nav_home', lang|default('en')) }}</a>
+  <a href="/promotions">{{ t('nav_promotions', lang|default('en')) }}</a>
+  <a href="/#how">{{ t('nav_guide', lang|default('en')) }}</a>
+  <a href="/brokers">{{ t('nav_brokers', lang|default('en')) }}</a>
+  <a href="/about">{{ t('nav_contact', lang|default('en')) }}</a>
+  {% if customer_email %}
+  <div class="drawer-user">👤 {{ customer_email }}</div>
+  <a href="/portal/logout" class="drawer-logout">{{ t('portal_logout', lang|default('en')) }}</a>
+  {% else %}
+  <a href="/portal/login" class="drawer-logout">{{ t('portal_login', lang|default('en')) }}</a>
+  {% endif %}
+</div>
+<div class="portal-overlay" id="portalOverlay"></div>
+
+<div class="content">
+  {% if ps.portal_notice %}
+  <div style="background:rgba(240,192,64,.1);border:1px solid rgba(240,192,64,.3);border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:var(--gold2);">
+    📢 {{ ps.portal_notice }}
+  </div>
+  {% endif %}
+  {% block content %}{% endblock %}
+</div>
+
+<!-- ── FOOTER LICENSE STRIP ── -->
+<div class="footer-license">
+  <div class="footer-license-inner">
+    <div class="footer-license-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z"/><polyline points="9 12 11 14 15 10"/></svg>
+    </div>
+    <div>
+      <div class="footer-license-title">Trusted Partner Network</div>
+      <p class="footer-license-text">We partner with brokers regulated by international authorities, ensuring transparent and reliable trading conditions.</p>
+      <p class="footer-license-text">Your assets are stored and managed directly by the broker — we focus solely on maximizing your benefits through the rebate system.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── FOOTER ── -->
+<footer class="footer">
+  <div class="footer-main">
+    <div class="footer-brand-col">
+      <a class="footer-logo" href="/">Trading<span>Bonus</span></a>
+      <p class="footer-desc">Cashback & rebate system for Forex & Gold traders — automatic daily payments, completely free.</p>
+      <div class="footer-socials">
+        <a class="footer-social-btn" href="{{ ps.get('telegram_url') or '#' }}" {% if ps.get('telegram_url') %}target="_blank" rel="noopener"{% endif %} title="Telegram">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/></svg>
+        </a>
+        <a class="footer-social-btn" href="{{ ps.get('facebook_url') or '#' }}" {% if ps.get('facebook_url') %}target="_blank" rel="noopener"{% endif %} title="Facebook">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.791-4.697 4.533-4.697 1.313 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
+        </a>
+        <a class="footer-social-btn" href="{{ ps.get('youtube_url') or '#' }}" {% if ps.get('youtube_url') %}target="_blank" rel="noopener"{% endif %} title="YouTube">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>
+        </a>
+      </div>
+    </div>
+    <div>
+      <div class="footer-col-title">Navigation</div>
+      <ul class="footer-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/promotions">Promotions</a></li>
+        <li><a href="/#how">Registration Guide</a></li>
+        <li><a href="/brokers">Trusted Brokers</a></li>
+        <li><a href="/blog">Blog & News</a></li>
+        <li><a href="/about">Contact</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Account</div>
+      <ul class="footer-links">
+        {% if customer_email %}
+        <li><a href="/portal/dashboard">Dashboard</a></li>
+        <li><a href="/portal/?tab=promotions">Rebate Programs</a></li>
+        <li><a href="/portal/change-password">Change Password</a></li>
+        <li><a href="/portal/logout">Logout</a></li>
+        {% else %}
+        <li><a href="/portal/login">Login</a></li>
+        <li><a href="/portal/register">Sign Up Free</a></li>
+        <li><a href="/portal/forgot-password">Forgot Password</a></li>
+        {% endif %}
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Support</div>
+      <div class="footer-contact-item">
+        <div class="footer-contact-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>
+        </div>
+        <div class="footer-contact-text">
+          Support Email<br>
+          <a href="mailto:{{ ps.support_email or 'support@tradingbonushub.com' }}">{{ ps.support_email or 'support@tradingbonushub.com' }}</a>
+        </div>
+      </div>
+      <div class="footer-contact-item">
+        <div class="footer-contact-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/></svg>
+        </div>
+        <div class="footer-contact-text">
+          Telegram Support<br>
+          <a href="{{ ps.get('telegram_url') or '#' }}" {% if ps.get('telegram_url') %}target="_blank" rel="noopener"{% endif %}>Message us now →</a>
+        </div>
+      </div>
+      <div class="footer-contact-item">
+        <div class="footer-contact-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        </div>
+        <div class="footer-contact-text">
+          Office Address<br>
+          <span style="color:rgba(255,255,255,.55);">M3 Masteri Waterfront, Vinhomes Ocean Park, Gia Lam, Hanoi, Vietnam</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <hr class="footer-divider">
+  <div class="footer-bottom">
+    <span class="footer-copy">{{ ps.footer_text or '© 2026 TradingBonusHub. All rights reserved.' }}</span>
+    <nav class="footer-legal">
+      <a href="{{ ps.get('privacy_url') or '/privacy' }}">Privacy Policy</a>
+      <a href="{{ ps.get('terms_url') or '/terms' }}">Terms of Use</a>
+      <a href="/about">Contact</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+async function openTgSupport() {
+  const btn = document.getElementById('btnTgSupport');
+  if (btn) { btn.disabled = true; btn.style.opacity = '.7'; }
+  try {
+    const r = await fetch('/api/telegram/link');
+    const d = await r.json();
+    if (d.ok && d.url) {
+      window.open(d.url, '_blank', 'noopener');
+    }
+  } catch(e) {}
+  if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+}
+</script>
+
+<script>
+(function() {
+  var btn = document.getElementById('portalHamburger');
+  var drawer = document.getElementById('portalDrawer');
+  var overlay = document.getElementById('portalOverlay');
+  if (!btn) return;
+  btn.addEventListener('click', function() {
+    var open = drawer.classList.toggle('open');
+    overlay.classList.toggle('open', open);
+    btn.classList.toggle('open', open);
+  });
+  overlay.addEventListener('click', function() {
+    drawer.classList.remove('open');
+    overlay.classList.remove('open');
+    btn.classList.remove('open');
+  });
+})();
+</script>
+{% block scripts %}{% endblock %}
+
+<script src="/static/toast.js"></script>
+
+<!-- ── Floating contact buttons ── -->
+<div class="float-contact">
+  <a class="float-btn float-tg" href="{{ ps.get('telegram_url') or '#' }}" {% if ps.get('telegram_url') %}target="_blank" rel="noopener"{% endif %} title="Telegram">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/></svg>
+    <span>Telegram</span>
+  </a>
+</div>
+<!-- Float contact styles moved to customer.css -->
+
+{% if edit_mode %}
+<div class="edit-mode-notice">✏ Edit mode — Double-click to edit text</div>
+<script>
+(function() {
+  const PAR = window.parent;
+
+  /* ── Make [data-edit] elements editable on double-click ── */
+  document.querySelectorAll('[data-edit]').forEach(el => {
+    const key     = el.dataset.edit;
+    const useHTML = el.dataset.editType === 'html';
+
+    el.title = 'Double-click to edit';
+
+    el.addEventListener('dblclick', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      el.contentEditable = 'true';
+      el.focus();
+      try {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      } catch (_) {}
+    });
+
+    el.addEventListener('blur', () => {
+      if (el.contentEditable !== 'true') return;
+      el.contentEditable = 'false';
+      const value = useHTML ? el.innerHTML : el.textContent.trim();
+      PAR.postMessage({ type: 'edit', key, value }, '*');
+    });
+
+    el.addEventListener('mouseenter', () => {
+      PAR.postMessage({ type: 'selection', hasSelection: false,
+        hint: '✏ Double-click to edit: ' + key }, '*');
+    });
+    el.addEventListener('mouseleave', () => {
+      PAR.postMessage({ type: 'selection', hasSelection: false,
+        hint: '💡 Double-click on text to edit directly' }, '*');
+    });
+  });
+
+  /* ── Track text selection inside contenteditable ── */
+  document.addEventListener('selectionchange', () => {
+    const sel = window.getSelection();
+    const has = sel && !sel.isCollapsed && sel.rangeCount > 0;
+    let inEditable = false;
+    if (has) {
+      let node = sel.anchorNode;
+      while (node) {
+        if (node.contentEditable === 'true') { inEditable = true; break; }
+        node = node.parentElement;
+      }
+    }
+    PAR.postMessage({ type: 'selection', hasSelection: has && inEditable }, '*');
+  });
+
+  /* ── Listen for commands from parent toolbar ── */
+  window.addEventListener('message', e => {
+    if (e.source !== PAR) return;
+    const msg = e.data;
+    if (!msg) return;
+
+    if (msg.type === 'execCmd') {
+      try {
+        if (msg.cmd === 'foreColor') document.execCommand('foreColor', false, msg.value);
+        else                          document.execCommand(msg.cmd);
+      } catch (_) {}
+    }
+
+    if (msg.type === 'themeColor') {
+      const root = document.documentElement;
+      if      (msg.key === 'primary_color') root.style.setProperty('--gold',  msg.color);
+      else if (msg.key === 'accent_color')  root.style.setProperty('--gold2', msg.color);
+    }
+
+    if (msg.type === 'syncVal') {
+      const el = document.querySelector('[data-edit="' + msg.key + '"]');
+      if (el && el.contentEditable !== 'true') el.textContent = msg.value;
+    }
+  });
+})();
+</script>
+{% endif %}
+</body>
+</html>

@@ -1,0 +1,494 @@
+{% extends "base.html" %}
+{% block title %}{{ 'New Article' if not article else 'Edit: ' + article.title }}{% endblock %}
+{% block page_title %}{{ '✍️ New Article' if not article else '✏️ Edit Article' }}{% endblock %}
+
+{% block head %}
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+<style>
+  .editor-layout { display:grid; grid-template-columns:1fr 320px; gap:20px; align-items:start; }
+  @media(max-width:900px){ .editor-layout { grid-template-columns:1fr; } }
+
+  .ql-container { font-size:15px; border-radius:0 0 6px 6px !important; }
+  .ql-toolbar { border-radius:6px 6px 0 0 !important; background:#f8f9fa; position:sticky; top:0; z-index:20; }
+  .ql-editor { min-height:380px; max-height:calc(100vh - 160px); overflow-y:auto; line-height:1.7; }
+  .ql-toolbar .ql-formats { margin-right:8px; }
+
+  /* Color picker fix */
+  .ql-snow .ql-color-picker .ql-picker-options,
+  .ql-snow .ql-background .ql-picker-options { z-index:25; }
+
+  /* Table styles */
+  .ql-editor table { border-collapse:collapse; width:100%; margin:12px 0; }
+  .ql-editor table td, .ql-editor table th { border:1px solid #ddd; padding:8px; }
+  .ql-editor table th { background:#f5f5f5; font-weight:600; }
+
+  /* Sidebar panels */
+  .sidebar-panel { display:flex; flex-direction:column; gap:16px; }
+  .panel-card { background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:16px; }
+  .panel-card h4 { font-size:13px; font-weight:700; color:#555; margin-bottom:12px; text-transform:uppercase; letter-spacing:.5px; }
+  .field-sm { display:flex; flex-direction:column; gap:5px; margin-bottom:10px; }
+  .field-sm label { font-size:12px; color:#666; font-weight:600; }
+  .field-sm input, .field-sm select, .field-sm textarea {
+    padding:6px 8px; border:1px solid #ddd; border-radius:5px; font-size:13px;
+  }
+  .field-sm textarea { resize:vertical; }
+
+  /* Cover image */
+  .cover-preview { width:100%; height:120px; object-fit:cover; border-radius:6px; margin-bottom:8px; display:none; }
+  .cover-preview.show { display:block; }
+
+  /* Save bar */
+  .save-bar {
+    position:sticky; bottom:0; background:#fff; padding:12px 0;
+    border-top:1px solid #e8e8e8; display:flex; align-items:center; gap:12px;
+    margin-top:20px; z-index:10;
+  }
+  .save-bar .msg { font-size:13px; font-weight:700; display:none; }
+  .save-bar .msg.ok  { color:#2e7d32; }
+  .save-bar .msg.err { color:#c62828; }
+
+  /* Media picker modal */
+  .media-grid {
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:8px;
+    max-height:400px; overflow-y:auto; padding:4px;
+  }
+  .media-item { cursor:pointer; border:2px solid transparent; border-radius:6px; overflow:hidden; }
+  .media-item:hover { border-color:#1a73e8; }
+  .media-item img { width:100%; height:80px; object-fit:cover; display:block; }
+  .media-item .media-name { font-size:10px; color:#666; padding:2px 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:16px;">
+  <a href="/admin/cms/articles" style="color:#666;font-size:13px;">← Article List</a>
+</div>
+
+<div class="editor-layout">
+  <!-- ── Main editor ── -->
+  <div>
+    <div class="card" style="padding:16px 20px 0;">
+      <div class="field-sm" style="margin-bottom:14px;">
+        <label>Subject *</label>
+        <input id="fTitle" type="text" placeholder="Enter article title..."
+               style="font-size:18px;font-weight:700;padding:10px 12px;"
+               value="{{ article.title if article else '' }}"
+               oninput="autoSlug()" />
+      </div>
+      <div class="field-sm" style="margin-bottom:16px;">
+        <label>Slug (URL)</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="fSlug" type="text" placeholder="duong-dan-url"
+                 value="{{ article.slug if article else '' }}"
+                 style="flex:1;font-family:monospace;font-size:12px;" />
+          <span style="font-size:11px;color:#aaa;" id="slugPreview"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quill editor -->
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div id="editor-el"></div>
+    </div>
+
+    <!-- Excerpt -->
+    <div class="card" style="padding:16px 20px;">
+      <div class="field-sm" style="margin-bottom:0;">
+        <label>Summary (excerpt)</label>
+        <textarea id="fExcerpt" rows="3" placeholder="Short description shown on listing page...">{{ article.excerpt if article else '' }}</textarea>
+      </div>
+    </div>
+
+    <!-- ── English Translation ── -->
+    <div class="card" style="padding:16px 20px;" id="enFieldsCard">
+      <h4 style="margin:0 0 14px;font-size:15px;font-weight:700;color:#1558b0;">
+        🌐 English Translation
+      </h4>
+
+      <div class="field-sm" style="margin-bottom:12px;">
+        <label>Title (EN)</label>
+        <input id="fTitleEn" type="text" placeholder="English title..."
+               style="font-size:16px;font-weight:600;padding:8px 10px;"
+               value="{{ article.title_en if article and article.title_en else '' }}" />
+      </div>
+      <div class="field-sm" style="margin-bottom:12px;">
+        <label>Summary (EN)</label>
+        <textarea id="fExcerptEn" rows="3" placeholder="English excerpt...">{{ article.excerpt_en if article and article.excerpt_en else '' }}</textarea>
+      </div>
+      <div class="field-sm" style="margin-bottom:0;">
+        <label>Content (EN)</label>
+        <div id="editor-en-el" style="min-height:200px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Sidebar ── -->
+  <div class="sidebar-panel">
+
+    <!-- Publish -->
+    <div class="panel-card">
+      <h4>Publish</h4>
+      <div class="field-sm">
+        <label>Status</label>
+        <select id="fStatus">
+          <option value="draft"     {% if article and article.status=='draft' %}selected{% endif %}>Draft</option>
+          <option value="review"    {% if article and article.status=='review' %}selected{% endif %}>Review</option>
+          <option value="published" {% if article and article.status=='published' %}selected{% endif %}>Published</option>
+          <option value="archived"  {% if article and article.status=='archived' %}selected{% endif %}>Archived</option>
+        </select>
+      </div>
+      <div class="field-sm">
+        <label>Content Type</label>
+        <select id="fType">
+          <option value="post"         {% if article and article.type=='post' %}selected{% endif %}>Article (Blog)</option>
+          <option value="page"         {% if article and article.type=='page' %}selected{% endif %}>Static Page</option>
+          <option value="announcement" {% if article and article.type=='announcement' %}selected{% endif %}>Announcement</option>
+        </select>
+      </div>
+      <div class="field-sm">
+        <label>Language</label>
+        <select id="fLang">
+          <option value="vi" {% if not article or article.lang=='vi' %}selected{% endif %}>Vietnamese</option>
+          <option value="en" {% if article and article.lang=='en' %}selected{% endif %}>English</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Category -->
+    <div class="panel-card">
+      <h4>Category</h4>
+      <div class="field-sm" style="margin-bottom:0;">
+        <label>Category</label>
+        <select id="fCategory">
+          <option value="">— None —</option>
+          {% for cat in categories %}
+          <option value="{{ cat.id }}"
+            {% if article and article.category_id == cat.id %}selected{% endif %}>
+            {{ cat.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <!-- Cover image -->
+    <div class="panel-card">
+      <h4>Cover Image</h4>
+      <p style="font-size:11px;color:#c8972a;font-weight:600;margin-bottom:8px;">🇻🇳 Vietnamese</p>
+      <img id="coverPreview" class="cover-preview {% if article and article.cover_url %}show{% endif %}"
+           src="{{ article.cover_url if article and article.cover_url else '' }}" alt="cover">
+      <button class="btn btn-secondary btn-sm" style="width:100%;margin-bottom:12px;" onclick="openMediaFor('cover')">
+        {{ 'Change' if article and article.cover_url else 'Select Image' }}
+      </button>
+      <input type="hidden" id="fCoverImageId" value="{{ article.cover_image_id if article and article.cover_image_id else '' }}">
+
+      <hr style="border:none;border-top:1px dashed #e0e0e0;margin:4px 0 10px;">
+      <p style="font-size:11px;color:#1558b0;font-weight:600;margin-bottom:8px;">🇬🇧 English</p>
+      <img id="coverPreviewEn" class="cover-preview {% if article and article.cover_url_en %}show{% endif %}"
+           src="{{ article.cover_url_en if article and article.cover_url_en else '' }}" alt="cover EN">
+      <button class="btn btn-secondary btn-sm" style="width:100%;" onclick="openMediaFor('cover_en')">
+        {{ 'Change' if article and article.cover_url_en else 'Select Image' }}
+      </button>
+      <input type="hidden" id="fCoverImageIdEn" value="{{ article.cover_image_id_en if article and article.cover_image_id_en else '' }}">
+    </div>
+
+    <!-- SEO -->
+    <div class="panel-card">
+      <h4>SEO</h4>
+      <div class="field-sm">
+        <label>SEO Title</label>
+        <input id="fSeoTitle" type="text" value="{{ article.seo_title if article else '' }}"
+               placeholder="Auto-generated from title if empty">
+      </div>
+      <div class="field-sm">
+        <label>SEO Description</label>
+        <textarea id="fSeoDesc" rows="2" placeholder="Auto-generated from excerpt if empty">{{ article.seo_desc if article else '' }}</textarea>
+      </div>
+      <div class="field-sm" style="margin-bottom:0;">
+        <label>OG Image URL</label>
+        <input id="fSeoImage" type="text" value="{{ article.seo_image if article else '' }}"
+               placeholder="Auto-generated from cover image">
+      </div>
+      <hr style="border:none;border-top:1px dashed #e0e0e0;margin:12px 0;">
+      <div class="field-sm">
+        <label style="color:#1558b0;">SEO Title (EN)</label>
+        <input id="fSeoTitleEn" type="text" value="{{ article.seo_title_en if article and article.seo_title_en else '' }}">
+      </div>
+      <div class="field-sm" style="margin-bottom:0;">
+        <label style="color:#1558b0;">SEO Description (EN)</label>
+        <textarea id="fSeoDescEn" rows="2">{{ article.seo_desc_en if article and article.seo_desc_en else '' }}</textarea>
+      </div>
+    </div>
+
+    {% if article and article.status == 'published' %}
+    <div class="panel-card" style="text-align:center;">
+      <a href="/blog/{{ article.slug }}" target="_blank" class="btn btn-secondary btn-sm" style="width:100%;">
+        View Published
+      </a>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<!-- Save bar -->
+<div class="save-bar">
+  <button class="btn btn-primary" onclick="doSave()">Save</button>
+  <button class="btn btn-secondary" onclick="doSave('published')">Save &amp; Publish</button>
+  <span class="msg ok"  id="msgOk">Saved!</span>
+  <span class="msg err" id="msgErr">Error saving</span>
+  <span style="margin-left:auto;font-size:12px;color:#aaa;">Ctrl+S</span>
+</div>
+
+<!-- Media picker modal -->
+<div class="overlay" id="mediaOverlay">
+  <div class="modal" style="max-width:720px;">
+    <div class="modal-header">
+      <h3>Media Library</h3>
+      <button class="close-btn" onclick="closeMedia()">✕</button>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-bottom:12px;">
+      <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+        Upload Image
+        <input type="file" id="mediaUploadInput" accept="image/*" style="display:none" onchange="uploadMedia(this)">
+      </label>
+      <span id="uploadStatus" style="font-size:12px;color:#888;align-self:center;"></span>
+    </div>
+
+    <div class="media-grid" id="mediaGrid">
+      <div class="empty">Loading...</div>
+    </div>
+    <div id="mediaLoadMore" style="text-align:center;margin-top:10px;display:none;">
+      <button class="btn btn-secondary btn-sm" onclick="loadMoreMedia()">Load More</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script>
+var ARTICLE_ID = {{ article.id if article else 'null' }};
+var _mediaPurpose = 'content';
+var _mediaOffset = 0;
+
+function esc(s) {
+  return String(s||'').replace(/[&<>"']/g, function(c) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
+// ── Quill init ────────────────────────────────────────────────────────────────
+var quill = new Quill('#editor-el', {
+  theme: 'snow',
+  modules: {
+    toolbar: [
+      [{ header: [1, 2, 3, 4, false] }],
+      [{ size: ['small', false, 'large', 'huge'] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ color: [] }, { background: [] }],
+      [{ align: [] }],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      [{ indent: '-1' }, { indent: '+1' }],
+      ['blockquote', 'code-block'],
+      ['link', 'image', 'video'],
+      [{ script: 'sub' }, { script: 'super' }],
+      [{ direction: 'rtl' }],
+      ['clean']
+    ]
+  }
+});
+
+// Load existing content
+{% if article and article.content %}
+quill.root.innerHTML = {{ article.content | tojson }};
+{% endif %}
+
+// Image button → open media library
+quill.getModule('toolbar').addHandler('image', function() {
+  _mediaPurpose = 'content';
+  openMedia();
+});
+
+// ── English content Quill ────────────────────────────────────────────────────
+var quillEn = new Quill('#editor-en-el', {
+  theme: 'snow',
+  modules: {
+    toolbar: [
+      [{ header: [1, 2, 3, 4, false] }],
+      [{ size: ['small', false, 'large', 'huge'] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ color: [] }, { background: [] }],
+      [{ align: [] }],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      [{ indent: '-1' }, { indent: '+1' }],
+      ['blockquote', 'code-block'],
+      ['link', 'image', 'video'],
+      [{ script: 'sub' }, { script: 'super' }],
+      ['clean']
+    ]
+  }
+});
+{% if article and article.content_en %}
+quillEn.root.innerHTML = {{ article.content_en | tojson }};
+{% endif %}
+
+// ── Slug auto-gen ──────────────────────────────────────────────────────────────
+var _slugEdited = {{ 'true' if article else 'false' }};
+document.getElementById('fSlug').addEventListener('input', function() { _slugEdited = true; });
+
+function autoSlug() {
+  if (_slugEdited) return;
+  var title = document.getElementById('fTitle').value;
+  if (!title) return;
+  fetch('/api/cms/slug-preview?text=' + encodeURIComponent(title))
+    .then(function(r) { return r.json(); })
+    .then(function(d) { document.getElementById('fSlug').value = d.slug; });
+}
+
+// ── Save ───────────────────────────────────────────────────────────────────────
+function doSave(forceStatus) {
+  var title = document.getElementById('fTitle').value.trim();
+  if (!title) { showMsg('err', 'Title cannot be empty'); return; }
+
+  var enContent = quillEn.root.innerHTML;
+  var payload = {
+    title: title,
+    slug:           document.getElementById('fSlug').value.trim(),
+    status:         forceStatus || document.getElementById('fStatus').value,
+    type:           document.getElementById('fType').value,
+    lang:           document.getElementById('fLang').value,
+    excerpt:        document.getElementById('fExcerpt').value,
+    content:        quill.root.innerHTML,
+    category_id:    document.getElementById('fCategory').value || null,
+    cover_image_id: document.getElementById('fCoverImageId').value || null,
+    seo_title:      document.getElementById('fSeoTitle').value,
+    seo_desc:       document.getElementById('fSeoDesc').value,
+    seo_image:      document.getElementById('fSeoImage').value,
+    title_en:       document.getElementById('fTitleEn').value,
+    excerpt_en:     document.getElementById('fExcerptEn').value,
+    content_en:     (enContent === '<p><br></p>' || enContent === '<p></p>') ? '' : enContent,
+    seo_title_en:      document.getElementById('fSeoTitleEn').value,
+    seo_desc_en:       document.getElementById('fSeoDescEn').value,
+    cover_image_id_en: document.getElementById('fCoverImageIdEn').value || null
+  };
+
+  var url    = ARTICLE_ID ? '/api/cms/articles/' + ARTICLE_ID : '/api/cms/articles';
+  var method = ARTICLE_ID ? 'PUT' : 'POST';
+
+  fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+    .then(function(r) { if (!r.ok) throw new Error(r.statusText); return r.json(); })
+    .then(function(data) {
+      showMsg('ok', 'Saved!');
+      if (!ARTICLE_ID && data.id) {
+        setTimeout(function() { window.location.href = '/admin/cms/articles/' + data.id + '/edit'; }, 600);
+      }
+    })
+    .catch(function(e) { showMsg('err', 'Error: ' + e.message); });
+}
+
+function showMsg(type, text) {
+  var ok  = document.getElementById('msgOk');
+  var err = document.getElementById('msgErr');
+  ok.style.display = err.style.display = 'none';
+  if (type === 'ok')  { ok.textContent  = text; ok.style.display  = 'inline'; setTimeout(function(){ ok.style.display  = 'none'; }, 3000); }
+  if (type === 'err') { err.textContent = text; err.style.display = 'inline'; setTimeout(function(){ err.style.display = 'none'; }, 5000); }
+}
+
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); doSave(); }
+});
+
+// ── Media picker ───────────────────────────────────────────────────────────────
+function openMediaFor(purpose) { _mediaPurpose = purpose; openMedia(); }
+
+function openMedia() {
+  _mediaOffset = 0;
+  document.getElementById('mediaOverlay').classList.add('active');
+  loadMedia(true);
+}
+
+function closeMedia() {
+  document.getElementById('mediaOverlay').classList.remove('active');
+}
+
+function loadMedia(reset) {
+  var grid = document.getElementById('mediaGrid');
+  if (reset) grid.innerHTML = '<div class="empty">Loading...</div>';
+
+  fetch('/api/cms/media?limit=30&offset=' + _mediaOffset)
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(data) {
+      if (reset) grid.innerHTML = '';
+
+      if (!data.items || !data.items.length) {
+        if (reset) {
+          grid.innerHTML = '<div class="empty" style="padding:20px;">No images yet. Upload some!</div>';
+        }
+        document.getElementById('mediaLoadMore').style.display = 'none';
+        return;
+      }
+
+      data.items.forEach(function(m) {
+        var div = document.createElement('div');
+        div.className = 'media-item';
+        div.innerHTML = '<img src="' + esc(m.url) + '" alt="' + esc(m.alt_text || '') + '"><div class="media-name">' + esc(m.original_name) + '</div>';
+        div.onclick = function() { selectMedia(m); };
+        grid.appendChild(div);
+      });
+
+      _mediaOffset += data.items.length;
+      document.getElementById('mediaLoadMore').style.display = data.items.length === 30 ? 'block' : 'none';
+    })
+    .catch(function(e) {
+      console.error('loadMedia error:', e);
+      grid.innerHTML = '<div class="empty" style="padding:20px;color:#c62828;">Error loading images: ' + esc(e.message) + '</div>';
+    });
+}
+
+function loadMoreMedia() { loadMedia(false); }
+
+function selectMedia(m) {
+  if (_mediaPurpose === 'cover') {
+    document.getElementById('fCoverImageId').value = m.id;
+    var preview = document.getElementById('coverPreview');
+    preview.src = m.url;
+    preview.classList.add('show');
+    if (!document.getElementById('fSeoImage').value) {
+      document.getElementById('fSeoImage').value = m.url;
+    }
+  } else if (_mediaPurpose === 'cover_en') {
+    document.getElementById('fCoverImageIdEn').value = m.id;
+    var previewEn = document.getElementById('coverPreviewEn');
+    previewEn.src = m.url;
+    previewEn.classList.add('show');
+  } else {
+    var range = quill.getSelection(true);
+    quill.insertEmbed(range.index, 'image', m.url, 'user');
+  }
+  closeMedia();
+}
+
+function uploadMedia(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var status = document.getElementById('uploadStatus');
+  status.textContent = 'Loading...';
+  var form = new FormData();
+  form.append('file', file);
+  fetch('/api/cms/media', { method: 'POST', body: form })
+    .then(function(r) { if (!r.ok) throw new Error(r.statusText); return r.json(); })
+    .then(function() {
+      status.textContent = 'Upload successful';
+      _mediaOffset = 0;
+      loadMedia(true);
+    })
+    .catch(function(e) { status.textContent = 'Error: ' + e.message; });
+  input.value = '';
+}
+</script>
+{% endblock %}

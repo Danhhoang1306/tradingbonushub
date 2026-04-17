@@ -1,0 +1,438 @@
+{% extends "base.html" %}
+{% block title %}Contact & Marketing Settings{% endblock %}
+{% block page_title %}🔗 Contact, Tracking & Marketing Settings{% endblock %}
+
+{% block head %}
+<style>
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 900px) { .settings-grid { grid-template-columns: 1fr; } }
+
+  .section-title {
+    font-size: 13px; font-weight: 700; color: #888;
+    text-transform: uppercase; letter-spacing: .6px;
+    margin-bottom: 16px; padding-bottom: 8px;
+    border-bottom: 2px solid #f0f0f0;
+  }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; font-weight: 600; color: #444; margin-bottom: 6px; }
+  .field label small { font-weight: 400; color: #999; margin-left: 6px; }
+  .field input, .field textarea {
+    width: 100%; padding: 9px 12px; border: 1px solid #ddd;
+    border-radius: 7px; font-size: 14px; transition: border-color .15s;
+  }
+  .field input:focus, .field textarea:focus { outline: none; border-color: #1a73e8; }
+  .field textarea { resize: vertical; min-height: 70px; }
+  .field .hint { font-size: 12px; color: #999; margin-top: 4px; }
+
+  .preview-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 7px; font-size: 13px; font-weight: 700;
+    text-decoration: none; border: none; cursor: pointer; margin-top: 6px;
+    transition: filter .15s;
+  }
+  .preview-btn:hover { filter: brightness(1.1); }
+  .preview-tg   { background: #2AABEE; color: #fff; }
+  .preview-chat { background: linear-gradient(135deg, #c8972a, #f0c040); color: #0d1b3e; }
+
+  .save-bar {
+    position: sticky; bottom: 0; background: #fff;
+    border-top: 1px solid #e8e8e8; padding: 14px 0;
+    display: flex; align-items: center; gap: 12px; margin-top: 8px;
+  }
+  .status-msg { font-size: 13px; }
+  .status-msg.ok  { color: #1e7e34; }
+  .status-msg.err { color: #c0392b; }
+
+  .bot-status-box {
+    background: #f8f9fa; border: 1px solid #e0e0e0;
+    border-radius: 8px; padding: 14px 16px; margin-top: 8px; font-size: 13px;
+  }
+  .bot-status-box.ok  { background: #e6f4ea; border-color: #c3e6cb; color: #1e7e34; }
+  .bot-status-box.err { background: #fce8e6; border-color: #f5c6cb; color: #c0392b; }
+
+  .divider { border: none; border-top: 1px solid #f0f0f0; margin: 8px 0 20px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-grid">
+
+  <!-- ── LEFT COLUMN: Public Contact ──────────────────────────────── -->
+  <div>
+    <div class="card">
+      <div class="section-title">🌐 Public Contact (homepage)</div>
+
+      <div class="field">
+        <label>Telegram Link <small>Shows floating button on all pages</small></label>
+        <input type="url" id="f-telegram_url" placeholder="https://t.me/your_channel"
+               value="{{ settings.get('telegram_url','') }}" />
+        <div style="margin-top:6px;">
+          <a class="preview-btn preview-tg" id="prev-tg" href="#" target="_blank">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/></svg>
+            Preview
+          </a>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Link Chat Box <small>Widget chat (tawk.to, Crisp, Tidio…)</small></label>
+        <input type="url" id="f-chatbox_url" placeholder="https://..."
+               value="{{ settings.get('chatbox_url','') }}" />
+        <div style="margin-top:6px;">
+          <a class="preview-btn preview-chat" id="prev-chat" href="#" target="_blank">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+            Preview
+          </a>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <div class="section-title">📧 Contact Info</div>
+
+      <div class="field">
+        <label>Support Email</label>
+        <input type="email" id="f-support_email" placeholder="support@tradingbonushub.com"
+               value="{{ settings.get('support_email','') }}" />
+      </div>
+
+      <div class="field">
+        <label>Footer Text</label>
+        <input type="text" id="f-footer_text" placeholder="© 2026 TradingBonusHub"
+               value="{{ settings.get('footer_text','') }}" />
+      </div>
+
+      <div class="field">
+        <label>Login Page Notice <small>Leave empty if not needed</small></label>
+        <textarea id="f-login_notice" placeholder="e.g. System maintenance until 10:00...">{{ settings.get('login_notice','') }}</textarea>
+      </div>
+
+      <div class="field">
+        <label>Customer Portal Notice</label>
+        <textarea id="f-portal_notice" placeholder="e.g. March payment schedule updated...">{{ settings.get('portal_notice','') }}</textarea>
+      </div>
+    </div>
+
+    <!-- ── TRACKING & ANALYTICS ── -->
+    <div class="card" style="margin-top:20px;">
+      <div class="section-title">📊 Tracking & Analytics</div>
+
+      <div class="field">
+        <label>Google Tag Manager ID <small>VD: GTM-XXXXXXX</small></label>
+        <input type="text" id="f-gtm_id" placeholder="GTM-XXXXXXX"
+               value="{{ settings.get('gtm_id','') }}" />
+        <div class="hint">Manage all tracking scripts via GTM. Recommended over adding individual scripts.</div>
+      </div>
+
+      <div class="field">
+        <label>Google Analytics 4 (GA4) ID <small>VD: G-XXXXXXXXXX</small></label>
+        <input type="text" id="f-ga4_id" placeholder="G-XXXXXXXXXX"
+               value="{{ settings.get('ga4_id','') }}" />
+        <div class="hint">If using GTM, you can configure GA4 there instead of here.</div>
+      </div>
+
+      <div class="field">
+        <label>Facebook Pixel ID <small>VD: 123456789012345</small></label>
+        <input type="text" id="f-fb_pixel_id" placeholder="123456789012345"
+               value="{{ settings.get('fb_pixel_id','') }}" />
+      </div>
+
+      <div class="field">
+        <label>Microsoft Clarity ID <small>VD: abcdef1234</small></label>
+        <input type="text" id="f-ms_clarity_id" placeholder="abcdef1234"
+               value="{{ settings.get('ms_clarity_id','') }}" />
+        <div class="hint">Free heatmap & session recording from Microsoft.</div>
+      </div>
+
+      <hr class="divider">
+      <div class="section-title">🔍 SEO & Social</div>
+
+      <div class="field">
+        <label>Google Search Console Meta Tag <small>Only the content="..." part</small></label>
+        <input type="text" id="f-search_console_meta" placeholder="abc123XYZ..."
+               value="{{ settings.get('search_console_meta','') }}" />
+        <div class="hint">From Search Console → Settings → Ownership verification → HTML tag. Only paste the content value.</div>
+      </div>
+
+      <div class="field">
+        <label>OG Image URL <small>1200x630px image for social sharing</small></label>
+        <input type="url" id="f-og_image_url" placeholder="https://tradingbonushub.com/static/og-image.png"
+               value="{{ settings.get('og_image_url','') }}" />
+        <div class="hint">Image shown when sharing links on Facebook, Zalo, Telegram. Ideal size: 1200x630px.</div>
+      </div>
+
+      <div class="field">
+        <label>Facebook Page URL</label>
+        <input type="url" id="f-facebook_url" placeholder="https://facebook.com/tradingbonushub"
+               value="{{ settings.get('facebook_url','') }}" />
+      </div>
+
+      <div class="field">
+        <label>YouTube Channel URL</label>
+        <input type="url" id="f-youtube_url" placeholder="https://youtube.com/@tradingbonushub"
+               value="{{ settings.get('youtube_url','') }}" />
+      </div>
+
+      <hr class="divider">
+      <div class="section-title">📜 Legal Pages</div>
+
+      <div class="field">
+        <label>Privacy Policy URL <small>Default: /privacy</small></label>
+        <input type="text" id="f-privacy_url" placeholder="/privacy"
+               value="{{ settings.get('privacy_url','') }}" />
+      </div>
+
+      <div class="field">
+        <label>Terms of Service URL <small>Default: /terms</small></label>
+        <input type="text" id="f-terms_url" placeholder="/terms"
+               value="{{ settings.get('terms_url','') }}" />
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT COLUMN ──────────────────────────────────────────────── -->
+  <div>
+    <!-- ── STICKY PROMO BAR ── -->
+    <div class="card">
+      <div class="section-title">📌 Sticky Promo Bar (Homepage)</div>
+
+      <p style="font-size:13px;color:#666;margin-bottom:16px;line-height:1.6;">
+        Thanh khuyến mãi nổi trên đầu trang khi user scroll xuống. Tắt/bật và chỉnh nội dung tại đây.
+      </p>
+
+      <div class="field">
+        <label>Bật / Tắt</label>
+        <select id="f-sticky_enabled" style="width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:7px;font-size:14px;">
+          <option value="1" {{ 'selected' if settings.get('sticky_enabled','1') == '1' else '' }}>Bật (Hiển thị)</option>
+          <option value="0" {{ 'selected' if settings.get('sticky_enabled','1') == '0' else '' }}>Tắt (Ẩn)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Nội dung (Tiếng Việt)</label>
+        <input type="text" id="f-sticky_text_vi" placeholder="🔥 100% REBATE cho khách đăng ký mới"
+               value="{{ settings.get('sticky_text_vi', '🔥 100% REBATE cho khách đăng ký mới') }}" />
+      </div>
+
+      <div class="field">
+        <label>Nội dung (English)</label>
+        <input type="text" id="f-sticky_text_en" placeholder="🔥 100% REBATE for new sign-ups"
+               value="{{ settings.get('sticky_text_en', '🔥 100% REBATE for new sign-ups') }}" />
+      </div>
+
+      <div class="field">
+        <label>Nút CTA (Tiếng Việt)</label>
+        <input type="text" id="f-sticky_cta_vi" placeholder="Nhận ngay"
+               value="{{ settings.get('sticky_cta_vi', 'Nhận ngay') }}" />
+      </div>
+
+      <div class="field">
+        <label>Nút CTA (English)</label>
+        <input type="text" id="f-sticky_cta_en" placeholder="Claim Now"
+               value="{{ settings.get('sticky_cta_en', 'Claim Now') }}" />
+      </div>
+
+      <div class="field">
+        <label>Link nút CTA <small>VD: /portal/login hoặc URL đầy đủ</small></label>
+        <input type="text" id="f-sticky_link" placeholder="/portal/login"
+               value="{{ settings.get('sticky_link', '/portal/login') }}" />
+      </div>
+
+      <div class="field">
+        <label>Màu nền <small>CSS gradient hoặc mã màu</small></label>
+        <input type="text" id="f-sticky_bg" placeholder="linear-gradient(90deg,#7c1d2e,#dc3545,#7c1d2e)"
+               value="{{ settings.get('sticky_bg', 'linear-gradient(90deg,#7c1d2e,#dc3545,#7c1d2e)') }}" />
+        <div class="hint">VD: <code>#dc3545</code> hoặc <code>linear-gradient(90deg,#7c1d2e,#dc3545,#7c1d2e)</code></div>
+      </div>
+
+      <!-- Live preview -->
+      <div class="field">
+        <label>Preview</label>
+        <div id="sticky-preview" style="
+          background:{{ settings.get('sticky_bg', 'linear-gradient(90deg,#7c1d2e,#dc3545,#7c1d2e)') }};
+          padding:8px 16px; border-radius:7px; display:flex; align-items:center;
+          justify-content:center; gap:10px; font-size:13px; font-weight:700; color:#fff;
+        ">
+          <span id="sticky-preview-text">{{ settings.get('sticky_text_vi', '🔥 100% REBATE cho khách đăng ký mới') }}</span>
+          <span style="padding:3px 12px;border-radius:50px;font-size:11px;font-weight:800;background:#fff;color:#dc3545;" id="sticky-preview-cta">{{ settings.get('sticky_cta_vi', 'Nhận ngay') }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TELEGRAM BOT ── -->
+    <div class="card" style="margin-top:20px;">
+      <div class="section-title">🤖 Telegram Bot — Private Chat per Customer</div>
+
+      <p style="font-size:13px;color:#666;margin-bottom:16px;line-height:1.6;">
+        When customers click the <b>Telegram</b> button on the portal, the bot creates a private conversation.
+        Customer messages are forwarded to the admin group. Admin replies → bot sends back to customer.
+      </p>
+
+      <div class="field">
+        <label>Bot Token <small>Get from @BotFather → /newbot</small></label>
+        <input type="password" id="f-telegram_bot_token" placeholder="123456789:ABC-..."
+               value="{{ settings.get('telegram_bot_token','') }}" autocomplete="off" />
+        <div class="hint">Keep secret — do not share this token</div>
+      </div>
+
+      <div class="field">
+        <label>Bot Username <small>Without @</small></label>
+        <input type="text" id="f-telegram_bot_name" placeholder="my_support_bot"
+               value="{{ settings.get('telegram_bot_name','') }}" />
+        <div class="hint">VD: tradingbonushub_bot</div>
+      </div>
+
+      <div class="field">
+        <label>Admin Group Chat ID <small>Group receiving customer messages</small></label>
+        <input type="text" id="f-telegram_admin_chat_id" placeholder="-100123456789"
+               value="{{ settings.get('telegram_admin_chat_id','') }}" />
+        <div class="hint">Add bot to group → use @userinfobot to get ID</div>
+      </div>
+
+      <hr class="divider">
+      <div class="section-title">⚡ Register Webhook</div>
+
+      <p style="font-size:13px;color:#666;margin-bottom:12px;line-height:1.6;">
+        After entering the Bot Token, click the button below so Telegram knows to send messages to this server.
+        Only needs to be done <b>once</b> after initial setup.
+      </p>
+
+      <button class="btn btn-primary" onclick="doSetWebhook()" id="btn-webhook">
+        ⚡ Register Webhook ngay
+      </button>
+      <div id="webhook-status" class="bot-status-box" style="display:none;"></div>
+
+      <hr class="divider">
+      <div class="section-title">🔍 Test Bot Connection</div>
+      <button class="btn btn-secondary" onclick="doTestBot()" id="btn-test">
+        📡 Test Bot Token
+      </button>
+      <div id="test-status" class="bot-status-box" style="display:none;"></div>
+    </div>
+  </div>
+
+</div><!-- /settings-grid -->
+
+<div class="save-bar">
+  <button class="btn btn-primary" onclick="saveAll()" id="btn-save">💾 Save All</button>
+  <span class="status-msg" id="save-status"></span>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Live preview for Telegram/Chat buttons ────────────────────────────
+document.getElementById('f-telegram_url').addEventListener('input', function() {
+  document.getElementById('prev-tg').href = this.value || '#';
+});
+document.getElementById('f-chatbox_url').addEventListener('input', function() {
+  document.getElementById('prev-chat').href = this.value || '#';
+});
+// Set initial href
+document.getElementById('prev-tg').href   = document.getElementById('f-telegram_url').value   || '#';
+document.getElementById('prev-chat').href  = document.getElementById('f-chatbox_url').value    || '#';
+
+// ── Sticky bar live preview ──────────────────────────────────────
+['sticky_text_vi','sticky_cta_vi','sticky_bg'].forEach(function(k) {
+  var el = document.getElementById('f-' + k);
+  if (el) el.addEventListener('input', updateStickyPreview);
+});
+function updateStickyPreview() {
+  var p = document.getElementById('sticky-preview');
+  var t = document.getElementById('sticky-preview-text');
+  var c = document.getElementById('sticky-preview-cta');
+  if (p) p.style.background = document.getElementById('f-sticky_bg').value || '#dc3545';
+  if (t) t.textContent = document.getElementById('f-sticky_text_vi').value || '';
+  if (c) c.textContent = document.getElementById('f-sticky_cta_vi').value || '';
+}
+
+// ── Collect all field values ──────────────────────────────────────
+const FIELDS = [
+  'telegram_url','chatbox_url','support_email','footer_text',
+  'login_notice','portal_notice',
+  'telegram_bot_token','telegram_bot_name','telegram_admin_chat_id',
+  'gtm_id','ga4_id','fb_pixel_id','ms_clarity_id',
+  'search_console_meta','og_image_url',
+  'facebook_url','youtube_url',
+  'privacy_url','terms_url',
+  'sticky_enabled','sticky_text_vi','sticky_text_en',
+  'sticky_cta_vi','sticky_cta_en','sticky_bg','sticky_link',
+];
+function collectData() {
+  const d = {};
+  FIELDS.forEach(k => {
+    const el = document.getElementById('f-' + k);
+    if (el) d[k] = el.value;
+  });
+  return d;
+}
+
+// ── Save ─────────────────────────────────────────────────────────
+async function saveAll() {
+  const btn = document.getElementById('btn-save');
+  const status = document.getElementById('save-status');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  status.textContent = ''; status.className = 'status-msg';
+  try {
+    const r = await fetch('/api/portal-settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(collectData()),
+    });
+    const d = await r.json();
+    status.textContent = d.ok ? '✅ Saved!' : '❌ Error saving';
+    status.className   = 'status-msg ' + (d.ok ? 'ok' : 'err');
+  } catch(e) {
+    status.textContent = '❌ Connection error'; status.className = 'status-msg err';
+  }
+  btn.disabled = false; btn.textContent = '💾 Save All';
+  setTimeout(() => { status.textContent = ''; }, 4000);
+}
+
+// ── Set Webhook ───────────────────────────────────────────────────
+async function doSetWebhook() {
+  await saveAll();  // save token first
+  const box = document.getElementById('webhook-status');
+  box.style.display = 'block'; box.className = 'bot-status-box';
+  box.textContent = '⏳ Registering...';
+  try {
+    const r = await fetch('/api/telegram/set-webhook', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ site_url: 'https://tradingbonushub.com' }),
+    });
+    const d = await r.json();
+    box.className = 'bot-status-box ' + (d.ok ? 'ok' : 'err');
+    box.textContent = d.ok
+      ? '✅ Registration successful! Telegram will send messages to this server.'
+      : '❌ Failed — check Bot Token and try again.';
+  } catch(e) {
+    box.className = 'bot-status-box err'; box.textContent = '❌ Server connection error';
+  }
+}
+
+// ── Test Bot Token ─────────────────────────────────────────────────
+async function doTestBot() {
+  const token = document.getElementById('f-telegram_bot_token').value.trim();
+  const box   = document.getElementById('test-status');
+  box.style.display = 'block'; box.className = 'bot-status-box';
+  box.textContent = '⏳ Checking...';
+  if (!token) {
+    box.className = 'bot-status-box err'; box.textContent = '❌ Bot Token not entered';
+    return;
+  }
+  try {
+    const r = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+    const d = await r.json();
+    if (d.ok) {
+      box.className = 'bot-status-box ok';
+      box.textContent = `✅ Valid bot: @${d.result.username} (${d.result.first_name})`;
+    } else {
+      box.className = 'bot-status-box err';
+      box.textContent = '❌ Invalid token: ' + (d.description || 'Unknown error');
+    }
+  } catch(e) {
+    box.className = 'bot-status-box err'; box.textContent = '❌ Cannot connect to Telegram API';
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Monthly Report - TradingBonusHub</title>
+</head>
+<body style="margin:0;padding:0;background:#f0f2f5;font-family:'Segoe UI',Arial,Helvetica,sans-serif;">
+
+<!-- Wrapper -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f0f2f5;">
+<tr><td align="center" style="padding:32px 16px;">
+
+<!-- Container -->
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+
+  <!-- Header -->
+  <tr>
+    <td style="background:#050d1e;padding:32px 48px;text-align:center;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td align="left" style="vertical-align:middle;">
+            <img src="https://tradingbonushub.com/static/logo-tb.png" alt="TradingBonusHub" width="40" height="40" style="border-radius:8px;">
+          </td>
+          <td align="right" style="vertical-align:middle;">
+            <p style="margin:0;font-size:12px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:1.5px;">Monthly Report</p>
+            <p style="margin:2px 0 0;font-size:18px;font-weight:700;color:#ffffff;">{{month_year}}</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Greeting -->
+  <tr>
+    <td style="padding:36px 48px 24px;">
+      <p style="margin:0 0 8px;font-size:16px;color:#1a1f2e;line-height:1.7;">
+        Hello <strong>{{name}}</strong>,
+      </p>
+      <p style="margin:0;font-size:15px;color:#4a5568;line-height:1.7;">
+        Here is a summary of your account activity for the past month.
+      </p>
+    </td>
+  </tr>
+
+  <!-- Stats Grid -->
+  <tr>
+    <td style="padding:0 48px 32px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <!-- Stat 1 -->
+          <td width="48%" style="background:#f8f9fb;border-radius:10px;padding:20px;text-align:center;border:1px solid #e5e7eb;">
+            <p style="margin:0;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Total Rebate</p>
+            <p style="margin:8px 0 0;font-size:28px;font-weight:800;color:#10b981;letter-spacing:-0.5px;">{{total_rebate}}</p>
+            <p style="margin:4px 0 0;font-size:12px;color:#6b7280;">USD</p>
+          </td>
+          <td width="4%"></td>
+          <!-- Stat 2 -->
+          <td width="48%" style="background:#f8f9fb;border-radius:10px;padding:20px;text-align:center;border:1px solid #e5e7eb;">
+            <p style="margin:0;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Total Lots</p>
+            <p style="margin:8px 0 0;font-size:28px;font-weight:800;color:#1a1f2e;letter-spacing:-0.5px;">{{total_lots}}</p>
+            <p style="margin:4px 0 0;font-size:12px;color:#6b7280;">lots traded</p>
+          </td>
+        </tr>
+        <tr><td height="12" colspan="3"></td></tr>
+        <tr>
+          <!-- Stat 3 -->
+          <td width="48%" style="background:#f8f9fb;border-radius:10px;padding:20px;text-align:center;border:1px solid #e5e7eb;">
+            <p style="margin:0;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Total Bonus</p>
+            <p style="margin:8px 0 0;font-size:28px;font-weight:800;color:#c8972a;letter-spacing:-0.5px;">{{total_bonus}}</p>
+            <p style="margin:4px 0 0;font-size:12px;color:#6b7280;">USD</p>
+          </td>
+          <td width="4%"></td>
+          <!-- Stat 4 -->
+          <td width="48%" style="background:#f8f9fb;border-radius:10px;padding:20px;text-align:center;border:1px solid #e5e7eb;">
+            <p style="margin:0;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Withdrawn</p>
+            <p style="margin:8px 0 0;font-size:28px;font-weight:800;color:#1a73e8;letter-spacing:-0.5px;">{{total_withdrawn}}</p>
+            <p style="margin:4px 0 0;font-size:12px;color:#6b7280;">USD</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Divider -->
+  <tr>
+    <td style="padding:0 48px;">
+      <div style="height:1px;background:#e5e7eb;"></div>
+    </td>
+  </tr>
+
+  <!-- Summary text -->
+  <tr>
+    <td style="padding:28px 48px 20px;">
+      <h3 style="margin:0 0 12px;font-size:15px;color:#1a1f2e;font-weight:700;">
+        &#128203; Summary
+      </h3>
+      <p style="margin:0 0 16px;font-size:14px;color:#4a5568;line-height:1.7;">
+        This month you traded a total of <strong style="color:#1a1f2e;">{{total_lots}} lots</strong> and
+        received <strong style="color:#10b981;">{{total_rebate}} USD</strong> in rebates. Keep up the great
+        trading performance to maximize your profits!
+      </p>
+
+      <!-- Tip box -->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:16px 20px;">
+            <p style="margin:0;font-size:13px;color:#92400e;line-height:1.6;">
+              <strong>&#128161; Tip:</strong> You can increase your rebate rate by enrolling in premium
+              rebate programs in the <em>Programs</em> section on your Dashboard.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- CTA -->
+  <tr>
+    <td style="padding:16px 48px 36px;text-align:center;">
+      <a href="https://tradingbonushub.com/customer/dashboard"
+         style="display:inline-block;background:#050d1e;color:#ffffff;font-size:14px;font-weight:600;
+                text-decoration:none;padding:13px 36px;border-radius:8px;
+                border:1px solid rgba(200,151,42,0.3);">
+        View Details on Dashboard
+      </a>
+    </td>
+  </tr>
+
+  <!-- Footer -->
+  <tr>
+    <td style="padding:24px 48px 32px;background:#f8f9fb;border-top:1px solid #e5e7eb;">
+      <p style="margin:0 0 8px;font-size:12px;color:#9ca3af;text-align:center;line-height:1.6;">
+        This report was automatically generated by the TradingBonusHub system.<br>
+        &copy; 2025 TradingBonusHub. All rights reserved.
+      </p>
+      <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">
+        <a href="https://tradingbonushub.com" style="color:#c8972a;text-decoration:none;">Website</a>
+        &nbsp;&middot;&nbsp;
+        <a href="https://tradingbonushub.com/customer/support" style="color:#c8972a;text-decoration:none;">Support</a>
+      </p>
+    </td>
+  </tr>
+
+</table>
+<!-- /Container -->
+
+</td></tr>
+</table>
+<!-- /Wrapper -->
+
+</body>
+</html>

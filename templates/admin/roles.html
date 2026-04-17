@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}Roles & Permissions — TradingBonusHub Admin{% endblock %}
+{% block page_title %}Roles & Permissions{% endblock %}
+
+{% block head %}
+<style>
+  .roles-grid { display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
+  @media (max-width: 900px) { .roles-grid { grid-template-columns: 1fr; } }
+  .role-item { padding: 12px 16px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: all .15s; }
+  .role-item:hover, .role-item.active { border-color: var(--accent); background: rgba(26,115,232,.04); }
+  .role-item .role-name { font-size: 14px; font-weight: 700; }
+  .role-item .role-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .perm-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  @media (max-width: 700px) { .perm-grid { grid-template-columns: repeat(2, 1fr); } }
+  .perm-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; cursor: pointer; }
+  .perm-item:hover { background: var(--bg); }
+  .perm-item input { margin: 0; }
+  .user-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0f2f5; }
+  .user-row:last-child { border-bottom: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="roles-grid">
+  <!-- Roles list -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Roles</div>
+        <button class="btn btn-primary btn-sm" onclick="showCreateRole()">+ New Role</button>
+      </div>
+      <div id="roles-list"><div class="empty" style="padding:20px;">Loading...</div></div>
+    </div>
+
+    <!-- Users -->
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title" style="margin-bottom:12px;">Admin Users</div>
+      <div id="users-list"><div class="empty" style="padding:20px;">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- Role detail -->
+  <div>
+    <div class="card" id="role-detail" style="display:none;">
+      <div class="card-header">
+        <div>
+          <div class="card-title" id="rd-title">Role Details</div>
+          <div class="card-subtitle">Configure permissions for this role</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary btn-sm" onclick="saveRole()">Save Changes</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteRole()">Delete</button>
+        </div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="font-size:12px;font-weight:700;color:var(--muted);">Role Name</label>
+        <input type="text" id="rd-name" class="date-input" style="width:100%;margin-top:4px;padding:8px 12px;">
+      </div>
+      <label style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;display:block;">Permissions</label>
+      <div class="perm-grid" id="perm-grid"></div>
+    </div>
+    <div class="card" id="role-placeholder" style="text-align:center;padding:40px;color:#aaa;">
+      Select a role to view and edit permissions
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const esc = s => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let allModules = [], allRoles = [], selectedRoleId = null;
+
+async function loadModules() {
+  const r = await fetch('/api/admin/roles/modules');
+  allModules = await r.json();
+}
+
+async function loadRoles() {
+  const r = await fetch('/api/admin/roles');
+  allRoles = await r.json();
+  const el = document.getElementById('roles-list');
+  el.innerHTML = allRoles.map(r => `
+    <div class="role-item ${selectedRoleId === r.id ? 'active' : ''}" onclick="selectRole(${r.id})">
+      <div class="role-name">${esc(r.name)}</div>
+      <div class="role-meta">${r.user_count} users · ${Array.isArray(r.permissions) ? r.permissions.length : 0} permissions</div>
+    </div>
+  `).join('');
+}
+
+async function loadUsers() {
+  const r = await fetch('/api/admin/roles/users');
+  const users = await r.json();
+  const el = document.getElementById('users-list');
+  el.innerHTML = users.map(u => `
+    <div class="user-row">
+      <div style="flex:1;">
+        <div style="font-weight:700;font-size:13px;">${esc(u.username)}</div>
+        <div style="font-size:11px;color:var(--muted);">${esc(u.role_name || u.role || 'admin')}</div>
+      </div>
+      <select onchange="assignRole(${u.id}, this.value)" style="padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;">
+        <option value="">admin (default)</option>
+        ${allRoles.map(r => `<option value="${r.id}" ${u.role_id === r.id ? 'selected' : ''}>${esc(r.name)}</option>`).join('')}
+      </select>
+    </div>
+  `).join('');
+}
+
+function selectRole(id) {
+  selectedRoleId = id;
+  const role = allRoles.find(r => r.id === id);
+  if (!role) return;
+
+  document.getElementById('role-detail').style.display = '';
+  document.getElementById('role-placeholder').style.display = 'none';
+  document.getElementById('rd-title').textContent = role.name;
+  document.getElementById('rd-name').value = role.name;
+
+  const perms = Array.isArray(role.permissions) ? role.permissions : [];
+  const hasAll = perms.includes('*');
+  const grid = document.getElementById('perm-grid');
+  grid.innerHTML = allModules.map(m => `
+    <label class="perm-item">
+      <input type="checkbox" value="${m}" ${hasAll || perms.includes(m) ? 'checked' : ''}>
+      ${m.replace('.*', '')}
+    </label>
+  `).join('');
+
+  loadRoles(); // refresh active state
+}
+
+async function saveRole() {
+  if (!selectedRoleId) return;
+  const name = document.getElementById('rd-name').value.trim();
+  const perms = [...document.querySelectorAll('#perm-grid input:checked')].map(i => i.value);
+  await fetch(`/api/admin/roles/${selectedRoleId}`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({name, permissions: perms})
+  });
+  loadRoles(); loadUsers();
+}
+
+async function deleteRole() {
+  if (!selectedRoleId || !confirm('Delete this role?')) return;
+  await fetch(`/api/admin/roles/${selectedRoleId}`, {method:'DELETE'});
+  selectedRoleId = null;
+  document.getElementById('role-detail').style.display = 'none';
+  document.getElementById('role-placeholder').style.display = '';
+  loadRoles(); loadUsers();
+}
+
+async function showCreateRole() {
+  const name = prompt('Enter role name:');
+  if (!name) return;
+  await fetch('/api/admin/roles', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({name, permissions: []})
+  });
+  loadRoles();
+}
+
+async function assignRole(uid, roleId) {
+  await fetch(`/api/admin/roles/users/${uid}/assign`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({role_id: roleId ? parseInt(roleId) : null})
+  });
+  loadRoles(); loadUsers();
+}
+
+loadModules().then(() => { loadRoles(); loadUsers(); });
+</script>
+{% endblock %}

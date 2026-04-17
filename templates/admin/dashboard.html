@@ -1,0 +1,852 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — TradingBonusHub Admin{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block head %}
+<style>
+  /* ── KPI Grid ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px; margin-bottom: 20px;
+  }
+  @media (max-width: 1280px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px)  { .kpi-grid { grid-template-columns: 1fr; } }
+
+  .kpi-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    position: relative; overflow: hidden;
+    transition: box-shadow .2s, transform .2s;
+    cursor: default;
+  }
+  .kpi-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+  .kpi-card::after {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 3px; background: var(--kc, var(--accent));
+  }
+  .kpi-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+  .kpi-icon {
+    width: 40px; height: 40px; border-radius: 9px;
+    background: var(--ki, #e8f0fe);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .kpi-link {
+    font-size: 11px; color: var(--accent); text-decoration: none;
+    opacity: 0; transition: opacity .2s;
+  }
+  .kpi-card:hover .kpi-link { opacity: 1; }
+  .kpi-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+  .kpi-value { font-size: 30px; font-weight: 800; color: var(--text); line-height: 1; }
+  .kpi-sub   { font-size: 11px; color: var(--muted); margin-top: 5px; }
+
+  /* ── Two-column main layout ── */
+  .dash-layout {
+    display: grid;
+    grid-template-columns: 1fr 310px;
+    gap: 20px; align-items: start;
+  }
+  @media (max-width: 1100px) { .dash-layout { grid-template-columns: 1fr; } }
+
+  /* ── Quick Actions ── */
+  .qa-grid {
+    display: grid; grid-template-columns: repeat(6, 1fr);
+    gap: 10px; margin-bottom: 20px;
+  }
+  @media (max-width: 900px) { .qa-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 480px) { .qa-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .qa-btn {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 6px; padding: 13px 6px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 9px; text-decoration: none; color: var(--text);
+    font-size: 11px; font-weight: 700; text-align: center;
+    transition: all .18s; cursor: pointer;
+  }
+  .qa-btn:hover {
+    background: var(--accent); color: #fff;
+    border-color: var(--accent); transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(26,115,232,.3);
+  }
+  .qa-icon { font-size: 20px; line-height: 1; }
+
+  /* ── Pending enrollment items ── */
+  .enroll-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid #f3f4f6;
+  }
+  .enroll-item:last-child { border-bottom: none; }
+  .enroll-main { flex: 1; min-width: 0; }
+  .enroll-email { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .enroll-meta  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .enroll-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+  /* ── Campaign table ── */
+  .rate-col { display: flex; align-items: center; gap: 8px; }
+  .rate-num { font-size: 13px; font-weight: 700; min-width: 34px; }
+  .mini-bar  { flex: 1; height: 5px; background: #eef0f4; border-radius: 3px; overflow: hidden; }
+  .mini-fill { height: 100%; border-radius: 3px; background: var(--accent); }
+
+  /* ── Stats card ── */
+  .stat-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 0; border-bottom: 1px solid #f3f4f6;
+  }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-label { font-size: 12px; color: var(--muted); }
+  .stat-val   { font-size: 13px; font-weight: 700; }
+
+  /* ── Top campaigns ── */
+  .top-item { margin-bottom: 13px; }
+  .top-item:last-child { margin-bottom: 0; }
+  .top-item-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .top-item-name { font-size: 12px; font-weight: 600; color: var(--text); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 8px; }
+  .top-item-rate { font-size: 13px; font-weight: 800; color: var(--accent); flex-shrink: 0; }
+
+  /* ── Status indicators ── */
+  .sys-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-size: 13px;
+  }
+  .sys-row:last-child { border-bottom: none; }
+  .sys-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    display: inline-block; margin-right: 7px; flex-shrink: 0;
+  }
+  .dot-ok   { background: #22c55e; }
+  .dot-warn { background: #f59e0b; animation: blink 1.5s infinite; }
+  .dot-err  { background: #ef4444; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ── Refresh indicator ── */
+  .refresh-live {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; color: var(--muted);
+  }
+  .live-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: #22c55e;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ── Quick links ── */
+  .qlink {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; border-radius: 7px;
+    text-decoration: none; color: var(--text); font-size: 13px;
+    transition: background .15s;
+  }
+  .qlink:hover { background: var(--bg); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Top bar: refresh info ── -->
+<div class="flex-between" style="margin-bottom:18px;">
+  <div style="font-size:12px;color:var(--muted);" id="last-updated">Loading...</div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="refresh-live">
+      <div class="live-dot"></div>
+      <span>Auto-refresh every 60s</span>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="loadAll()">🔄 Refresh</button>
+  </div>
+</div>
+
+<!-- ══════════ KPI CARDS ══════════ -->
+<div class="kpi-grid">
+
+  <div class="kpi-card" style="--kc:#1a73e8;--ki:#e8f0fe;">
+    <div class="kpi-header">
+      <div class="kpi-icon">📨</div>
+      <a href="/admin/campaigns" class="kpi-link">View All →</a>
+    </div>
+    <div class="kpi-label">Campaigns</div>
+    <div class="kpi-value" id="s-campaigns">—</div>
+    <div class="kpi-sub" id="s-campaigns-sub">Total campaigns</div>
+  </div>
+
+  <div class="kpi-card" style="--kc:#059669;--ki:#d1fae5;">
+    <div class="kpi-header">
+      <div class="kpi-icon">👥</div>
+      <a href="/admin/customers" class="kpi-link">Manage →</a>
+    </div>
+    <div class="kpi-label">Emails Sent</div>
+    <div class="kpi-value" id="s-emails">—</div>
+    <div class="kpi-sub">Open rate: <strong id="s-rate" style="color:#059669;">—</strong></div>
+  </div>
+
+  <div class="kpi-card" style="--kc:#7c3aed;--ki:#ede9fe;">
+    <div class="kpi-header">
+      <div class="kpi-icon">📋</div>
+      <a href="/admin/enrollments" class="kpi-link">Review Now →</a>
+    </div>
+    <div class="kpi-label">Pending Enrollments</div>
+    <div class="kpi-value" id="s-pending" style="color:#7c3aed;">—</div>
+    <div class="kpi-sub">Program requests</div>
+  </div>
+
+  <div class="kpi-card" style="--kc:#d97706;--ki:#fef3c7;">
+    <div class="kpi-header">
+      <div class="kpi-icon">📬</div>
+      <a href="/admin/compose" class="kpi-link">Compose →</a>
+    </div>
+    <div class="kpi-label">Emails Opened</div>
+    <div class="kpi-value" id="s-opened" style="color:#d97706;">—</div>
+    <div class="kpi-sub" id="s-opened-sub">Email opens</div>
+  </div>
+
+</div>
+
+<!-- ══════════ ANALYTICS KPIs ══════════ -->
+<div class="kpi-grid" id="analytics-kpi" style="margin-bottom:20px;">
+
+  <div class="kpi-card" style="--kc:#059669;--ki:#d1fae5;">
+    <div class="kpi-header">
+      <div class="kpi-icon">💰</div>
+      <a href="/admin/analytics" class="kpi-link">Details →</a>
+    </div>
+    <div class="kpi-label">Total Rebate Paid</div>
+    <div class="kpi-value" id="s-rebate-total" style="color:#059669;">—</div>
+    <div class="kpi-sub">This month: $<span id="s-rebate-month">—</span></div>
+  </div>
+
+  <div class="kpi-card" style="--kc:#7c3aed;--ki:#ede9fe;">
+    <div class="kpi-header">
+      <div class="kpi-icon">📊</div>
+      <a href="/admin/analytics" class="kpi-link">Details →</a>
+    </div>
+    <div class="kpi-label">Trading Volume</div>
+    <div class="kpi-value" id="s-volume" style="color:#7c3aed;">—</div>
+    <div class="kpi-sub">Commission: $<span id="s-commission">—</span></div>
+  </div>
+
+  <div class="kpi-card" style="--kc:#0891b2;--ki:#cffafe;">
+    <div class="kpi-header">
+      <div class="kpi-icon">👛</div>
+      <a href="/admin/auto-credit" class="kpi-link">Manage →</a>
+    </div>
+    <div class="kpi-label">Wallet Balances</div>
+    <div class="kpi-value" id="s-wallet" style="color:#0891b2;">—</div>
+    <div class="kpi-sub">Pending: <span id="s-pending-wd">—</span></div>
+  </div>
+
+  <div class="kpi-card" style="--kc:#dc2626;--ki:#fee2e2;">
+    <div class="kpi-header">
+      <div class="kpi-icon">🔔</div>
+      <a href="/admin/payment" class="kpi-link">Review →</a>
+    </div>
+    <div class="kpi-label">Pending Withdrawals</div>
+    <div class="kpi-value" id="s-pending-wd-count" style="color:#dc2626;">—</div>
+    <div class="kpi-sub" id="s-pending-wd-amount">Withdrawal requests</div>
+  </div>
+
+</div>
+
+<!-- ══════════ QUICK ACTIONS ══════════ -->
+<div style="margin-bottom:20px;">
+  <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.9px;color:var(--muted);margin-bottom:10px;">
+    ⚡ Quick Actions
+  </div>
+  <div class="qa-grid">
+    <a href="/admin/campaigns/new" class="qa-btn">
+      <span class="qa-icon">📨</span>Create Campaign
+    </a>
+    <a href="/admin/compose" class="qa-btn">
+      <span class="qa-icon">✉️</span>Compose Email
+    </a>
+    <a href="/admin/customers" class="qa-btn">
+      <span class="qa-icon">👥</span>Import KH
+    </a>
+    <a href="/admin/rebate" class="qa-btn">
+      <span class="qa-icon">💰</span>Upload Rebate
+    </a>
+    <a href="/admin/payment" class="qa-btn">
+      <span class="qa-icon">💳</span>Export Payment
+    </a>
+    <a href="/admin/enrollments" class="qa-btn">
+      <span class="qa-icon">📋</span>Review Enrollments
+    </a>
+    <a href="/admin/analytics" class="qa-btn">
+      <span class="qa-icon">📊</span>Analytics
+    </a>
+    <a href="/admin/auto-credit" class="qa-btn">
+      <span class="qa-icon">💰</span>Auto-Credit
+    </a>
+    <a href="/admin/segments" class="qa-btn">
+      <span class="qa-icon">👥</span>Segments
+    </a>
+    <a href="/admin/scheduling" class="qa-btn">
+      <span class="qa-icon">📅</span>Scheduling
+    </a>
+  </div>
+</div>
+
+<!-- ══════════ MAIN LAYOUT ══════════ -->
+<div class="dash-layout">
+
+  <!-- ── LEFT COLUMN ── -->
+  <div>
+
+    <!-- Pending Enrollments -->
+    <div class="card" id="pending-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">📋 Pending Enrollments</div>
+          <div class="card-subtitle">Approve or reject program enrollment requests</div>
+        </div>
+        <a href="/admin/enrollments" class="btn btn-primary btn-sm">View All</a>
+      </div>
+      <div id="pending-list">
+        <div class="empty" style="padding:20px;">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Promo Alerts -->
+    <div class="card" id="promo-card" style="display:none;">
+      <div class="card-header">
+        <div>
+          <div class="card-title">🎁 Promo 100% Rebate</div>
+          <div class="card-subtitle">Customers with new client promotions</div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="downgradeExpired()" id="promo-downgrade-btn" style="display:none;">⏬ Downgrade Expired</button>
+      </div>
+      <div id="promo-stats" style="display:flex;gap:16px;padding:12px 0;border-bottom:1px solid #f0f2f5;margin-bottom:8px;">
+        <div style="text-align:center;flex:1;">
+          <div style="font-size:24px;font-weight:800;color:var(--accent);" id="promo-total">0</div>
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;">Active</div>
+        </div>
+        <div style="text-align:center;flex:1;">
+          <div style="font-size:24px;font-weight:800;color:#f59e0b;" id="promo-expiring">0</div>
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;">Expiring (3 days)</div>
+        </div>
+        <div style="text-align:center;flex:1;">
+          <div style="font-size:24px;font-weight:800;color:#ef4444;" id="promo-expired">0</div>
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;">Expired</div>
+        </div>
+      </div>
+      <div id="promo-list"></div>
+    </div>
+
+    <!-- Recent Campaigns -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">📨 Recent Campaigns</div>
+          <div class="card-subtitle">5 latest campaigns</div>
+        </div>
+        <a href="/admin/campaigns/new" class="btn btn-primary btn-sm">+ Create New</a>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Campaign Name</th>
+            <th>Total / Sent</th>
+            <th>Open Rate</th>
+            <th>Status</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody id="campaign-tbody">
+          <tr><td colspan="5" class="empty">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Email Tracking -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">📧 Individual Emails</div>
+          <div class="card-subtitle">Emails sent directly, not via campaign</div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="loadEmails()">🔄 Refresh</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Recipient</th>
+            <th>Subject</th>
+            <th>Sent At</th>
+            <th>Opens</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="email-tbody">
+          <tr><td colspan="5" class="empty">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- ── RIGHT SIDEBAR ── -->
+  <div>
+
+    <!-- Email Stats -->
+    <div class="card">
+      <div class="card-title" style="margin-bottom:14px;">📊 Email Statistics</div>
+
+      <div class="stat-row">
+        <span class="stat-label">Total Sent</span>
+        <span class="stat-val" id="stat-total">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Opened</span>
+        <span class="stat-val" style="color:var(--success);" id="stat-opened">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Not Opened</span>
+        <span class="stat-val" style="color:var(--muted);" id="stat-unopened">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Active Campaigns</span>
+        <span class="stat-val" style="color:var(--warning);" id="stat-sending">—</span>
+      </div>
+
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f0f2f5;">
+        <div class="flex-between" style="margin-bottom:6px;">
+          <span style="font-size:12px;color:var(--muted);">Open Rate</span>
+          <span style="font-size:22px;font-weight:800;color:var(--accent);" id="stat-rate">—</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="stat-rate-fill" style="width:0%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Campaigns by Open Rate -->
+    <div class="card">
+      <div class="card-title" style="margin-bottom:14px;">🏆 Top Performing</div>
+      <div id="top-campaigns">
+        <div class="empty" style="padding:16px;">Loading...</div>
+      </div>
+    </div>
+
+    <!-- System Status -->
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px;">🖥️ System Status</div>
+      <div class="sys-row">
+        <span><span class="sys-dot dot-ok"></span>Web Server</span>
+        <span class="badge badge-open" style="font-size:10px;">Online</span>
+      </div>
+      <div class="sys-row">
+        <span><span class="sys-dot dot-ok"></span>Database</span>
+        <span class="badge badge-open" style="font-size:10px;">Connected</span>
+      </div>
+      <div class="sys-row">
+        <span><span class="sys-dot dot-warn" id="smtp-dot"></span>SMTP</span>
+        <span id="smtp-status" style="font-size:12px;color:var(--muted);">Not checked</span>
+      </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="card">
+      <div class="card-title" style="margin-bottom:10px;">🔗 Quick Links</div>
+      <div style="display:flex;flex-direction:column;gap:1px;">
+        <a href="/admin/analytics"        class="qlink">📊 Analytics Dashboard</a>
+        <a href="/admin/scheduling"       class="qlink">📅 Scheduling</a>
+        <a href="/admin/segments"         class="qlink">👥 Customer Segments</a>
+        <a href="/admin/auto-credit"      class="qlink">💰 Auto-Credit Rebates</a>
+        <a href="/admin/roles"            class="qlink">🔒 Roles & Permissions</a>
+        <a href="/admin/notifications-config" class="qlink">🔔 Notification Rules</a>
+        <a href="/admin/settings"         class="qlink">⚙️ SMTP & Settings</a>
+        <a href="/admin/portal-editor"    class="qlink">🎨 Portal Editor</a>
+        <a href="/admin/promotions"       class="qlink">🎁 Promotions</a>
+      </div>
+    </div>
+
+  </div><!-- end right sidebar -->
+
+</div><!-- end dash-layout -->
+
+<!-- ── Email Detail Modal ── -->
+<div class="overlay" id="overlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-title">Email Detail</h3>
+      <button class="close-btn" onclick="closeModalDirect()">✕</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* ═══════════════════════════════════════════
+   DASHBOARD — JavaScript
+═══════════════════════════════════════════ */
+
+async function loadAll() {
+  try {
+    await Promise.all([loadCampaigns(), loadEmails(), loadPending()]);
+    const now = new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
+    document.getElementById('last-updated').textContent = 'Updated at: ' + now;
+  } catch (err) {
+    console.error('Dashboard load error:', err);
+  }
+}
+
+/* ── Campaigns ── */
+async function loadCampaigns() {
+  const r = await fetch('/api/campaigns');
+  const camps = await r.json();
+
+  document.getElementById('s-campaigns').textContent = camps.length;
+
+  const sending = camps.filter(c => c.status === 'sending').length;
+  document.getElementById('s-campaigns-sub').textContent =
+    sending > 0 ? sending + ' sending' : 'Total campaigns';
+  document.getElementById('stat-sending').textContent = sending || '0';
+
+  renderCampaignTable(camps);
+  renderTopCampaigns(camps);
+}
+
+function renderCampaignTable(camps) {
+  const tb = document.getElementById('campaign-tbody');
+  if (!camps.length) {
+    tb.innerHTML = `<tr><td colspan="5" class="empty">
+      No campaigns yet. <a href="/admin/campaigns/new">Create Now →</a>
+    </td></tr>`;
+    return;
+  }
+  tb.innerHTML = camps.slice(0, 5).map(c => {
+    const pct = c.sent > 0 ? Math.round(c.unique_opens / c.sent * 100) : 0;
+    const rateStr = c.sent > 0 ? pct + '%' : '—';
+    return `<tr style="cursor:pointer" onclick="location.href='/admin/campaigns/${c.id}'">
+      <td><strong>${esc(c.name)}</strong></td>
+      <td>${c.total} / ${c.sent}</td>
+      <td>
+        <div class="rate-col">
+          <span class="rate-num">${rateStr}</span>
+          <div class="mini-bar"><div class="mini-fill" style="width:${pct}%"></div></div>
+        </div>
+      </td>
+      <td>${statusBadge(c.status)}</td>
+      <td class="text-muted">${fmtShort(c.created_at)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderTopCampaigns(camps) {
+  const el  = document.getElementById('top-campaigns');
+  const top = [...camps]
+    .filter(c => c.sent > 0)
+    .sort((a, b) => (b.unique_opens / b.sent) - (a.unique_opens / a.sent))
+    .slice(0, 5);
+
+  if (!top.length) {
+    el.innerHTML = '<div class="empty" style="padding:14px;">No data</div>';
+    return;
+  }
+  const medals = ['🥇','🥈','🥉','4.','5.'];
+  el.innerHTML = top.map((c, i) => {
+    const pct = Math.round(c.unique_opens / c.sent * 100);
+    return `<div class="top-item">
+      <div class="top-item-header">
+        <span class="top-item-name">${medals[i]} ${esc(c.name)}</span>
+        <span class="top-item-rate">${pct}%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width:${pct}%"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── Emails ── */
+async function loadEmails() {
+  const r    = await fetch('/api/emails?limit=500');
+  const resp = await r.json();
+  const all  = resp.items || resp;
+
+  const total     = resp.total ?? all.length;
+  const opened    = all.filter(e => e.open_count > 0).length;
+  const unopened  = total - opened;
+  const rate      = total > 0 ? Math.round(opened / total * 100) : 0;
+  const standalone = all.filter(e => !e.campaign_id);
+
+  // KPI cards
+  document.getElementById('s-emails').textContent  = total;
+  document.getElementById('s-rate').textContent    = rate + '%';
+  document.getElementById('s-opened').textContent  = opened;
+
+  // Stats panel
+  document.getElementById('stat-total').textContent    = total;
+  document.getElementById('stat-opened').textContent   = opened;
+  document.getElementById('stat-unopened').textContent = unopened;
+  document.getElementById('stat-rate').textContent     = rate + '%';
+  document.getElementById('stat-rate-fill').style.width = rate + '%';
+
+  // Email table
+  const tb = document.getElementById('email-tbody');
+  if (!standalone.length) {
+    tb.innerHTML = '<tr><td colspan="5" class="empty">No individual emails.</td></tr>';
+    return;
+  }
+  tb.innerHTML = standalone.slice(0, 20).map(e => `
+    <tr style="cursor:pointer" onclick="showDetail('${e.id}','${esc(e.recipient_name)}')">
+      <td>
+        <strong>${esc(e.recipient_name)}</strong>
+        <div class="text-muted" style="font-size:11px;">${esc(e.recipient_email)}</div>
+      </td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+        ${esc(e.subject || '—')}
+      </td>
+      <td class="text-muted">${fmtShort(e.created_at)}</td>
+      <td><strong>${e.open_count}</strong></td>
+      <td>${e.open_count > 0
+        ? '<span class="badge badge-open">✅ Opened</span>'
+        : '<span class="badge badge-unseen">Not Opened</span>'}</td>
+    </tr>
+  `).join('');
+}
+
+/* ── Pending Enrollments ── */
+async function loadPending() {
+  try {
+    const r    = await fetch('/api/enrollments?status=unconfirmed&limit=5');
+    const data = await r.json();
+    const list = data.items || (Array.isArray(data) ? data : []);
+    const cnt  = data.total ?? list.length;
+
+    document.getElementById('s-pending').textContent = cnt;
+
+    // Update notification badge
+    const badge = document.getElementById('enrollment-badge');
+    const notif = document.getElementById('notif-count');
+    if (cnt > 0) {
+      if (badge) { badge.textContent = cnt; badge.classList.add('visible'); }
+      if (notif) { notif.textContent = cnt; notif.classList.add('visible'); }
+    } else {
+      if (badge) badge.classList.remove('visible');
+      if (notif) notif.classList.remove('visible');
+    }
+
+    const el = document.getElementById('pending-list');
+    if (!list.length) {
+      el.innerHTML = `<div style="text-align:center;padding:24px;color:#aaa;font-size:13px;">
+        ✅ No pending enrollments
+      </div>`;
+      return;
+    }
+    el.innerHTML = list.map(e => `
+      <div class="enroll-item" id="enroll-${e.id}">
+        <div class="enroll-main">
+          <div class="enroll-email">${esc(e.customer_email || e.email || '—')}</div>
+          <div class="enroll-meta">
+            ${esc(e.program_name || '—')} · ${esc(e.broker_name || '—')} · ${fmtShort(e.created_at)}
+          </div>
+        </div>
+        <div class="enroll-actions">
+          <button class="btn btn-success btn-xs" title="Approve"
+                  onclick="doEnroll(${e.id},'confirm',this)">✓ Approve</button>
+          <button class="btn btn-danger btn-xs" title="Reject"
+                  onclick="doEnroll(${e.id},'reject',this)">✗</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (_) {
+    document.getElementById('s-pending').textContent = '—';
+  }
+}
+
+async function doEnroll(id, action, btn) {
+  const label = action === 'confirm' ? 'Approve' : 'Reject';
+  if (!confirm(label + ' this enrollment?')) return;
+  btn.disabled = true;
+  try {
+    const r = await fetch(`/api/enrollments/${id}/${action}`, { method: 'PUT' });
+    if (r.ok) {
+      const row = document.getElementById('enroll-' + id);
+      if (row) { row.style.opacity = '.35'; row.style.pointerEvents = 'none'; }
+      setTimeout(loadPending, 800);
+    } else {
+      alert('Error. Please try again.');
+      btn.disabled = false;
+    }
+  } catch (_) { btn.disabled = false; }
+}
+
+/* ── Email Detail Modal ── */
+async function showDetail(id, name) {
+  document.getElementById('modal-title').textContent = name + ' — open history';
+  document.getElementById('modal-body').innerHTML = '<p style="text-align:center;padding:20px;color:#aaa;">Loading...</p>';
+  document.getElementById('overlay').classList.add('active');
+
+  const r = await fetch('/api/emails/' + id);
+  const { opens } = await r.json();
+
+  document.getElementById('modal-title').textContent =
+    name + ' — ' + opens.length + ' opens';
+
+  if (!opens.length) {
+    document.getElementById('modal-body').innerHTML =
+      '<p style="text-align:center;color:#aaa;padding:24px;">No opens yet.</p>';
+    return;
+  }
+
+  document.getElementById('modal-body').innerHTML = `
+    <div style="margin-bottom:12px;padding:10px 14px;background:#f8f9fb;border-radius:8px;font-size:13px;">
+      <strong>${opens.length}</strong> opens ·
+      First: <strong>${fmt(opens[0]?.opened_at)}</strong> ·
+      Last: <strong>${fmt(opens[opens.length-1]?.opened_at)}</strong>
+    </div>
+    <table>
+      <thead><tr>
+        <th>#</th><th>Time</th><th>Device</th>
+        <th>OS</th><th>Email Client</th><th>IP</th>
+      </tr></thead>
+      <tbody>
+        ${opens.map((o, i) => `
+          <tr>
+            <td class="text-muted">${i+1}</td>
+            <td>${fmt(o.opened_at)}</td>
+            <td>${dIcon(o.device_type)} ${o.device_type||'—'}</td>
+            <td>${o.os||'—'}</td>
+            <td>${o.email_client||'—'}</td>
+            <td class="text-muted">${o.ip_address||'—'}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function closeModal(e) { if (e.target.id === 'overlay') closeModalDirect(); }
+function closeModalDirect() { document.getElementById('overlay').classList.remove('active'); }
+
+/* ── Helpers ── */
+function statusBadge(s) {
+  const map = {
+    draft:           ['badge-draft',   '⚫ Draft'],
+    sending:         ['badge-sending', '⏳ Sending'],
+    done:            ['badge-done',    '✅ Completed'],
+    done_with_errors:['badge-errors',  '⚠️ Has Errors'],
+    failed:          ['badge-errors',  '❌ Failed'],
+  };
+  const [cls, label] = map[s] || ['badge-draft', s];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+function fmt(iso) {
+  if (!iso) return '—';
+  return new Date(iso.endsWith('Z') ? iso : iso + 'Z')
+    .toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
+}
+function fmtShort(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso.endsWith('Z') ? iso : iso + 'Z');
+  return d.toLocaleDateString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
+}
+function dIcon(d) { return d === 'Mobile' ? '📱' : d === 'Tablet' ? '📟' : '💻'; }
+function esc(s) {
+  return String(s||'').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ── Promo Widget ── */
+async function loadPromo() {
+  try {
+    const r = await fetch('/api/promo/dashboard-stats');
+    const d = await r.json();
+    const card = document.getElementById('promo-card');
+    const hasData = d.total_active > 0 || d.expired_pending > 0;
+    card.style.display = hasData ? '' : 'none';
+    if (!hasData) return;
+
+    document.getElementById('promo-total').textContent = d.total_active;
+    document.getElementById('promo-expiring').textContent = d.expiring_3d;
+    document.getElementById('promo-expired').textContent = d.expired_pending;
+
+    const btn = document.getElementById('promo-downgrade-btn');
+    btn.style.display = d.expired_pending > 0 ? '' : 'none';
+
+    const list = document.getElementById('promo-list');
+    const items = [];
+
+    // Expired first (red)
+    for (const c of (d.expired || [])) {
+      const name = esc(c.customer_name || c.client_name || c.login_email || c.broker_email);
+      const exp = new Date(c.promo_expires_at).toLocaleDateString('en-US');
+      items.push(`<div class="enroll-item">
+        <span style="color:#ef4444;font-size:16px;">⚠️</span>
+        <div class="enroll-main">
+          <div class="enroll-email">${name}</div>
+          <div class="enroll-meta">Expires: ${exp} · ${esc(c.broker_name)}</div>
+        </div>
+        <span class="badge" style="background:#fef2f2;color:#dc2626;font-size:10px;">Expired</span>
+      </div>`);
+    }
+    // Expiring soon (yellow)
+    for (const c of (d.expiring || [])) {
+      const name = esc(c.customer_name || c.client_name || c.login_email || c.broker_email);
+      const exp = new Date(c.promo_expires_at).toLocaleDateString('en-US');
+      const daysLeft = Math.ceil((new Date(c.promo_expires_at) - new Date()) / 86400000);
+      items.push(`<div class="enroll-item">
+        <span style="color:#f59e0b;font-size:16px;">⏰</span>
+        <div class="enroll-main">
+          <div class="enroll-email">${name}</div>
+          <div class="enroll-meta">Expires: ${exp} (${daysLeft} days left) · ${esc(c.broker_name)}</div>
+        </div>
+        <span class="badge" style="background:#fffbeb;color:#d97706;font-size:10px;">Expiring Soon</span>
+      </div>`);
+    }
+
+    list.innerHTML = items.length
+      ? items.join('')
+      : '<div class="empty" style="padding:12px;font-size:13px;">No warnings</div>';
+  } catch(e) {
+    console.error('Promo load error:', e);
+  }
+}
+
+async function downgradeExpired() {
+  if (!confirm('Downgrade all expired promo customers to base program?')) return;
+  await fetch('/api/promo/downgrade', {method: 'POST'});
+  loadPromo();
+}
+
+/* ── Analytics KPIs ── */
+async function loadAnalytics() {
+  try {
+    const r = await fetch('/api/analytics/overview');
+    const d = await r.json();
+    const fmt$ = n => '$' + Number(n||0).toLocaleString('en-US', {maximumFractionDigits:0});
+    const fmtN = n => Number(n||0).toLocaleString('en-US', {maximumFractionDigits:0});
+
+    document.getElementById('s-rebate-total').textContent = fmt$(d.rebates.total_paid);
+    document.getElementById('s-rebate-month').textContent = fmtN(d.rebates.this_month);
+    document.getElementById('s-volume').textContent = fmtN(d.trading.total_volume) + ' lots';
+    document.getElementById('s-commission').textContent = fmtN(d.trading.total_commission);
+    document.getElementById('s-wallet').textContent = fmt$(d.wallet.total_balance);
+    document.getElementById('s-pending-wd').textContent = fmt$(d.wallet.pending_withdrawals_amount);
+    document.getElementById('s-pending-wd-count').textContent = d.wallet.pending_withdrawals_count;
+    document.getElementById('s-pending-wd-amount').textContent = fmt$(d.wallet.pending_withdrawals_amount) + ' total';
+  } catch(e) { console.error('Analytics load error:', e); }
+}
+
+/* ── Init ── */
+loadAll();
+loadPromo();
+loadAnalytics();
+setInterval(loadAll, 60000);
+setInterval(loadPromo, 60000);
+setInterval(loadAnalytics, 120000);
+
+/* Keyboard shortcut: R to refresh (when not typing) */
+document.addEventListener('keydown', e => {
+  if (e.key === 'r' && !e.ctrlKey && !e.metaKey
+      && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) {
+    loadAll();
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Trading Bonus Admin{% endblock %}</title>
+  <link rel="stylesheet" href="{{ static_url('/static/css/base.css') }}" />
+  <link rel="stylesheet" href="{{ static_url('/static/css/admin.css') }}" />
+  <link rel="stylesheet" href="{{ static_url('/static/ux-enhancements.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<!-- ══════════ SIDEBAR ══════════ -->
+<aside class="sidebar" id="sidebar">
+
+  <div class="sidebar-logo">
+    <span class="logo-left">
+      <span class="logo-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </span>
+      <span class="logo-text">Trading<span class="logo-accent">BonusHub</span></span>
+    </span>
+    <button class="sidebar-toggle-btn" id="sidebar-toggle-btn"
+            onclick="toggleSidebar()" title="Toggle menu">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+  </div>
+
+  <div class="sidebar-search">
+    <input type="text" id="nav-search" placeholder="Search menu... (Ctrl+K)"
+           oninput="filterNav(this.value)" autocomplete="off" />
+  </div>
+
+  <nav class="admin-nav" id="main-nav">
+
+    <!-- Overview -->
+    <div class="nav-group-label">Overview</div>
+    <a href="/admin/" title="Dashboard"
+       class="{% if active == 'dashboard' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
+      <span class="nav-label">Dashboard</span>
+    </a>
+
+    <!-- Email Marketing -->
+    <div class="nav-group-label">Email Marketing</div>
+    <a href="/admin/templates" title="Email Templates"
+       class="{% if active == 'templates' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
+      <span class="nav-label">Email Templates</span>
+    </a>
+    <a href="/admin/compose" title="Compose & Send"
+       class="{% if active == 'compose' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+      <span class="nav-label">Compose</span>
+    </a>
+    <a href="/admin/campaigns" title="Email Campaigns"
+       class="{% if active == 'campaigns' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/></svg></span>
+      <span class="nav-label">Campaigns</span>
+    </a>
+
+    <!-- Customers -->
+    <div class="nav-group-label">Customers</div>
+    <a href="/admin/leads" title="Leads — Upload & Email Campaigns"
+       class="{% if active == 'leads' or active == 'imported-leads' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
+      <span class="nav-label">Leads</span>
+    </a>
+    <a href="/admin/crm" title="CRM — Registered Customers"
+       class="{% if active == 'crm' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+      <span class="nav-label">CRM</span>
+    </a>
+    <a href="/admin/enrollments" title="Program Enrollments"
+       class="{% if active == 'enrollments' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/></svg></span>
+      <span class="nav-label">Enrollments</span>
+      <span class="nav-badge" id="enrollment-badge"></span>
+    </a>
+
+    <!-- Programs & Rebate -->
+    <div class="nav-group-label">Programs & Rebate</div>
+    <a href="/admin/brokers" title="Broker Management"
+       class="{% if active == 'brokers' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
+      <span class="nav-label">Brokers</span>
+    </a>
+    <a href="/admin/promotions" title="Programs & Rebate Settings"
+       class="{% if active == 'promotions' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+      <span class="nav-label">Programs</span>
+    </a>
+    <a href="/admin/special-offers" title="Special Offers"
+       class="{% if active == 'special_offers' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+      <span class="nav-label">Special Offers</span>
+    </a>
+    <a href="/admin/account-owners" title="IB / Account Owners"
+       class="{% if active == 'account_owners' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
+      <span class="nav-label">IB / Account Owners</span>
+    </a>
+    <a href="/admin/rebate" title="Import & Calculate Rebate"
+       class="{% if active == 'rebate' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+      <span class="nav-label">Rebate</span>
+    </a>
+    <a href="/admin/payment" title="Payment & Export"
+       class="{% if active == 'payment' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
+      <span class="nav-label">Payment</span>
+    </a>
+    <!-- Content & CMS -->
+    <div class="nav-group-label">Content & CMS</div>
+    <a href="/admin/cms/articles" title="Articles / Blog"
+       class="{% if active == 'cms_articles' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span>
+      <span class="nav-label">Articles</span>
+    </a>
+    <a href="/admin/cms/media" title="Media Library"
+       class="{% if active == 'cms_media' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span>
+      <span class="nav-label">Media Library</span>
+    </a>
+    <a href="/admin/cms/banners" title="Homepage Banners"
+       class="{% if active == 'cms_banners' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+      <span class="nav-label">Banners</span>
+    </a>
+    <a href="/admin/cms/navigation" title="Navigation Menu"
+       class="{% if active == 'cms_navigation' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg></span>
+      <span class="nav-label">Navigation</span>
+    </a>
+    <a href="/admin/faq" title="FAQ – Frequently Asked Questions"
+       class="{% if active == 'faq' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+      <span class="nav-label">FAQ</span>
+    </a>
+
+    <!-- Analytics & Control -->
+    <div class="nav-group-label">Analytics & Control</div>
+    <a href="/admin/analytics" title="Analytics Dashboard"
+       class="{% if active == 'analytics' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+      <span class="nav-label">Analytics</span>
+    </a>
+    <a href="/admin/scheduling" title="Program & Content Scheduling"
+       class="{% if active == 'scheduling' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+      <span class="nav-label">Scheduling</span>
+    </a>
+    <a href="/admin/segments" title="Customer Segments"
+       class="{% if active == 'segments' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+      <span class="nav-label">Segments</span>
+    </a>
+    <a href="/admin/auto-credit" title="Auto-credit Rebates to Wallets"
+       class="{% if active == 'auto_credit' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+      <span class="nav-label">Auto-Credit</span>
+    </a>
+
+    <!-- System -->
+    <div class="nav-group-label">System</div>
+    <a href="/admin/roles" title="Role & Permission Management"
+       class="{% if active == 'roles' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+      <span class="nav-label">Roles & Permissions</span>
+    </a>
+    <a href="/admin/notifications-config" title="Notification Rules"
+       class="{% if active == 'notifications' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
+      <span class="nav-label">Notifications</span>
+    </a>
+    <a href="/admin/settings" title="Settings: SMTP, Accounts, OAuth"
+       class="{% if active == 'settings' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+      <span class="nav-label">Settings</span>
+    </a>
+    <a href="/admin/contact-settings" title="Portal, Contact & Telegram Bot"
+       class="{% if active == 'contact_settings' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
+      <span class="nav-label">Portal & Contact</span>
+    </a>
+    <a href="/admin/system" title="Audit Log, Sessions, System Monitor"
+       class="{% if active == 'system' %}active{% endif %}">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
+      <span class="nav-label">System Monitor</span>
+    </a>
+
+  </nav>
+</aside>
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeMobileSidebar()"></div>
+
+<!-- ══════════ MAIN ══════════ -->
+<div class="main" id="main">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="topbar-menu-btn" onclick="openMobileSidebar()" title="Menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="page-title-wrap">
+        {% block breadcrumb %}{% endblock %}
+        <div class="page-title">{% block page_title %}{% endblock %}</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <!-- Notification bell (pending enrollments) -->
+      <button class="notif-btn" onclick="location.href='/admin/enrollments'"
+              title="Pending Enrollments">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="notif-count" id="notif-count"></span>
+      </button>
+
+      <!-- User menu -->
+      <div class="user-menu">
+        <button class="user-btn" onclick="toggleUserMenu()" id="user-btn">
+          <div class="user-avatar" id="user-avatar">
+            {{ user[0]|upper if user else 'A' }}
+          </div>
+          <span class="user-name">{{ user }}</span>
+          <span class="user-caret">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </button>
+        <div class="user-dropdown" id="user-dropdown">
+          <div class="user-dropdown-header">
+            <div class="user-dropdown-name">{{ user }}</div>
+            <div class="user-dropdown-role">Admin Panel</div>
+          </div>
+          <a href="/admin/settings">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Settings
+          </a>
+          <a href="/admin/contact-settings">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            Portal & Contact
+          </a>
+          <hr>
+          <a href="/admin/logout" class="danger">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Logout
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page content -->
+  <div class="content">
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+{% block scripts %}{% endblock %}
+
+<script src="/static/toast.js"></script>
+<script>
+/* ── Sidebar ── */
+(function () {
+  if (window.innerWidth > 768 && localStorage.getItem('sb') === '1') {
+    document.getElementById('sidebar').classList.add('collapsed');
+    document.getElementById('main').classList.add('sidebar-collapsed');
+    var btn = document.getElementById('sidebar-toggle-btn');
+    if (btn) btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+  }
+})();
+
+function toggleSidebar() {
+  const sb  = document.getElementById('sidebar');
+  const mn  = document.getElementById('main');
+  const btn = document.getElementById('sidebar-toggle-btn');
+  const c   = sb.classList.toggle('collapsed');
+  mn.classList.toggle('sidebar-collapsed', c);
+  btn.innerHTML = c
+    ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>'
+    : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+  localStorage.setItem('sb', c ? '1' : '0');
+}
+function openMobileSidebar() {
+  document.getElementById('sidebar').classList.add('mobile-open');
+  document.getElementById('sidebar-overlay').classList.add('active');
+}
+function closeMobileSidebar() {
+  document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('sidebar-overlay').classList.remove('active');
+}
+
+/* ── User dropdown ── */
+function toggleUserMenu() {
+  document.getElementById('user-dropdown').classList.toggle('open');
+}
+document.addEventListener('click', function (e) {
+  if (!e.target.closest('.user-menu')) {
+    document.getElementById('user-dropdown')?.classList.remove('open');
+  }
+});
+
+/* ── Nav search filter ── */
+function filterNav(q) {
+  const links    = document.querySelectorAll('#main-nav a');
+  const labels   = document.querySelectorAll('.nav-group-label');
+  q = q.trim().toLowerCase();
+  if (!q) {
+    links.forEach(a => a.style.display = '');
+    labels.forEach(l => l.style.display = '');
+    return;
+  }
+  links.forEach(a => {
+    const txt = (a.textContent + a.title).toLowerCase();
+    a.style.display = txt.includes(q) ? '' : 'none';
+  });
+  labels.forEach(l => l.style.display = 'none');
+}
+
+/* ── Keyboard shortcuts ── */
+document.addEventListener('keydown', function (e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault();
+    const inp = document.getElementById('nav-search');
+    if (inp) { inp.focus(); inp.select(); }
+  }
+});
+
+/* ── Pending enrollment badge ── */
+(async function () {
+  try {
+    const r = await fetch('/api/enrollments/pending-count');
+    const d = await r.json();
+    if (d.count > 0) {
+      const badge = document.getElementById('enrollment-badge');
+      const notif = document.getElementById('notif-count');
+      if (badge) { badge.textContent = d.count; badge.classList.add('visible'); }
+      if (notif) { notif.textContent = d.count; notif.classList.add('visible'); }
+    }
+  } catch (_) {}
+})();
+
+/* ── Pending withdrawal badge ── */
+/* ── Tab helper (reusable across pages) ── */
+function initTabs(containerId) {
+  const bar   = document.querySelector(`#${containerId} .tab-bar`);
+  const panes = document.querySelectorAll(`#${containerId} .tab-pane`);
+  if (!bar) return;
+  bar.querySelectorAll('button').forEach((btn, i) => {
+    btn.addEventListener('click', () => {
+      bar.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      panes.forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      panes[i]?.classList.add('active');
+    });
+  });
+}
+</script>
+</body>
+</html>

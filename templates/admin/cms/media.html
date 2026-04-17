@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% block title %}CMS — Media Library{% endblock %}
+{% block page_title %}🖼️ Media Library{% endblock %}
+
+{% block head %}
+<style>
+  .upload-zone {
+    border:2px dashed #c0c9d0; border-radius:10px; padding:32px;
+    text-align:center; background:#f8fbff; cursor:pointer; transition:border-color .2s;
+    margin-bottom:24px;
+  }
+  .upload-zone:hover, .upload-zone.drag { border-color:#1a73e8; background:#edf3ff; }
+  .upload-zone p { color:#888; font-size:14px; margin-top:8px; }
+
+  .media-grid {
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px;
+  }
+  .media-card {
+    border:1px solid #e0e0e0; border-radius:8px; overflow:hidden;
+    background:#fff; transition:box-shadow .15s;
+  }
+  .media-card:hover { box-shadow:0 2px 12px rgba(0,0,0,.12); }
+  .media-card img { width:100%; height:110px; object-fit:cover; display:block; }
+  .media-card .meta { padding:8px; }
+  .media-card .fname { font-size:11px; color:#555; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .media-card .fsize { font-size:10px; color:#aaa; }
+  .media-card .actions { display:flex; gap:4px; padding:0 8px 8px; }
+  .media-card .actions button { flex:1; font-size:11px; padding:3px 0; }
+
+  .load-more { text-align:center; margin-top:20px; }
+  #uploadBar { background:#e8f0fe; border-radius:6px; padding:10px 14px; margin-bottom:16px; font-size:13px; display:none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Upload zone -->
+<div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+  <div style="font-size:36px;">📤</div>
+  <strong>Click or drag & drop images here</strong>
+  <p>Supports: JPG, PNG, GIF, WebP, SVG (max 10 MB/file)</p>
+  <input type="file" id="fileInput" accept="image/*" multiple style="display:none" onchange="uploadFiles(this.files)">
+</div>
+
+<div id="uploadBar"></div>
+
+<div class="flex-between" style="margin-bottom:16px;">
+  <strong id="totalLabel" style="font-size:14px;"></strong>
+</div>
+
+<div class="media-grid" id="mediaGrid"></div>
+<div class="load-more" id="loadMore" style="display:none;">
+  <button class="btn btn-secondary" onclick="loadMore()">Load More</button>
+</div>
+
+<!-- Alt text modal -->
+<div class="overlay" id="altOverlay">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <h3>Edit Alt Text</h3>
+      <button class="close-btn" onclick="closeAlt()">✕</button>
+    </div>
+    <img id="altPreview" style="width:100%;height:160px;object-fit:cover;border-radius:6px;margin-bottom:12px;">
+    <div class="form-group">
+      <label>Alt text (cho SEO & accessibility)</label>
+      <input type="text" id="altInput" placeholder="Brief image description">
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="closeAlt()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAlt()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete confirm modal -->
+<div class="overlay" id="delOverlay">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-header">
+      <h3>Delete Image</h3>
+      <button class="close-btn" onclick="closeDel()">✕</button>
+    </div>
+    <p style="font-size:14px;margin-bottom:20px;">Delete this image from the library and disk? This action cannot be undone.</p>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="closeDel()">Cancel</button>
+      <button class="btn btn-danger" id="delConfirmBtn">Delete</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let _offset = 0, _total = 0;
+let _altId = null, _delId = null;
+const LIMIT = 36;
+
+// ── Drag & Drop ────────────────────────────────────────────────────────────────
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag');
+  uploadFiles(e.dataTransfer.files);
+});
+
+// ── Upload ────────────────────────────────────────────────────────────────────
+async function uploadFiles(files) {
+  const bar = document.getElementById('uploadBar');
+  bar.style.display = 'block';
+  let done = 0;
+  for (const file of files) {
+    bar.textContent = `Uploading ${file.name}... (${done+1}/${files.length})`;
+    const form = new FormData();
+    form.append('file', file);
+    try {
+      const res = await fetch('/api/cms/media', { method: 'POST', body: form });
+      if (!res.ok) { const e = await res.json(); bar.textContent = '✗ Error: ' + (e.detail||'upload failed'); continue; }
+      done++;
+    } catch(e) { bar.textContent = '✗ Network error'; }
+  }
+  bar.textContent = `✓ Uploaded ${done} images`;
+  setTimeout(() => { bar.style.display = 'none'; }, 3000);
+  _offset = 0;
+  loadMedia(true);
+}
+
+// ── Load media ────────────────────────────────────────────────────────────────
+async function loadMedia(reset = false) {
+  const res  = await fetch(`/api/cms/media?limit=${LIMIT}&offset=${_offset}`);
+  const data = await res.json();
+  _total = data.total;
+
+  const grid = document.getElementById('mediaGrid');
+  if (reset) grid.innerHTML = '';
+
+  document.getElementById('totalLabel').textContent = `${_total} images in library`;
+
+  if (!data.items.length && reset) {
+    grid.innerHTML = '<p style="color:#aaa;text-align:center;padding:40px;grid-column:1/-1;">Library is empty. Upload some images!</p>';
+    document.getElementById('loadMore').style.display = 'none';
+    return;
+  }
+
+  data.items.forEach(m => {
+    const div = document.createElement('div');
+    div.className = 'media-card';
+    div.innerHTML = `
+      <img src="${esc(m.url)}" alt="${esc(m.alt_text)}">
+      <div class="meta">
+        <div class="fname" title="${esc(m.original_name)}">${esc(m.original_name)}</div>
+        <div class="fsize">${fmtSize(m.size_bytes)}</div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-secondary btn-sm" onclick="openAlt(${m.id},'${esc(m.url)}','${esc(m.alt_text)}')">Alt</button>
+        <button class="btn btn-secondary btn-sm" onclick="copyUrl('${esc(m.url)}')">Copy</button>
+        <button class="btn btn-danger btn-sm" onclick="openDel(${m.id})">✕</button>
+      </div>`;
+    grid.appendChild(div);
+  });
+
+  _offset += data.items.length;
+  document.getElementById('loadMore').style.display = _offset < _total ? 'block' : 'none';
+}
+
+function loadMore() { loadMedia(false); }
+
+function copyUrl(url) {
+  navigator.clipboard.writeText(location.origin + url).then(() => {
+    alert('URL copied!');
+  });
+}
+
+// ── Alt text ──────────────────────────────────────────────────────────────────
+function openAlt(id, url, alt) {
+  _altId = id;
+  document.getElementById('altPreview').src = url;
+  document.getElementById('altInput').value = alt;
+  document.getElementById('altOverlay').classList.add('active');
+}
+function closeAlt() { document.getElementById('altOverlay').classList.remove('active'); }
+async function saveAlt() {
+  await fetch(`/api/cms/media/${_altId}`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ alt_text: document.getElementById('altInput').value }),
+  });
+  closeAlt();
+  _offset = 0; loadMedia(true);
+}
+
+// ── Delete ────────────────────────────────────────────────────────────────────
+function openDel(id) {
+  _delId = id;
+  document.getElementById('delOverlay').classList.add('active');
+  document.getElementById('delConfirmBtn').onclick = confirmDel;
+}
+function closeDel() { document.getElementById('delOverlay').classList.remove('active'); }
+async function confirmDel() {
+  await fetch(`/api/cms/media/${_delId}`, { method: 'DELETE' });
+  closeDel();
+  _offset = 0; loadMedia(true);
+}
+
+function fmtSize(b) {
+  if (!b) return '';
+  if (b < 1024) return b + ' B';
+  if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+  return (b/1024/1024).toFixed(1) + ' MB';
+}
+function esc(s) {
+  return String(s||'').replace(/[&<>"']/g, function(c) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
+loadMedia(true);
+</script>
+{% endblock %}

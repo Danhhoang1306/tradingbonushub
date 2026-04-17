@@ -1,0 +1,772 @@
+{% extends "base.html" %}
+{% block title %}Leads CRM — Trading Bonus{% endblock %}
+{% block page_title %}Leads CRM{% endblock %}
+
+{% block head %}
+<style>
+/* ── Override base layout ── */
+.content { padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; height: calc(100vh - 56px); }
+
+/* ── Toolbar ── */
+.crm-toolbar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; background: #fff;
+  border-bottom: 1px solid #e0e0e0; flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.crm-toolbar-left  { display: flex; align-items: center; gap: 8px; flex: 1; flex-wrap: wrap; }
+.crm-toolbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.crm-search {
+  height: 30px; padding: 0 10px 0 28px; border: 1px solid #ccc;
+  border-radius: 4px; font-size: 12px; width: 220px;
+  background: #fafafa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") 8px center no-repeat;
+}
+.crm-search:focus { outline: none; border-color: #1a1a2e; background-color: #fff; }
+
+.crm-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 28px; padding: 0 12px; border-radius: 14px;
+  font-size: 11px; font-weight: 600; cursor: pointer;
+  border: 1px solid #ddd; background: #f5f5f5; color: #555;
+  transition: all .15s; white-space: nowrap;
+}
+.crm-pill.active { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+.crm-pill .badge {
+  background: #e53e3e; color: #fff; border-radius: 10px;
+  padding: 0 5px; font-size: 10px; line-height: 16px; min-width: 16px; text-align: center;
+}
+.crm-pill.active .badge { background: rgba(255,255,255,.3); }
+
+.crm-btn {
+  height: 28px; padding: 0 12px; border-radius: 4px; font-size: 11px; font-weight: 600;
+  cursor: pointer; border: 1px solid #ddd; background: #fff; color: #444;
+  display: inline-flex; align-items: center; gap: 5px; transition: background .15s;
+}
+.crm-btn:hover { background: #f5f5f5; }
+.crm-btn.primary { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+.crm-btn.primary:hover { background: #2a2a4e; }
+.crm-btn.success { background: #065f46; color: #fff; border-color: #065f46; }
+.crm-btn.success:hover { background: #047857; }
+
+.crm-total-badge {
+  font-size: 11px; color: #666; background: #f0f0f0;
+  padding: 3px 10px; border-radius: 10px; font-weight: 600;
+}
+
+/* ── Table wrap ── */
+.crm-table-wrap {
+  flex: 1; overflow: auto; position: relative;
+}
+
+/* ── Table ── */
+.crm-table {
+  width: max-content; min-width: 100%;
+  border-collapse: collapse; font-size: 12px;
+  background: #fff;
+}
+
+/* Header */
+.crm-table thead tr.header-labels th {
+  position: sticky; top: 0; z-index: 10;
+  background: #e8eaf0; color: #333; font-weight: 700;
+  padding: 0; white-space: nowrap;
+  border-bottom: 1px solid #cfd3db;
+  border-right: 1px solid #dde0e8;
+  user-select: none;
+}
+.crm-table thead tr.header-labels th .th-inner {
+  display: flex; align-items: center; gap: 4px;
+  padding: 7px 10px; cursor: pointer;
+}
+.crm-table thead tr.header-labels th .th-inner:hover { background: #d8dae8; }
+.crm-table thead tr.header-labels th .sort-icon { color: #aaa; font-size: 10px; }
+.crm-table thead tr.header-labels th.sorted-asc  .sort-icon,
+.crm-table thead tr.header-labels th.sorted-desc .sort-icon { color: #1a1a2e; }
+
+/* Filter row */
+.crm-table thead tr.header-filters th {
+  position: sticky; top: 33px; z-index: 10;
+  background: #f3f4f8; padding: 4px 6px;
+  border-bottom: 2px solid #cfd3db;
+  border-right: 1px solid #dde0e8;
+}
+.crm-table thead tr.header-filters th input,
+.crm-table thead tr.header-filters th select {
+  width: 100%; height: 22px; padding: 0 5px;
+  border: 1px solid #ccc; border-radius: 3px;
+  font-size: 11px; background: #fff; color: #333;
+  box-sizing: border-box;
+}
+.crm-table thead tr.header-filters th input:focus,
+.crm-table thead tr.header-filters th select:focus { outline: none; border-color: #1a1a2e; }
+
+/* Sticky cols */
+.crm-table th.sticky-col, .crm-table td.sticky-col {
+  position: sticky; left: 0; z-index: 5; background: inherit;
+}
+.crm-table th.sticky-col { z-index: 15; }
+.crm-table th.sticky-col2, .crm-table td.sticky-col2 {
+  position: sticky; left: 36px; z-index: 5; background: inherit;
+  border-right: 2px solid #cfd3db !important;
+}
+.crm-table th.sticky-col2 { z-index: 15; }
+
+/* Body rows */
+.crm-table tbody tr {
+  border-bottom: 1px solid #eef0f5;
+  transition: background .1s;
+}
+.crm-table tbody tr:hover { background: #f0f4ff; cursor: pointer; }
+.crm-table tbody tr.selected { background: #e6edff; }
+.crm-table tbody td {
+  padding: 6px 10px; white-space: nowrap;
+  border-right: 1px solid #eef0f5; color: #333;
+  max-width: 200px; overflow: hidden; text-overflow: ellipsis;
+}
+.crm-table tbody td.sticky-col,
+.crm-table tbody td.sticky-col2 { background: inherit; }
+.crm-table tbody tr:hover td.sticky-col,
+.crm-table tbody tr:hover td.sticky-col2 { background: #f0f4ff; }
+.crm-table tbody tr.selected td.sticky-col,
+.crm-table tbody tr.selected td.sticky-col2 { background: #e6edff; }
+
+.crm-table input[type=checkbox] { cursor: pointer; accent-color: #1a1a2e; }
+
+/* Status chips */
+.chip {
+  display: inline-block; padding: 1px 8px; border-radius: 10px;
+  font-size: 10px; font-weight: 700; white-space: nowrap;
+}
+.chip-green   { background: #d1fadf; color: #065f46; }
+.chip-yellow  { background: #fef9c3; color: #854d0e; }
+.chip-red     { background: #fee2e2; color: #991b1b; }
+.chip-blue    { background: #dbeafe; color: #1e40af; }
+.chip-gray    { background: #f1f5f9; color: #475569; }
+.chip-purple  { background: #ede9fe; color: #5b21b6; }
+.chip-orange  { background: #ffedd5; color: #9a3412; }
+
+/* ── Pagination bar ── */
+.crm-pagebar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 16px; background: #fff;
+  border-top: 1px solid #e0e0e0; flex-shrink: 0;
+  font-size: 12px; color: #555;
+}
+.crm-pagebar-left  { display: flex; align-items: center; gap: 10px; }
+.crm-pagebar-right { display: flex; align-items: center; gap: 4px; }
+.crm-page-btn {
+  min-width: 28px; height: 26px; padding: 0 6px; border-radius: 4px;
+  border: 1px solid #ddd; background: #fff; cursor: pointer;
+  font-size: 11px; font-weight: 600; color: #444;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background .12s;
+}
+.crm-page-btn:hover:not(:disabled) { background: #f0f4ff; border-color: #1a1a2e; color: #1a1a2e; }
+.crm-page-btn.active { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+.crm-page-btn:disabled { opacity: .4; cursor: default; }
+.crm-page-select {
+  height: 26px; padding: 0 6px; border: 1px solid #ddd; border-radius: 4px;
+  font-size: 11px; background: #fff; cursor: pointer;
+}
+
+/* ── Detail drawer ── */
+.crm-drawer-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.35);
+  z-index: 100; display: none;
+}
+.crm-drawer-overlay.open { display: block; }
+.crm-drawer {
+  position: fixed; top: 0; right: -600px; width: 580px; max-width: 96vw;
+  height: 100vh; background: #fff; z-index: 101;
+  box-shadow: -4px 0 24px rgba(0,0,0,.18);
+  transition: right .28s cubic-bezier(.4,0,.2,1);
+  display: flex; flex-direction: column;
+}
+.crm-drawer.open { right: 0; }
+.crm-drawer-head {
+  background: #1a1a2e; color: #fff;
+  padding: 16px 20px; display: flex; align-items: center; gap: 14px; flex-shrink: 0;
+}
+.crm-drawer-avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: #e37400; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 700; flex-shrink: 0;
+}
+.crm-drawer-title { font-size: 16px; font-weight: 700; }
+.crm-drawer-sub   { font-size: 12px; color: rgba(255,255,255,.65); margin-top: 2px; }
+.crm-drawer-badges { display: flex; gap: 5px; margin-top: 6px; flex-wrap: wrap; }
+.drw-badge {
+  padding: 1px 8px; border-radius: 8px; font-size: 10px; font-weight: 700;
+}
+.db-verified   { background: #d1e7dd; color: #0a3622; }
+.db-unverified { background: #fee2e2; color: #991b1b; }
+.db-unsub      { background: #fee2e2; color: #991b1b; }
+.db-country    { background: rgba(255,255,255,.15); color: #fff; }
+.db-ib         { background: rgba(200,151,42,.3); color: #f0c040; }
+.db-lead       { background: rgba(227,116,0,.4); color: #ffb347; }
+
+.crm-drawer-close {
+  margin-left: auto; background: none; border: none; color: rgba(255,255,255,.7);
+  font-size: 20px; cursor: pointer; padding: 4px; line-height: 1;
+  flex-shrink: 0;
+}
+.crm-drawer-close:hover { color: #fff; }
+.crm-drawer-body { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; background: #f8f9fa; }
+
+/* Detail sections */
+.drw-section { background: #fff; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.06); overflow: hidden; }
+.drw-section-head {
+  padding: 10px 14px; border-bottom: 1px solid #f0f0f0;
+  font-weight: 700; font-size: 12px; color: #1a1a2e;
+  display: flex; align-items: center; gap: 6px;
+}
+.drw-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+.drw-cell { padding: 8px 14px; border-bottom: 1px solid #f8f8f8; }
+.drw-cell:nth-child(odd) { border-right: 1px solid #f8f8f8; }
+.drw-label { font-size: 10px; color: #888; text-transform: uppercase; margin-bottom: 2px; }
+.drw-value { font-size: 12px; font-weight: 600; color: #1a1a2e; word-break: break-all; }
+
+.mt5-card { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; }
+.mt5-card:last-child { border-bottom: none; }
+.mt5-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.mt5-num  { font-family: monospace; font-weight: 700; font-size: 13px; color: #1a1a2e; }
+.mt5-type { font-size: 10px; color: #888; background: #f0f0f0; padding: 1px 7px; border-radius: 8px; }
+.mt5-enr  { margin-left: auto; font-size: 10px; font-weight: 700; padding: 1px 8px; border-radius: 8px; }
+.enr-active  { background: #d1fadf; color: #065f46; }
+.enr-pending { background: #fef9c3; color: #854d0e; }
+.enr-none    { background: #f1f5f9; color: #475569; }
+.mt5-promo   { font-size: 11px; color: #c8972a; font-weight: 600; margin-top: 2px; }
+.mt5-stats   { font-size: 11px; color: #555; display: flex; gap: 14px; margin-top: 2px; }
+
+.drw-table { width: 100%; font-size: 11px; border-collapse: collapse; }
+.drw-table th { padding: 6px 10px; background: #f8f9fa; color: #555; font-weight: 600; text-align: left; }
+.drw-table td { padding: 6px 10px; border-top: 1px solid #f0f0f0; }
+.drw-table tr:hover td { background: #fafafa; }
+
+.drw-spinner { display: flex; justify-content: center; padding: 30px; color: #aaa; font-size: 13px; }
+
+/* Loading overlay */
+.crm-loading {
+  position: absolute; inset: 0; background: rgba(255,255,255,.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 20; font-size: 13px; color: #888;
+}
+
+/* ── Add Lead modal ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  z-index: 200; display: none; align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: #fff; border-radius: 10px; padding: 24px; width: 440px; max-width: 95vw;
+  box-shadow: 0 8px 32px rgba(0,0,0,.2);
+}
+.modal-box h3 { margin: 0 0 16px; font-size: 16px; color: #1a1a2e; }
+.modal-box .form-group { margin-bottom: 12px; }
+.modal-box label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 4px; }
+.modal-box input { width: 100%; height: 34px; border: 1px solid #ccc; border-radius: 4px; padding: 0 10px; font-size: 13px; }
+.modal-box input:focus { outline: none; border-color: #1a1a2e; }
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ── Toolbar ── -->
+<div class="crm-toolbar">
+  <div class="crm-toolbar-left">
+    <span class="crm-total-badge" id="pill-all">…</span>
+    <input class="crm-search" id="crm-search" type="text" placeholder="Search name, email, UID, IB, country..." oninput="onSearch()">
+  </div>
+  <div class="crm-toolbar-right">
+    <span class="crm-total-badge" id="crm-total-badge">0 records</span>
+    <button class="crm-btn" onclick="resetFilters()">↺ Reset</button>
+    <button class="crm-btn" onclick="exportCSV()">⬇ Export</button>
+    <button class="crm-btn primary" onclick="openAddModal()">+ Add Lead</button>
+    <a href="/admin/customers" class="crm-btn">📂 Import CSV</a>
+  </div>
+</div>
+
+<!-- ── Table ── -->
+<div class="crm-table-wrap" id="crm-table-wrap">
+  <div class="crm-loading" id="crm-loading">⏳ Loading data...</div>
+  <table class="crm-table" id="crm-table">
+    <thead>
+      <!-- Label row -->
+      <tr class="header-labels">
+        <th class="sticky-col"  style="width:36px;" onclick="toggleAllCheckboxes()"><div class="th-inner" style="justify-content:center;"><input type="checkbox" id="chk-all"></div></th>
+        <th class="sticky-col2" style="min-width:90px;"  onclick="sortBy('vantage_uid')"><div class="th-inner">User ID <span class="sort-icon" id="sort-vantage_uid">⇅</span></div></th>
+        <th style="min-width:160px;" onclick="sortBy('name')"><div class="th-inner">Full Name <span class="sort-icon" id="sort-name">⇅</span></div></th>
+        <th style="min-width:200px;" onclick="sortBy('email')"><div class="th-inner">Email <span class="sort-icon" id="sort-email">⇅</span></div></th>
+        <th style="min-width:140px;" onclick="sortBy('ib_name')"><div class="th-inner">IB Name <span class="sort-icon" id="sort-ib_name">⇅</span></div></th>
+        <th style="min-width:100px;" onclick="sortBy('country')"><div class="th-inner">Country <span class="sort-icon" id="sort-country">⇅</span></div></th>
+        <th style="min-width:130px;" onclick="sortBy('ib_status')"><div class="th-inner">Client Status <span class="sort-icon" id="sort-ib_status">⇅</span></div></th>
+        <th style="min-width:120px;" onclick="sortBy('program_status')"><div class="th-inner">Program Status <span class="sort-icon" id="sort-program_status">⇅</span></div></th>
+        <th style="min-width:140px;" onclick="sortBy('created_at')"><div class="th-inner">Created <span class="sort-icon" id="sort-created_at">↓</span></div></th>
+        <th style="min-width:80px;"></th>
+      </tr>
+      <!-- Filter row -->
+      <tr class="header-filters" id="filter-row">
+        <th class="sticky-col"></th>
+        <th class="sticky-col2"><input id="f-vantage_uid" placeholder="UID…"    oninput="applyFilters()"></th>
+        <th><input  id="f-name"    placeholder="Name..."     oninput="applyFilters()"></th>
+        <th><input  id="f-email"   placeholder="Email…"   oninput="applyFilters()"></th>
+        <th><input  id="f-ib_name" placeholder="IB name…" oninput="applyFilters()"></th>
+        <th><input  id="f-country" placeholder="Country…"oninput="applyFilters()"></th>
+        <th>
+          <select id="f-ib_status" onchange="applyFilters()">
+            <option value="">All</option>
+            <option value="lead">Lead</option>
+            <option value="pending_data">Pending data</option>
+            <option value="pending_transfer">Pending transfer</option>
+          </select>
+        </th>
+        <th></th>
+        <th></th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="crm-tbody"></tbody>
+  </table>
+</div>
+
+<!-- ── Pagination bar ── -->
+<div class="crm-pagebar">
+  <div class="crm-pagebar-left">
+    <span id="pg-info">–</span>
+    <select class="crm-page-select" id="pg-size" onchange="onPageSizeChange()">
+      <option value="50">50 / trang</option>
+      <option value="100" selected>100 / trang</option>
+      <option value="200">200 / trang</option>
+      <option value="500">500 / trang</option>
+    </select>
+  </div>
+  <div class="crm-pagebar-right" id="pg-buttons"></div>
+</div>
+
+<!-- ── Detail drawer ── -->
+<div class="crm-drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="crm-drawer" id="drawer">
+  <div class="crm-drawer-head" id="drawer-head">
+    <div class="crm-drawer-avatar" id="drawer-avatar">?</div>
+    <div style="flex:1;min-width:0;">
+      <div class="crm-drawer-title" id="drawer-title">—</div>
+      <div class="crm-drawer-sub"   id="drawer-sub">—</div>
+      <div class="crm-drawer-badges" id="drawer-badges"></div>
+    </div>
+    <button class="crm-drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="crm-drawer-body" id="drawer-body">
+    <div class="drw-spinner">Select a row to view details</div>
+  </div>
+</div>
+
+<!-- ── Add Lead modal ── -->
+<div class="modal-overlay" id="add-modal" onclick="e => { if(e.target===this)closeAddModal(); }">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <h3>🎯 Add New Lead</h3>
+    <div class="form-group">
+      <label>Email *</label>
+      <input id="ml-email" type="email" placeholder="khachhang@example.com" />
+    </div>
+    <div class="form-group">
+      <label>Full Name</label>
+      <input id="ml-name" type="text" placeholder="John Doe" />
+    </div>
+    <div id="ml-msg" style="font-size:12px;min-height:18px;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary btn-sm" onclick="closeAddModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="ml-submit" onclick="addLead()">+ Add Lead</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+let _all     = [];
+let _filtered= [];
+let _sortCol = 'created_at';
+let _sortDir = 'desc';
+let _page    = 1;
+let _pageSize= 100;
+let _totalDB = 0;
+let _selectedEmail = null;
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmt(d){
+  if (!d) return '—';
+  const dt = new Date(d); if (isNaN(dt)) return d;
+  return dt.toLocaleString('en-US',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+function fmtDate(d){
+  if (!d) return '—';
+  const dt = new Date(d); if (isNaN(dt)) return d;
+  return dt.toLocaleDateString('en-US');
+}
+function fmt2(n){ return (parseFloat(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmt4(n){ return (parseFloat(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:4}); }
+function initials(name, email){
+  if (name && name.trim()){
+    const p = name.trim().split(/\s+/);
+    return (p[0][0]+(p[p.length-1][0]||'')).toUpperCase();
+  }
+  return (email||'?')[0].toUpperCase();
+}
+
+// ── Load data ────────────────────────────────────────────────────────────────
+async function loadPage(){
+  document.getElementById('crm-loading').style.display = 'flex';
+  const offset = (_page - 1) * _pageSize;
+  const r = await fetch(`/api/leads?limit=${_pageSize}&offset=${offset}`);
+  const data = await r.json();
+  _all     = data.items || [];
+  _totalDB = data.total || 0;
+  document.getElementById('crm-loading').style.display = 'none';
+  document.getElementById('pill-all').textContent = _totalDB;
+  applyFilters();
+}
+
+// ── Filter + sort ─────────────────────────────────────────────────────────────
+function getFieldFilters(){
+  return {
+    vantage_uid: (document.getElementById('f-vantage_uid').value || '').toLowerCase(),
+    name:        (document.getElementById('f-name').value        || '').toLowerCase(),
+    email:       (document.getElementById('f-email').value       || '').toLowerCase(),
+    ib_name:     (document.getElementById('f-ib_name').value     || '').toLowerCase(),
+    country:     (document.getElementById('f-country').value     || '').toLowerCase(),
+    ib_status:   (document.getElementById('f-ib_status').value   || ''),
+  };
+}
+
+function applyFilters(){
+  const q  = (document.getElementById('crm-search').value || '').toLowerCase();
+  const ff = getFieldFilters();
+
+  _filtered = _all.filter(c => {
+    if (q && !['name','email','vantage_uid','country','ib_name'].some(
+      k => (c[k]||'').toLowerCase().includes(q))) return false;
+    if (ff.vantage_uid && !(c.vantage_uid||'').toLowerCase().includes(ff.vantage_uid)) return false;
+    if (ff.name        && !(c.name||'').toLowerCase().includes(ff.name))               return false;
+    if (ff.email       && !(c.email||'').toLowerCase().includes(ff.email))             return false;
+    if (ff.ib_name     && !(c.ib_name||'').toLowerCase().includes(ff.ib_name))         return false;
+    if (ff.country     && !(c.country||'').toLowerCase().includes(ff.country))         return false;
+    if (ff.ib_status   && c.ib_status !== ff.ib_status)                                return false;
+    return true;
+  });
+
+  _filtered.sort((a,b) => {
+    let av = a[_sortCol] ?? ''; let bv = b[_sortCol] ?? '';
+    if (typeof av === 'number') return _sortDir==='asc' ? av-bv : bv-av;
+    return _sortDir==='asc'
+      ? String(av).localeCompare(String(bv))
+      : String(bv).localeCompare(String(av));
+  });
+
+  updateTotalBadge();
+  renderTable();
+  renderPagination();
+}
+
+// ── Sort ─────────────────────────────────────────────────────────────────────
+function sortBy(col){
+  if (_sortCol === col) _sortDir = _sortDir==='asc' ? 'desc' : 'asc';
+  else { _sortCol = col; _sortDir = 'asc'; }
+  document.querySelectorAll('.sort-icon').forEach(el => el.textContent = '⇅');
+  const icon = document.getElementById(`sort-${col}`);
+  if (icon) icon.textContent = _sortDir==='asc' ? '↑' : '↓';
+  applyFilters();
+}
+
+// ── Render table ─────────────────────────────────────────────────────────────
+function renderTable(){
+  const tbody = document.getElementById('crm-tbody');
+  if (!_filtered.length){
+    tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;padding:40px;color:#aaa;">Không có lead nào</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = _filtered.map(c => {
+    const sel = c.email === _selectedEmail ? 'selected' : '';
+
+    const clientStatusChip = !c.ib_status ? '—'
+      : c.ib_status === 'lead'             ? `<span class="chip chip-gray">Lead</span>`
+      : c.ib_status === 'pending_data'     ? `<span class="chip chip-yellow">Pending data</span>`
+      : c.ib_status === 'pending_transfer' ? `<span class="chip chip-blue">Pending transfer</span>`
+      : `<span class="chip chip-gray">${esc(c.ib_status)}</span>`;
+
+    const programStatusChip = !c.program_status ? '<span class="chip chip-gray">—</span>'
+      : c.program_status === 'unconfirmed' ? `<span class="chip chip-yellow">Unconfirmed</span>`
+      : `<span class="chip chip-gray">${esc(c.program_status)}</span>`;
+
+    const dateStr = c.created_at ? c.created_at.slice(0,10) : '—';
+
+    return `<tr class="${sel}" onclick="selectRow(this,'${esc(c.email)}')">
+      <td class="sticky-col"  style="text-align:center;" onclick="event.stopPropagation()">
+        <input type="checkbox" class="row-chk" data-email="${esc(c.email)}">
+      </td>
+      <td class="sticky-col2" style="font-family:monospace;font-size:11px;">${esc(c.vantage_uid||'—')}</td>
+      <td style="font-weight:600;">${esc(c.name||'—')}</td>
+      <td style="color:#1e40af;">${esc(c.email||'—')}</td>
+      <td>${esc(c.ib_name||'—')}</td>
+      <td>${esc(c.country||'—')}</td>
+      <td>${clientStatusChip}</td>
+      <td>${programStatusChip}</td>
+      <td style="color:#888;font-size:11px;">${esc(dateStr)}</td>
+      <td></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Pagination ────────────────────────────────────────────────────────────────
+function renderPagination(){
+  const total = _totalDB;
+  const pages = Math.ceil(total / _pageSize) || 1;
+  const start = (_page-1)*_pageSize+1;
+  const end   = Math.min(_page*_pageSize, total);
+  document.getElementById('pg-info').textContent = `Showing ${start}–${end} of ${total} (filtered: ${_filtered.length})`;
+
+  const btns = document.getElementById('pg-buttons');
+  let html = `<button class="crm-page-btn" onclick="goPage(1)" ${_page===1?'disabled':''}>«</button>
+              <button class="crm-page-btn" onclick="goPage(${_page-1})" ${_page===1?'disabled':''}>‹</button>`;
+  const range = 2;
+  for (let p = Math.max(1,_page-range); p <= Math.min(pages,_page+range); p++){
+    html += `<button class="crm-page-btn ${p===_page?'active':''}" onclick="goPage(${p})">${p}</button>`;
+  }
+  html += `<button class="crm-page-btn" onclick="goPage(${_page+1})" ${_page>=pages?'disabled':''}>›</button>
+           <button class="crm-page-btn" onclick="goPage(${pages})"   ${_page>=pages?'disabled':''}>»</button>`;
+  btns.innerHTML = html;
+}
+
+function goPage(p){
+  const pages = Math.ceil(_totalDB/_pageSize) || 1;
+  if (p < 1 || p > pages) return;
+  _page = p; loadPage();
+}
+function onPageSizeChange(){
+  _pageSize = parseInt(document.getElementById('pg-size').value);
+  _page = 1; loadPage();
+}
+
+function updateTotalBadge(){
+  document.getElementById('pill-all').textContent        = `${_filtered.length} / ${_totalDB} records`;
+  document.getElementById('crm-total-badge').textContent = `${_filtered.length} / ${_totalDB}`;
+}
+
+// ── Search ─────────────────────────────────────────────────────────────────────
+function onSearch(){ applyFilters(); }
+
+function resetFilters(){
+  document.getElementById('crm-search').value = '';
+  ['f-vantage_uid','f-name','f-email','f-ib_name','f-country'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-ib_status').value = '';
+  applyFilters();
+}
+
+// ── Checkboxes ────────────────────────────────────────────────────────────────
+function toggleAllCheckboxes(){
+  const chkAll = document.getElementById('chk-all');
+  document.querySelectorAll('.row-chk').forEach(c => c.checked = !chkAll.checked);
+  chkAll.checked = !chkAll.checked;
+}
+
+// ── Row select + drawer ───────────────────────────────────────────────────────
+function selectRow(tr, email){
+  document.querySelectorAll('#crm-tbody tr').forEach(r => r.classList.remove('selected'));
+  tr.classList.add('selected');
+  _selectedEmail = email;
+  openDrawer(email);
+}
+
+function openDrawer(email){
+  document.getElementById('drawer-overlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawer-body').innerHTML = '<div class="drw-spinner">⏳ Loading...</div>';
+  document.getElementById('drawer-avatar').textContent = '…';
+  document.getElementById('drawer-title').textContent  = '…';
+  document.getElementById('drawer-sub').textContent    = email;
+  document.getElementById('drawer-badges').innerHTML   = '';
+
+  fetch(`/api/customers/${encodeURIComponent(email)}/detail`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.detail) {
+        document.getElementById('drawer-body').innerHTML = `<div style="padding:20px;color:#e53e3e;">${esc(data.detail)}</div>`;
+        return;
+      }
+      renderDrawer(data);
+    })
+    .catch(() => {
+      document.getElementById('drawer-body').innerHTML = '<div style="padding:20px;color:#e53e3e;">Error loading data</div>';
+    });
+}
+
+function closeDrawer(){
+  document.getElementById('drawer-overlay').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+}
+
+function renderDrawer(data){
+  const c   = data.customer;
+  const ini = initials(c.name, c.email);
+  document.getElementById('drawer-avatar').textContent = ini;
+  document.getElementById('drawer-title').textContent  = c.name || '(No name)';
+  document.getElementById('drawer-sub').textContent    = c.email;
+  document.getElementById('drawer-badges').innerHTML   = [
+    '<span class="drw-badge db-lead">🎯 Lead</span>',
+    c.is_verified ? '<span class="drw-badge db-verified">✓ Verified</span>'
+                  : '<span class="drw-badge db-unverified">Not Verified</span>',
+    c.unsubscribed  ? '<span class="drw-badge db-unsub">Unsubscribed</span>'          : '',
+    c.country       ? `<span class="drw-badge db-country">🌍 ${esc(c.country)}</span>` : '',
+    c.ib_name       ? `<span class="drw-badge db-ib">IB: ${esc(c.ib_name)}</span>`     : '',
+  ].filter(Boolean).join('');
+
+  const mt5Html = data.mt5_accounts.length
+    ? data.mt5_accounts.map(m => {
+        const enr = m.enrollment;
+        const enrBadge = enr
+          ? (enr.status==='active'
+              ? `<span class="mt5-enr enr-active">Active</span>`
+              : `<span class="mt5-enr enr-pending">Review</span>`)
+          : `<span class="mt5-enr enr-none">Not Enrolled</span>`;
+        return `<div class="mt5-card">
+          <div class="mt5-card-head">
+            <span class="mt5-num">${esc(m.mt5_number)}</span>
+            <span class="mt5-type">${esc(m.account_type||'—')}</span>
+            ${enrBadge}
+          </div>
+          ${enr ? `<div class="mt5-promo">📌 ${esc(enr.promo_name)} · ${esc(enr.broker_name||'')}</div>` : ''}
+          <div class="mt5-stats">
+            <span>Lots: <strong>${fmt4(m.rebate.total_lots)}</strong></span>
+            <span>Comm: <strong>$${fmt2(m.rebate.total_comm)}</strong></span>
+          </div>
+        </div>`;
+      }).join('')
+    : '<div style="padding:14px;color:#aaa;font-size:12px;text-align:center;">No MT5 accounts</div>';
+
+  const histHtml = data.rebate_history.length
+    ? `<table class="drw-table">
+        <thead><tr><th>MT5</th><th>Period</th><th>Lots</th><th>Comm ($)</th><th>Program</th></tr></thead>
+        <tbody>${data.rebate_history.map(h => `
+          <tr>
+            <td style="font-family:monospace;">${esc(h.mt5_account)}</td>
+            <td>${esc(fmtDate(h.period_date||h.created_at.slice(0,10)))}</td>
+            <td>${fmt4(h.total_lots)}</td>
+            <td>$${fmt2(h.total_comm)}</td>
+            <td style="color:#c8972a;font-size:10px;">${esc(h.note||'—')}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`
+    : '<div style="padding:14px;color:#aaa;font-size:12px;text-align:center;">No rebate history</div>';
+
+  const emailHtml = data.emails_sent.length
+    ? `<table class="drw-table">
+        <thead><tr><th>Email</th><th>Sent Date</th><th>Opens</th></tr></thead>
+        <tbody>${data.emails_sent.map(e => `
+          <tr>
+            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;">${esc(e.subject||'—')}</td>
+            <td>${esc(fmt(e.created_at))}</td>
+            <td><span style="background:${e.open_count>0?'#d1fadf':'#f1f5f9'};color:${e.open_count>0?'#065f46':'#999'};padding:1px 7px;border-radius:8px;font-weight:700;font-size:10px;">${e.open_count}</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`
+    : '<div style="padding:14px;color:#aaa;font-size:12px;text-align:center;">No emails sent</div>';
+
+  document.getElementById('drawer-body').innerHTML = `
+    <div class="drw-section">
+      <div class="drw-section-head">📋 Basic Info</div>
+      <div class="drw-info-grid">
+        <div class="drw-cell"><div class="drw-label">Vantage UID</div><div class="drw-value" style="font-family:monospace;">${esc(c.vantage_uid||'—')}</div></div>
+        <div class="drw-cell"><div class="drw-label">AFFID (IB)</div><div class="drw-value" style="font-family:monospace;">${esc(c.affid||'—')}</div></div>
+        <div class="drw-cell"><div class="drw-label">IB Name</div><div class="drw-value">${esc(c.ib_name||'—')}</div></div>
+        <div class="drw-cell"><div class="drw-label">Country</div><div class="drw-value">${esc(c.country||'—')}</div></div>
+        <div class="drw-cell"><div class="drw-label">Account Status</div><div class="drw-value">${c.must_change_password?'<span style="color:#854d0e;">⏳ Pending PW Change</span>':'<span style="color:#065f46;">✅ Active</span>'}</div></div>
+        <div class="drw-cell"><div class="drw-label">Created</div><div class="drw-value" style="font-weight:400;">${esc(fmt(c.created_at))}</div></div>
+      </div>
+    </div>
+    <div class="drw-section">
+      <div class="drw-section-head">💳 MT5 Accounts (${data.mt5_accounts.length})</div>
+      ${mt5Html}
+    </div>
+    <div class="drw-section">
+      <div class="drw-section-head">💰 Rebate History (${data.rebate_history.length})</div>
+      ${histHtml}
+    </div>
+    <div class="drw-section">
+      <div class="drw-section-head">📧 Email History (${data.emails_sent.length})</div>
+      ${emailHtml}
+    </div>
+  `;
+}
+
+// ── Add Lead modal ────────────────────────────────────────────────────────────
+function openAddModal(){
+  document.getElementById('add-modal').classList.add('open');
+  document.getElementById('ml-email').value = '';
+  document.getElementById('ml-name').value  = '';
+  document.getElementById('ml-msg').textContent = '';
+  document.getElementById('ml-email').focus();
+}
+function closeAddModal(){
+  document.getElementById('add-modal').classList.remove('open');
+}
+
+async function addLead(){
+  const email = document.getElementById('ml-email').value.trim();
+  const name  = document.getElementById('ml-name').value.trim();
+  const msg   = document.getElementById('ml-msg');
+  const btn   = document.getElementById('ml-submit');
+  if (!email) { msg.style.color='#c5221f'; msg.textContent='Enter email!'; return; }
+  btn.disabled = true; btn.textContent = '⏳ Đang thêm...';
+  msg.style.color = '#555'; msg.textContent = '';
+  try {
+    const r = await fetch('/api/customers', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ email, name: name || undefined }),
+    });
+    const d = await r.json();
+    if (r.ok) {
+      msg.style.color = '#137333';
+      msg.textContent = `✅ Đã thêm lead ${email}`;
+      setTimeout(() => { closeAddModal(); loadPage(); }, 1000);
+    } else {
+      msg.style.color = '#c5221f';
+      msg.textContent = '❌ ' + (d.detail || 'Errors');
+    }
+  } finally {
+    btn.disabled = false; btn.textContent = '+ Add Lead';
+  }
+}
+
+// ── Export CSV ────────────────────────────────────────────────────────────────
+function exportCSV(){
+  const headers = ['Vantage UID','Name (Broker)','Email (Broker)','IB Name','Country','Client Status','Program Status','Created'];
+  const rows = _filtered.map(c => [
+    c.vantage_uid||'', c.name||'', c.email||'', c.ib_name||'',
+    c.country||'', c.ib_status||'', c.program_status||'',
+    c.created_at ? c.created_at.slice(0,10) : '',
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement('a'), {href:url, download:`leads_export_${new Date().toISOString().slice(0,10)}.csv`});
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ── Keyboard ──────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeDrawer(); closeAddModal(); }
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.getElementById('sort-created_at').textContent = '↓';
+loadPage();
+</script>
+{% endblock %}

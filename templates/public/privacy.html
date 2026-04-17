@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ t('privacy_title', lang) }} | TradingBonusHub</title>
+  <link rel="canonical" href="https://tradingbonushub.com/privacy" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/logo-tb.png" />
+  <meta name="description" content="TradingBonusHub Privacy Policy — how we collect, use, and protect your personal data." />
+  <meta name="robots" content="index, follow" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --gold: #f0c040; --gold2: #c8972a; --navy: #050d1e; --glass: rgba(255,255,255,0.08); --glass-border: rgba(255,255,255,0.18); }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--navy) url('/static/bg-hero.svg') fixed center/cover no-repeat; color: rgba(255,255,255,0.92); min-height: 100vh; }
+    .header { background: rgba(5,10,22,0.92); backdrop-filter: blur(12px); padding: 0 40px; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 200; border-bottom: 1px solid rgba(240,192,64,.18); box-shadow: 0 2px 20px rgba(0,0,0,.4); }
+    .logo { font-size: 18px; font-weight: 800; color: #fff; text-decoration: none; }
+    .logo span { color: var(--gold); }
+    .header-nav { display: flex; align-items: center; gap: 4px; }
+    .nav-link { color: rgba(255,255,255,.8); font-size: 14px; font-weight: 600; text-decoration: none; padding: 8px 14px; border-radius: 6px; transition: background .15s, color .15s; }
+    .nav-link:hover { background: rgba(255,255,255,.1); color: #fff; }
+    .btn-auth { padding: 8px 20px; border-radius: 8px; font-size: 14px; font-weight: 700; background: linear-gradient(135deg, var(--gold2), var(--gold)); color: #1a1a2e; text-decoration: none; margin-left: 6px; white-space: nowrap; transition: filter .15s; }
+    .btn-auth:hover { filter: brightness(1.08); }
+    .page-hero { background: rgba(5,13,30,0.5); padding: 64px 40px; text-align: center; }
+    .page-hero h1 { font-size: 36px; font-weight: 800; margin-bottom: 14px; }
+    .page-hero h1 span { color: var(--gold); }
+    .page-hero p { color: rgba(255,255,255,.7); font-size: 16px; max-width: 560px; margin: 0 auto; line-height: 1.7; }
+    .content-wrap { max-width: 860px; margin: 0 auto; padding: 56px 32px; }
+    .legal-card { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 16px; padding: 40px 44px; box-shadow: 0 2px 16px rgba(0,0,0,.35); }
+    .legal-card h2 { font-size: 20px; font-weight: 700; color: var(--gold); margin: 32px 0 14px; }
+    .legal-card h2:first-child { margin-top: 0; }
+    .legal-card p { font-size: 14px; color: rgba(255,255,255,.82); line-height: 1.85; margin-bottom: 12px; }
+    .legal-card ul { padding-left: 20px; margin: 8px 0 16px; }
+    .legal-card li { font-size: 14px; color: rgba(255,255,255,.8); line-height: 1.85; margin-bottom: 6px; }
+    .legal-card .updated { font-size: 12px; color: rgba(255,255,255,.45); margin-top: 28px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.1); }
+    .footer-mini { text-align: center; padding: 28px 20px; font-size: 12px; color: rgba(255,255,255,.3); }
+    .footer-mini a { color: rgba(255,255,255,.5); text-decoration: none; }
+    .footer-mini a:hover { color: var(--gold); }
+    @media (max-width: 640px) {
+      .content-wrap { padding: 32px 16px; }
+      .legal-card { padding: 28px 20px; }
+      .page-hero { padding: 40px 20px; }
+      .page-hero h1 { font-size: 26px; }
+      .header { padding: 0 16px; }
+    }
+  </style>
+  {% include "_tracking_head.html" %}
+</head>
+<body>
+{% include "_tracking_body.html" %}
+
+{% include "_nav.html" %}
+
+<div class="page-hero">
+  {% if lang == 'en' %}<h1>Privacy <span>Policy</span></h1>{% else %}<h1>Chính sách <span>Bảo mật</span></h1>{% endif %}
+  <p>{{ t('privacy_hero_p', lang) }}</p>
+</div>
+
+<div class="content-wrap">
+  <div class="legal-card">
+    {% if lang == 'en' %}
+
+    <h2>1. Information We Collect</h2>
+    <p>When you use TradingBonusHub services, we may collect the following information:</p>
+    <ul>
+      <li><b>Personal information:</b> Name, email address, phone number when you register an account or contact us.</li>
+      <li><b>Trading account information:</b> Broker registration email, MT4/MT5 account ID for verification and rebate calculation.</li>
+      <li><b>Technical data:</b> IP address, browser type, device, access time through cookies and similar technologies.</li>
+      <li><b>Transaction data:</b> Trading volume (lots) provided by broker for rebate/cashback calculation.</li>
+    </ul>
+
+    <h2>2. Purpose of Use</h2>
+    <p>We use collected information for the following purposes:</p>
+    <ul>
+      <li>Identity and trading account verification.</li>
+      <li>Accurate rebate/cashback calculation and payment.</li>
+      <li>Service notifications about programs, trading reports, and service updates.</li>
+      <li>Improving user experience and enhancing service quality.</li>
+      <li>Legal compliance.</li>
+    </ul>
+
+    <h2>3. Information Sharing</h2>
+    <p>We do <b>NOT sell</b> your personal information to third parties. Information is only shared in the following cases:</p>
+    <ul>
+      <li><b>Partner brokers:</b> For account verification and rebate calculation (only email and MT4/MT5 account ID).</li>
+      <li><b>Legal authorities:</b> When required by competent authorities.</li>
+      <li><b>Service providers:</b> Email and hosting providers operating under confidentiality agreements with us.</li>
+    </ul>
+
+    <h2>4. Data Security</h2>
+    <p>We implement appropriate security measures to protect your personal information:</p>
+    <ul>
+      <li>Argon2/PBKDF2 password encryption.</li>
+      <li>HTTPS/TLS encryption for the entire website.</li>
+      <li>Internal access controls — only authorized personnel have access to data.</li>
+      <li>Regular data backups.</li>
+    </ul>
+
+    <h2>5. Cookies</h2>
+    <p>The website uses cookies for the following purposes:</p>
+    <ul>
+      <li><b>Essential cookies:</b> Maintaining login sessions and security (session, CSRF token).</li>
+      <li><b>Analytics cookies:</b> Google Analytics, Microsoft Clarity to understand how users interact with the website (can be disabled).</li>
+      <li><b>Advertising cookies:</b> Facebook Pixel to measure advertising effectiveness (can be disabled).</li>
+    </ul>
+    <p>You can manage cookies via your browser settings.</p>
+
+    <h2>6. Your Rights</h2>
+    <p>You have the right to:</p>
+    <ul>
+      <li>View, edit, or delete your personal information.</li>
+      <li>Unsubscribe from emails via the "unsubscribe" link in each email.</li>
+      <li>Request a data export of your personal information.</li>
+      <li>Withdraw from any program at any time.</li>
+    </ul>
+    <p>To exercise these rights, please contact <a href="mailto:support@tradingbonushub.com" style="color:var(--gold);">support@tradingbonushub.com</a>.</p>
+
+    <h2>7. Data Retention</h2>
+    <p>Personal information is stored during your use of the service and up to 12 months after inactivity, unless the law requires a longer retention period.</p>
+
+    <h2>8. Policy Changes</h2>
+    <p>We may update this privacy policy from time to time. Important changes will be notified via email or on the website.</p>
+
+    <h2>9. Contact</h2>
+    <p>If you have questions about this privacy policy, please contact:</p>
+    <ul>
+      <li>Email: <a href="mailto:support@tradingbonushub.com" style="color:var(--gold);">support@tradingbonushub.com</a></li>
+      <li>Website: <a href="https://tradingbonushub.com" style="color:var(--gold);">tradingbonushub.com</a></li>
+    </ul>
+
+    <div class="updated">Last updated: April 2026</div>
+
+    {% else %}
+
+    <h2>1. Thông tin chúng tôi thu thập</h2>
+    <p>Khi bạn sử dụng dịch vụ của TradingBonusHub, chúng tôi có thể thu thập các thông tin sau:</p>
+    <ul>
+      <li><b>Thông tin cá nhân:</b> Họ tên, địa chỉ email, số điện thoại khi bạn đăng ký tài khoản hoặc liên hệ với chúng tôi.</li>
+      <li><b>Thông tin tài khoản giao dịch:</b> Email đăng ký tại broker, mã tài khoản MT4/MT5 để xác nhận và tính toán rebate.</li>
+      <li><b>Dữ liệu kỹ thuật:</b> Địa chỉ IP, loại trình duyệt, thiết bị, thời gian truy cập thông qua cookies và công nghệ tương tự.</li>
+      <li><b>Dữ liệu giao dịch:</b> Khối lượng giao dịch (lots) được broker cung cấp để tính rebate/cashback.</li>
+    </ul>
+
+    <h2>2. Mục đích sử dụng thông tin</h2>
+    <p>Chúng tôi sử dụng thông tin thu thập được cho các mục đích:</p>
+    <ul>
+      <li>Xác minh danh tính và tài khoản giao dịch của bạn.</li>
+      <li>Tính toán và thanh toán rebate/cashback chính xác.</li>
+      <li>Gửi thông báo về chương trình, báo cáo giao dịch, và cập nhật dịch vụ.</li>
+      <li>Cải thiện trải nghiệm người dùng và nâng cao chất lượng dịch vụ.</li>
+      <li>Tuân thủ các yêu cầu pháp lý.</li>
+    </ul>
+
+    <h2>3. Chia sẻ thông tin</h2>
+    <p>Chúng tôi <b>không bán</b> thông tin cá nhân của bạn cho bên thứ ba. Thông tin chỉ được chia sẻ trong các trường hợp:</p>
+    <ul>
+      <li><b>Với broker đối tác:</b> Để xác minh tài khoản và tính rebate (chỉ email và mã tài khoản MT4/MT5).</li>
+      <li><b>Theo yêu cầu pháp luật:</b> Khi có yêu cầu từ cơ quan có thẩm quyền.</li>
+      <li><b>Dịch vụ hỗ trợ:</b> Nhà cung cấp email, hosting hoạt động theo hợp đồng bảo mật với chúng tôi.</li>
+    </ul>
+
+    <h2>4. Bảo mật dữ liệu</h2>
+    <p>Chúng tôi áp dụng các biện pháp bảo mật phù hợp để bảo vệ thông tin cá nhân của bạn:</p>
+    <ul>
+      <li>Mã hóa mật khẩu bằng thuật toán Argon2/PBKDF2.</li>
+      <li>Kết nối HTTPS/TLS cho toàn bộ website.</li>
+      <li>Kiểm soát truy cập nội bộ — chỉ nhân viên được ủy quyền mới có quyền truy cập dữ liệu.</li>
+      <li>Sao lưu dữ liệu định kỳ.</li>
+    </ul>
+
+    <h2>5. Cookies</h2>
+    <p>Website sử dụng cookies cho các mục đích:</p>
+    <ul>
+      <li><b>Cookies thiết yếu:</b> Duy trì phiên đăng nhập và bảo mật (session, CSRF token).</li>
+      <li><b>Cookies phân tích:</b> Google Analytics, Microsoft Clarity để hiểu cách người dùng tương tác với website (có thể tắt).</li>
+      <li><b>Cookies quảng cáo:</b> Facebook Pixel để đo lường hiệu quả quảng cáo (có thể tắt).</li>
+    </ul>
+    <p>Bạn có thể quản lý cookies thông qua cài đặt trình duyệt.</p>
+
+    <h2>6. Quyền của bạn</h2>
+    <p>Bạn có quyền:</p>
+    <ul>
+      <li>Yêu cầu xem, chỉnh sửa hoặc xóa thông tin cá nhân.</li>
+      <li>Hủy đăng ký nhận email thông qua link "unsubscribe" trong mỗi email.</li>
+      <li>Yêu cầu xuất dữ liệu cá nhân của bạn.</li>
+      <li>Rút lui khỏi chương trình bất kỳ lúc nào.</li>
+    </ul>
+    <p>Để thực hiện các quyền trên, vui lòng liên hệ <a href="mailto:support@tradingbonushub.com" style="color:var(--gold);">support@tradingbonushub.com</a>.</p>
+
+    <h2>7. Lưu trữ dữ liệu</h2>
+    <p>Thông tin cá nhân được lưu trữ trong thời gian bạn sử dụng dịch vụ và tối đa 12 tháng sau khi ngừng hoạt động, trừ khi pháp luật yêu cầu thời gian lưu trữ lâu hơn.</p>
+
+    <h2>8. Thay đổi chính sách</h2>
+    <p>Chúng tôi có thể cập nhật chính sách bảo mật này theo thời gian. Mọi thay đổi quan trọng sẽ được thông báo qua email hoặc trên website.</p>
+
+    <h2>9. Liên hệ</h2>
+    <p>Nếu bạn có câu hỏi về chính sách bảo mật, vui lòng liên hệ:</p>
+    <ul>
+      <li>Email: <a href="mailto:support@tradingbonushub.com" style="color:var(--gold);">support@tradingbonushub.com</a></li>
+      <li>Website: <a href="https://tradingbonushub.com" style="color:var(--gold);">tradingbonushub.com</a></li>
+    </ul>
+
+    <div class="updated">Cập nhật lần cuối: Tháng 4, 2026</div>
+
+    {% endif %}
+  </div>
+</div>
+
+<div class="footer-mini">
+  <a href="/{% if lang == 'en' %}?lang=en{% endif %}">{{ t('nav_home', lang) }}</a> &nbsp;|&nbsp; <a href="/terms{% if lang == 'en' %}?lang=en{% endif %}">{{ t('footer_terms', lang) }}</a> &nbsp;|&nbsp; <a href="/about{% if lang == 'en' %}?lang=en{% endif %}">{{ t('nav_contact', lang) }}</a>
+  <br>{{ ps.get('footer_text') or '&copy; 2026 TradingBonusHub. All rights reserved.' }}
+</div>
+
+</body>
+</html>

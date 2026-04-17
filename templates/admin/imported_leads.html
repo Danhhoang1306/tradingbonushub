@@ -1,0 +1,697 @@
+{% extends "base.html" %}
+{% block title %}Imported Leads — Trading Bonus{% endblock %}
+{% block page_title %}Imported Leads{% endblock %}
+
+{% block head %}
+<style>
+.content { padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; height: calc(100vh - 56px); }
+
+/* ── Toolbar ── */
+.il-toolbar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; background: #fff;
+  border-bottom: 1px solid #e0e0e0; flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.il-toolbar-left  { display: flex; align-items: center; gap: 8px; flex: 1; flex-wrap: wrap; }
+.il-toolbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.il-search {
+  height: 30px; padding: 0 10px 0 28px; border: 1px solid #ccc;
+  border-radius: 4px; font-size: 12px; width: 220px;
+  background: #fafafa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") 8px center no-repeat;
+}
+.il-search:focus { outline: none; border-color: #1a1a2e; background-color: #fff; }
+
+.il-filter-select {
+  height: 30px; padding: 0 8px; border: 1px solid #ccc; border-radius: 4px;
+  font-size: 12px; background: #fafafa; min-width: 120px;
+}
+.il-filter-select:focus { outline: none; border-color: #1a1a2e; }
+
+.il-btn {
+  height: 28px; padding: 0 12px; border-radius: 4px; font-size: 11px; font-weight: 600;
+  cursor: pointer; border: 1px solid #ddd; background: #fff; color: #444;
+  display: inline-flex; align-items: center; gap: 5px; transition: background .15s;
+}
+.il-btn:hover { background: #f5f5f5; }
+.il-btn.primary { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+.il-btn.primary:hover { background: #2a2a4e; }
+.il-btn.success { background: #065f46; color: #fff; border-color: #065f46; }
+.il-btn.success:hover { background: #047857; }
+.il-btn.danger  { background: #dc2626; color: #fff; border-color: #dc2626; }
+
+.il-total-badge {
+  font-size: 11px; color: #666; background: #f0f0f0;
+  padding: 3px 10px; border-radius: 10px; font-weight: 600;
+}
+
+/* ── Table ── */
+.il-table-wrap { flex: 1; overflow: auto; position: relative; }
+.il-table {
+  width: max-content; min-width: 100%;
+  border-collapse: collapse; font-size: 12px; background: #fff;
+}
+.il-table thead th {
+  position: sticky; top: 0; z-index: 10;
+  background: #e8eaf0; color: #333; font-weight: 700;
+  padding: 7px 10px; white-space: nowrap;
+  border-bottom: 1px solid #cfd3db; border-right: 1px solid #dde0e8;
+  text-align: left;
+}
+.il-table tbody tr { border-bottom: 1px solid #eef0f5; transition: background .1s; }
+.il-table tbody tr:hover { background: #f0f4ff; }
+.il-table tbody tr.selected { background: #e6edff; }
+.il-table tbody td {
+  padding: 6px 10px; white-space: nowrap;
+  border-right: 1px solid #eef0f5; color: #333;
+  max-width: 220px; overflow: hidden; text-overflow: ellipsis;
+}
+.il-table input[type=checkbox] { cursor: pointer; accent-color: #1a1a2e; }
+
+/* Chips */
+.chip { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; }
+.chip-green  { background: #d1fadf; color: #065f46; }
+.chip-red    { background: #fee2e2; color: #991b1b; }
+.chip-yellow { background: #fef9c3; color: #854d0e; }
+.chip-gray   { background: #f1f5f9; color: #475569; }
+.chip-blue   { background: #dbeafe; color: #1e40af; }
+
+/* ── Pagination ── */
+.il-pagebar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 16px; background: #fff;
+  border-top: 1px solid #e0e0e0; flex-shrink: 0;
+  font-size: 12px; color: #555;
+}
+.il-pagebar-left  { display: flex; align-items: center; gap: 10px; }
+.il-pagebar-right { display: flex; align-items: center; gap: 4px; }
+.il-page-btn {
+  min-width: 28px; height: 26px; padding: 0 6px; border-radius: 4px;
+  border: 1px solid #ddd; background: #fff; cursor: pointer;
+  font-size: 11px; font-weight: 600; color: #444;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.il-page-btn:hover:not(:disabled) { background: #f0f4ff; border-color: #1a1a2e; color: #1a1a2e; }
+.il-page-btn.active { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+.il-page-btn:disabled { opacity: .4; cursor: default; }
+.il-page-select {
+  height: 26px; padding: 0 6px; border: 1px solid #ddd; border-radius: 4px;
+  font-size: 11px; background: #fff; cursor: pointer;
+}
+
+/* ── Loading ── */
+.il-loading {
+  position: absolute; inset: 0; background: rgba(255,255,255,.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 20; font-size: 13px; color: #888;
+}
+
+/* ── Modal ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  z-index: 200; display: none; align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: #fff; border-radius: 10px; padding: 24px; width: 540px; max-width: 95vw;
+  box-shadow: 0 8px 32px rgba(0,0,0,.2); max-height: 90vh; overflow-y: auto;
+}
+.modal-box h3 { margin: 0 0 16px; font-size: 16px; color: #1a1a2e; }
+.modal-box .form-group { margin-bottom: 12px; }
+.modal-box label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 4px; }
+.modal-box input[type=file] { width: 100%; }
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+/* ── Drawer ── */
+.il-drawer-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.35);
+  z-index: 100; display: none;
+}
+.il-drawer-overlay.open { display: block; }
+.il-drawer {
+  position: fixed; top: 0; right: -600px; width: 540px; max-width: 96vw;
+  height: 100vh; background: #fff; z-index: 101;
+  box-shadow: -4px 0 24px rgba(0,0,0,.18);
+  transition: right .28s cubic-bezier(.4,0,.2,1);
+  display: flex; flex-direction: column;
+}
+.il-drawer.open { right: 0; }
+.il-drawer-head {
+  background: #1a1a2e; color: #fff;
+  padding: 16px 20px; display: flex; align-items: center; gap: 14px; flex-shrink: 0;
+}
+.il-drawer-title { font-size: 16px; font-weight: 700; }
+.il-drawer-sub   { font-size: 12px; color: rgba(255,255,255,.65); margin-top: 2px; }
+.il-drawer-close {
+  margin-left: auto; background: none; border: none; color: rgba(255,255,255,.7);
+  font-size: 20px; cursor: pointer; padding: 4px; line-height: 1;
+}
+.il-drawer-close:hover { color: #fff; }
+.il-drawer-body { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; background: #f8f9fa; }
+
+.drw-section { background: #fff; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.06); overflow: hidden; }
+.drw-section-head { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; font-weight: 700; font-size: 12px; color: #1a1a2e; }
+.drw-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+.drw-cell { padding: 8px 14px; border-bottom: 1px solid #f8f8f8; }
+.drw-cell:nth-child(odd) { border-right: 1px solid #f8f8f8; }
+.drw-label { font-size: 10px; color: #888; text-transform: uppercase; margin-bottom: 2px; }
+.drw-value { font-size: 12px; font-weight: 600; color: #1a1a2e; word-break: break-all; }
+.drw-table { width: 100%; font-size: 11px; border-collapse: collapse; }
+.drw-table th { padding: 6px 10px; background: #f8f9fa; color: #555; font-weight: 600; text-align: left; }
+.drw-table td { padding: 6px 10px; border-top: 1px solid #f0f0f0; }
+
+/* ── Import result banner ── */
+.import-result {
+  padding: 10px 16px; font-size: 12px; font-weight: 600;
+  display: none; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.import-result.success { background: #d1fadf; color: #065f46; display: flex; }
+.import-result.error   { background: #fee2e2; color: #991b1b; display: flex; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ── Import result banner ── -->
+<div class="import-result" id="import-result">
+  <span id="import-result-text"></span>
+  <button onclick="this.parentElement.style.display='none'" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:16px;opacity:.6;">✕</button>
+</div>
+
+<!-- ── Toolbar ── -->
+<div class="il-toolbar">
+  <div class="il-toolbar-left">
+    <span class="il-total-badge" id="il-total">0 leads</span>
+    <input class="il-search" id="il-search" type="text" placeholder="Search name, email, user ID..."
+           oninput="debouncedLoad()">
+    <select class="il-filter-select" id="il-country" onchange="loadLeads()">
+      <option value="">All countries</option>
+    </select>
+    <select class="il-filter-select" id="il-source" onchange="loadLeads()">
+      <option value="">All sources</option>
+    </select>
+  </div>
+  <div class="il-toolbar-right">
+    <button class="il-btn" onclick="resetFilters()">Reset</button>
+    <button class="il-btn" onclick="exportSelectedCSV()">Export CSV</button>
+    <button class="il-btn success" onclick="openSendModal()">Send Campaign</button>
+    <button class="il-btn primary" onclick="openImportModal()">Import Excel</button>
+  </div>
+</div>
+
+<!-- ── Table ── -->
+<div class="il-table-wrap" id="il-table-wrap">
+  <div class="il-loading" id="il-loading">Loading...</div>
+  <table class="il-table" id="il-table">
+    <thead>
+      <tr>
+        <th style="width:36px;"><input type="checkbox" id="chk-all" onclick="toggleAll()"></th>
+        <th>Email</th>
+        <th>Name</th>
+        <th>Country</th>
+        <th>Mobile</th>
+        <th>User ID</th>
+        <th>Sales</th>
+        <th>AFFID</th>
+        <th>Type</th>
+        <th>Source</th>
+        <th>Last Campaign</th>
+        <th>Send Status</th>
+        <th>Imported</th>
+      </tr>
+    </thead>
+    <tbody id="il-tbody"></tbody>
+  </table>
+</div>
+
+<!-- ── Pagination ── -->
+<div class="il-pagebar">
+  <div class="il-pagebar-left">
+    <span id="pg-info">-</span>
+    <select class="il-page-select" id="pg-size" onchange="onPageSize()">
+      <option value="50">50</option>
+      <option value="100" selected>100</option>
+      <option value="200">200</option>
+      <option value="500">500</option>
+    </select>
+  </div>
+  <div class="il-pagebar-right" id="pg-btns"></div>
+</div>
+
+<!-- ── Detail drawer ── -->
+<div class="il-drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="il-drawer" id="drawer">
+  <div class="il-drawer-head">
+    <div style="flex:1;min-width:0;">
+      <div class="il-drawer-title" id="drw-title">-</div>
+      <div class="il-drawer-sub"   id="drw-sub">-</div>
+    </div>
+    <button class="il-drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="il-drawer-body" id="drw-body">
+    <div style="padding:20px;color:#aaa;text-align:center;">Select a lead</div>
+  </div>
+</div>
+
+<!-- ── Import modal ── -->
+<div class="modal-overlay" id="import-modal">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <h3>Import Leads from Excel</h3>
+    <div class="form-group">
+      <label>Excel file (.xlsx, .xls)</label>
+      <input type="file" id="imp-file" accept=".xlsx,.xls,.csv">
+    </div>
+    <div class="form-group">
+      <label><input type="checkbox" id="imp-custom-headers" checked> Row 2 is custom headers (Row 1 = default, Row 2 = your column names)</label>
+    </div>
+    <div id="imp-msg" style="font-size:12px;min-height:18px;"></div>
+    <div class="modal-footer">
+      <button class="il-btn" onclick="closeImportModal()">Cancel</button>
+      <button class="il-btn primary" id="imp-btn" onclick="doImport()">Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Send campaign modal ── -->
+<div class="modal-overlay" id="send-modal">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <h3>Send Campaign to Leads</h3>
+    <div class="form-group">
+      <label>Campaign Name *</label>
+      <input type="text" id="sc-name" style="width:100%;height:34px;border:1px solid #ccc;border-radius:4px;padding:0 10px;font-size:13px;">
+    </div>
+    <div class="form-group">
+      <label>Email Subject *</label>
+      <input type="text" id="sc-subject" value="Notification from TradingBonusHub" style="width:100%;height:34px;border:1px solid #ccc;border-radius:4px;padding:0 10px;font-size:13px;">
+    </div>
+    <div class="form-group">
+      <label>Template *</label>
+      <select id="sc-template" style="width:100%;height:34px;border:1px solid #ccc;border-radius:4px;padding:0 10px;font-size:13px;">
+        <option value="">-- Select template --</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Placeholder Mapping (JSON)</label>
+      <textarea id="sc-mapping" rows="3" style="width:100%;border:1px solid #ccc;border-radius:4px;padding:8px;font-size:12px;font-family:monospace;" placeholder='{"[Customer Name]":"name","[Country]":"country"}'>{}</textarea>
+    </div>
+    <div class="form-group">
+      <label>Send to:</label>
+      <div style="font-size:12px;color:#555;" id="sc-target-info">
+        All leads matching current filters
+      </div>
+    </div>
+    <div class="form-group">
+      <label><input type="checkbox" id="sc-exclude-sent"> Exclude leads already sent in a previous campaign</label>
+      <select id="sc-exclude-campaign" style="width:100%;height:30px;border:1px solid #ccc;border-radius:4px;padding:0 8px;font-size:12px;margin-top:4px;display:none;">
+        <option value="">-- Select campaign to exclude --</option>
+      </select>
+    </div>
+    <div id="sc-msg" style="font-size:12px;min-height:18px;"></div>
+    <div class="modal-footer">
+      <button class="il-btn" onclick="closeSendModal()">Cancel</button>
+      <button class="il-btn success" id="sc-btn" onclick="doSendCampaign()">Create & Send</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+let _data = [];
+let _total = 0;
+let _page = 1;
+let _pageSize = 100;
+let _debounceTimer = null;
+let _selectedIds = new Set();
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── Load data ────────────────────────────────────────────────────────────────
+async function loadLeads(){
+  document.getElementById('il-loading').style.display = 'flex';
+  const search  = document.getElementById('il-search').value.trim();
+  const country = document.getElementById('il-country').value;
+  const source  = document.getElementById('il-source').value;
+  const offset  = (_page - 1) * _pageSize;
+
+  const params = new URLSearchParams({limit: _pageSize, offset});
+  if (search)  params.set('search', search);
+  if (country) params.set('country', country);
+  if (source)  params.set('source', source);
+
+  const r = await fetch(`/api/imported-leads?${params}`);
+  const d = await r.json();
+  _data  = d.items || [];
+  _total = d.total || 0;
+  document.getElementById('il-loading').style.display = 'none';
+  document.getElementById('il-total').textContent = `${_total} leads`;
+  renderTable();
+  renderPagination();
+}
+
+function debouncedLoad(){
+  clearTimeout(_debounceTimer);
+  _debounceTimer = setTimeout(() => { _page = 1; loadLeads(); }, 300);
+}
+
+// ── Load filters ─────────────────────────────────────────────────────────────
+async function loadFilters(){
+  const r = await fetch('/api/imported-leads/filters');
+  const d = await r.json();
+  const cs = document.getElementById('il-country');
+  const ss = document.getElementById('il-source');
+  (d.countries||[]).forEach(c => {
+    cs.innerHTML += `<option value="${esc(c)}">${esc(c)}</option>`;
+  });
+  (d.sources||[]).forEach(s => {
+    ss.innerHTML += `<option value="${esc(s)}">${esc(s)}</option>`;
+  });
+}
+
+function resetFilters(){
+  document.getElementById('il-search').value = '';
+  document.getElementById('il-country').value = '';
+  document.getElementById('il-source').value = '';
+  _page = 1; loadLeads();
+}
+
+// ── Render table ─────────────────────────────────────────────────────────────
+function renderTable(){
+  const tbody = document.getElementById('il-tbody');
+  if (!_data.length){
+    tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:40px;color:#aaa;">No leads found</td></tr>';
+    return;
+  }
+  tbody.innerHTML = _data.map(l => {
+    const chk = _selectedIds.has(l.id) ? 'checked' : '';
+    const statusChip = !l._last_status ? '<span class="chip chip-gray">-</span>'
+      : l._last_status === 'sent'   ? '<span class="chip chip-green">Sent</span>'
+      : l._last_status === 'failed' ? '<span class="chip chip-red">Failed</span>'
+      : `<span class="chip chip-yellow">${esc(l._last_status)}</span>`;
+    return `<tr onclick="openDrawer(${l.id})">
+      <td onclick="event.stopPropagation()"><input type="checkbox" class="row-chk" data-id="${l.id}" ${chk} onchange="onCheckRow(this)"></td>
+      <td style="color:#1e40af;">${esc(l.email)}</td>
+      <td style="font-weight:600;">${esc(l.name||'-')}</td>
+      <td>${esc(l.country||'-')}</td>
+      <td>${esc(l.mobile||'-')}</td>
+      <td style="font-family:monospace;font-size:11px;">${esc(l.user_id||'-')}</td>
+      <td>${esc(l.sales||'-')}</td>
+      <td style="font-family:monospace;">${esc(l.affid||'-')}</td>
+      <td>${esc(l.leads_type||'-')}</td>
+      <td style="font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;">${esc(l.source||'-')}</td>
+      <td style="font-size:11px;">${esc(l._last_campaign||'-')}</td>
+      <td>${statusChip}</td>
+      <td style="font-size:11px;color:#888;">${l.created_at ? l.created_at.slice(0,10) : '-'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Checkbox ─────────────────────────────────────────────────────────────────
+function toggleAll(){
+  const chkAll = document.getElementById('chk-all').checked;
+  document.querySelectorAll('.row-chk').forEach(c => {
+    c.checked = chkAll;
+    const id = parseInt(c.dataset.id);
+    if (chkAll) _selectedIds.add(id); else _selectedIds.delete(id);
+  });
+  updateSendTarget();
+}
+function onCheckRow(el){
+  const id = parseInt(el.dataset.id);
+  if (el.checked) _selectedIds.add(id); else _selectedIds.delete(id);
+  updateSendTarget();
+}
+
+// ── Pagination ───────────────────────────────────────────────────────────────
+function renderPagination(){
+  const pages = Math.ceil(_total / _pageSize) || 1;
+  const start = (_page-1)*_pageSize+1;
+  const end   = Math.min(_page*_pageSize, _total);
+  document.getElementById('pg-info').textContent = `${start}-${end} of ${_total}`;
+  const btns = document.getElementById('pg-btns');
+  let h = `<button class="il-page-btn" onclick="goPage(1)" ${_page===1?'disabled':''}>«</button>
+           <button class="il-page-btn" onclick="goPage(${_page-1})" ${_page===1?'disabled':''}>‹</button>`;
+  for (let p=Math.max(1,_page-2); p<=Math.min(pages,_page+2); p++){
+    h += `<button class="il-page-btn ${p===_page?'active':''}" onclick="goPage(${p})">${p}</button>`;
+  }
+  h += `<button class="il-page-btn" onclick="goPage(${_page+1})" ${_page>=pages?'disabled':''}>›</button>
+        <button class="il-page-btn" onclick="goPage(${pages})" ${_page>=pages?'disabled':''}>»</button>`;
+  btns.innerHTML = h;
+}
+function goPage(p){ const pages = Math.ceil(_total/_pageSize)||1; if(p<1||p>pages)return; _page=p; loadLeads(); }
+function onPageSize(){ _pageSize = parseInt(document.getElementById('pg-size').value); _page=1; loadLeads(); }
+
+// ── Detail drawer ────────────────────────────────────────────────────────────
+async function openDrawer(leadId){
+  document.getElementById('drawer-overlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drw-body').innerHTML = '<div style="padding:20px;color:#aaa;text-align:center;">Loading...</div>';
+
+  const r = await fetch(`/api/imported-leads/${leadId}`);
+  const d = await r.json();
+  if (d.detail){ document.getElementById('drw-body').innerHTML = `<div style="color:#c00;padding:20px;">${esc(d.detail)}</div>`; return; }
+
+  const l = d.lead;
+  document.getElementById('drw-title').textContent = l.name || l.email;
+  document.getElementById('drw-sub').textContent = l.email;
+
+  let extra = {};
+  try { extra = JSON.parse(l.extra_data || '{}'); } catch(e){}
+
+  const extraHtml = Object.keys(extra).length
+    ? Object.entries(extra).map(([k,v]) =>
+        `<div class="drw-cell"><div class="drw-label">${esc(k)}</div><div class="drw-value">${esc(v)}</div></div>`
+      ).join('')
+    : '<div style="padding:10px 14px;color:#aaa;font-size:12px;">No extra data</div>';
+
+  const histHtml = d.campaign_history.length
+    ? `<table class="drw-table">
+        <thead><tr><th>Campaign</th><th>Subject</th><th>Status</th><th>Sent At</th><th>Error</th></tr></thead>
+        <tbody>${d.campaign_history.map(h => `
+          <tr>
+            <td>${esc(h.campaign_name)}</td>
+            <td>${esc(h.subject||'-')}</td>
+            <td>${h.status==='sent'?'<span class="chip chip-green">Sent</span>'
+                 :h.status==='failed'?'<span class="chip chip-red">Failed</span>'
+                 :'<span class="chip chip-yellow">'+esc(h.status)+'</span>'}</td>
+            <td style="font-size:11px;">${h.sent_at ? h.sent_at.slice(0,19) : '-'}</td>
+            <td style="font-size:11px;color:#c00;max-width:200px;overflow:hidden;text-overflow:ellipsis;" title="${esc(h.error_msg||'')}">${esc(h.error_msg||'-')}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`
+    : '<div style="padding:14px;color:#aaa;font-size:12px;text-align:center;">No campaign history</div>';
+
+  document.getElementById('drw-body').innerHTML = `
+    <div class="drw-section">
+      <div class="drw-section-head">Lead Info</div>
+      <div class="drw-info-grid">
+        <div class="drw-cell"><div class="drw-label">Email</div><div class="drw-value" style="color:#1e40af;">${esc(l.email)}</div></div>
+        <div class="drw-cell"><div class="drw-label">Name</div><div class="drw-value">${esc(l.name||'-')}</div></div>
+        <div class="drw-cell"><div class="drw-label">Country</div><div class="drw-value">${esc(l.country||'-')}</div></div>
+        <div class="drw-cell"><div class="drw-label">Mobile</div><div class="drw-value">${esc(l.mobile||'-')}</div></div>
+        <div class="drw-cell"><div class="drw-label">User ID</div><div class="drw-value" style="font-family:monospace;">${esc(l.user_id||'-')}</div></div>
+        <div class="drw-cell"><div class="drw-label">AFFID</div><div class="drw-value" style="font-family:monospace;">${esc(l.affid||'-')}</div></div>
+        <div class="drw-cell"><div class="drw-label">Sales</div><div class="drw-value">${esc(l.sales||'-')}</div></div>
+        <div class="drw-cell"><div class="drw-label">Type</div><div class="drw-value">${esc(l.leads_type||'-')}</div></div>
+        <div class="drw-cell"><div class="drw-label">Source</div><div class="drw-value">${esc(l.source||'-')}</div></div>
+        <div class="drw-cell"><div class="drw-label">Imported</div><div class="drw-value">${l.created_at ? l.created_at.slice(0,19) : '-'}</div></div>
+      </div>
+    </div>
+    <div class="drw-section">
+      <div class="drw-section-head">Extra Data</div>
+      <div class="drw-info-grid">${extraHtml}</div>
+    </div>
+    <div class="drw-section">
+      <div class="drw-section-head">Campaign History (${d.campaign_history.length})</div>
+      ${histHtml}
+    </div>
+  `;
+}
+function closeDrawer(){
+  document.getElementById('drawer-overlay').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+}
+
+// ── Import modal ─────────────────────────────────────────────────────────────
+function openImportModal(){
+  document.getElementById('import-modal').classList.add('open');
+  document.getElementById('imp-file').value = '';
+  document.getElementById('imp-msg').textContent = '';
+}
+function closeImportModal(){ document.getElementById('import-modal').classList.remove('open'); }
+
+async function doImport(){
+  const fileEl = document.getElementById('imp-file');
+  const msg = document.getElementById('imp-msg');
+  const btn = document.getElementById('imp-btn');
+  if (!fileEl.files.length){ msg.style.color='#c00'; msg.textContent='Select a file'; return; }
+
+  const form = new FormData();
+  form.append('data_file', fileEl.files[0]);
+  form.append('use_custom_headers', document.getElementById('imp-custom-headers').checked);
+
+  btn.disabled = true; btn.textContent = 'Importing...';
+  msg.style.color = '#555'; msg.textContent = '';
+
+  try {
+    const r = await fetch('/api/imported-leads/import', { method: 'POST', body: form });
+    const d = await r.json();
+    if (r.ok){
+      const banner = document.getElementById('import-result');
+      const txt = document.getElementById('import-result-text');
+      banner.className = 'import-result success';
+      txt.textContent = `Imported: ${d.total} rows — ${d.new} new, ${d.updated} updated, ${d.skipped} skipped. Columns: ${(d.columns_detected||[]).join(', ')}`;
+      closeImportModal();
+      loadLeads();
+      loadFilters();
+    } else {
+      msg.style.color = '#c00';
+      msg.textContent = d.detail || 'Import failed';
+    }
+  } catch(e){
+    msg.style.color = '#c00'; msg.textContent = 'Network error';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Import';
+  }
+}
+
+// ── Send campaign modal ──────────────────────────────────────────────────────
+async function openSendModal(){
+  document.getElementById('send-modal').classList.add('open');
+  document.getElementById('sc-msg').textContent = '';
+  document.getElementById('sc-name').value = '';
+  updateSendTarget();
+
+  // Load templates
+  const sel = document.getElementById('sc-template');
+  if (sel.options.length <= 1){
+    const r = await fetch('/api/templates');
+    const templates = await r.json();
+    templates.forEach(t => {
+      sel.innerHTML += `<option value="${t.id}">${esc(t.name)}</option>`;
+    });
+  }
+  // Load campaigns for exclude
+  const campSel = document.getElementById('sc-exclude-campaign');
+  if (campSel.options.length <= 1){
+    const r2 = await fetch('/api/campaigns');
+    const camps = await r2.json();
+    camps.forEach(c => {
+      campSel.innerHTML += `<option value="${c.id}">${esc(c.name)} (${c.status})</option>`;
+    });
+  }
+}
+function closeSendModal(){ document.getElementById('send-modal').classList.remove('open'); }
+
+document.getElementById('sc-exclude-sent').addEventListener('change', function(){
+  document.getElementById('sc-exclude-campaign').style.display = this.checked ? 'block' : 'none';
+});
+
+function updateSendTarget(){
+  const info = document.getElementById('sc-target-info');
+  if (_selectedIds.size > 0){
+    info.textContent = `${_selectedIds.size} selected lead(s)`;
+  } else {
+    const country = document.getElementById('il-country').value;
+    const source  = document.getElementById('il-source').value;
+    const search  = document.getElementById('il-search').value.trim();
+    const parts = ['All leads'];
+    if (country) parts.push(`country: ${country}`);
+    if (source) parts.push(`source: ${source}`);
+    if (search) parts.push(`search: "${search}"`);
+    info.textContent = parts.join(' | ') + ` (${_total} total)`;
+  }
+}
+
+async function doSendCampaign(){
+  const msg = document.getElementById('sc-msg');
+  const btn = document.getElementById('sc-btn');
+  const name = document.getElementById('sc-name').value.trim();
+  const subject = document.getElementById('sc-subject').value.trim();
+  const templateId = parseInt(document.getElementById('sc-template').value);
+  if (!name){ msg.style.color='#c00'; msg.textContent='Enter campaign name'; return; }
+  if (!subject){ msg.style.color='#c00'; msg.textContent='Enter subject'; return; }
+  if (!templateId){ msg.style.color='#c00'; msg.textContent='Select template'; return; }
+
+  let mapping = {};
+  try { mapping = JSON.parse(document.getElementById('sc-mapping').value || '{}'); }
+  catch(e){ msg.style.color='#c00'; msg.textContent='Invalid mapping JSON'; return; }
+
+  const filters = {};
+  if (_selectedIds.size > 0){
+    filters.lead_ids = [..._selectedIds];
+  } else {
+    const country = document.getElementById('il-country').value;
+    const source  = document.getElementById('il-source').value;
+    const search  = document.getElementById('il-search').value.trim();
+    if (country) filters.country = country;
+    if (source)  filters.source = source;
+    if (search)  filters.search = search;
+  }
+
+  if (document.getElementById('sc-exclude-sent').checked){
+    const excId = parseInt(document.getElementById('sc-exclude-campaign').value);
+    if (excId) filters.exclude_campaign_id = excId;
+  }
+
+  btn.disabled = true; btn.textContent = 'Creating...';
+  msg.style.color = '#555'; msg.textContent = '';
+
+  try {
+    const r = await fetch('/api/campaigns/from-leads', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        name, template_id: templateId, subject,
+        base_url: location.origin,
+        mapping, filters,
+      }),
+    });
+    const d = await r.json();
+    if (r.ok){
+      msg.style.color = '#065f46';
+      let info = `Campaign created! ${d.total} leads.`;
+      if (d.overlap_with_customers > 0){
+        info += ` (${d.overlap_with_customers} email(s) also registered as customers)`;
+      }
+      info += ' Redirecting...';
+      msg.textContent = info;
+      setTimeout(() => { window.location.href = `/admin/campaigns#${d.id}`; }, 2000);
+    } else {
+      msg.style.color = '#c00';
+      msg.textContent = d.detail || 'Failed to create campaign';
+    }
+  } catch(e){
+    msg.style.color = '#c00'; msg.textContent = 'Network error';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Create & Send';
+  }
+}
+
+// ── Export CSV ────────────────────────────────────────────────────────────────
+function exportSelectedCSV(){
+  const rows = _selectedIds.size > 0 ? _data.filter(l => _selectedIds.has(l.id)) : _data;
+  if (!rows.length){ alert('No data to export'); return; }
+  const headers = ['Email','Name','Country','Mobile','User ID','Sales','AFFID','Type','Source'];
+  const csv = [headers, ...rows.map(l => [
+    l.email, l.name, l.country, l.mobile, l.user_id, l.sales, l.affid, l.leads_type, l.source,
+  ])].map(r => r.map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob),
+    download: `leads_export_${new Date().toISOString().slice(0,10)}.csv`,
+  });
+  a.click();
+}
+
+// ── Keyboard ─────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape'){ closeDrawer(); closeImportModal(); closeSendModal(); }
+});
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+loadFilters();
+loadLeads();
+</script>
+{% endblock %}

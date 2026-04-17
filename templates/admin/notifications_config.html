@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Notification Rules — TradingBonusHub Admin{% endblock %}
+{% block page_title %}Notification Rules{% endblock %}
+
+{% block head %}
+<style>
+  .notif-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  @media (max-width: 900px) { .notif-grid { grid-template-columns: 1fr; } }
+  .notif-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .notif-card h4 { font-size: 14px; margin: 0 0 12px; }
+  .rule-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
+  .rule-item:last-child { border-bottom: none; }
+  .rule-event { font-size: 13px; font-weight: 600; }
+  .rule-channel { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .toggle-switch { position: relative; width: 40px; height: 22px; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider { position: absolute; cursor: pointer; inset: 0; background: #ccc; border-radius: 11px; transition: .2s; }
+  .toggle-slider:before { content: ''; position: absolute; height: 16px; width: 16px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+  .toggle-switch input:checked + .toggle-slider { background: #22c55e; }
+  .toggle-switch input:checked + .toggle-slider:before { transform: translateX(18px); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+  <div style="font-size:13px;color:var(--muted);">Configure which events trigger email or Telegram notifications to admin</div>
+  <button class="btn btn-primary btn-sm" onclick="showAddRule()">+ Add Rule</button>
+</div>
+
+<div class="notif-grid">
+  <div class="notif-card">
+    <h4>Email Notifications</h4>
+    <div id="rules-email"><div class="empty" style="padding:16px;">Loading...</div></div>
+  </div>
+  <div class="notif-card">
+    <h4>Telegram Notifications</h4>
+    <div id="rules-telegram"><div class="empty" style="padding:16px;">Loading...</div></div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const esc = s => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const LABELS = {
+  'enrollment.new': 'New Enrollment Request',
+  'enrollment.approved': 'Enrollment Approved',
+  'withdrawal.new': 'New Withdrawal Request',
+  'withdrawal.approved': 'Withdrawal Approved',
+  'withdrawal.completed': 'Withdrawal Completed',
+  'customer.registered': 'Customer Registered',
+  'customer.verified': 'Customer Verified Email',
+  'rebate.imported': 'Rebate Batch Imported',
+  'rebate.exported': 'Rebate Batch Exported',
+  'campaign.completed': 'Campaign Completed',
+  'promo.expiring': 'Promo Expiring Soon',
+  'promo.expired': 'Promo Expired',
+};
+
+async function loadRules() {
+  const r = await fetch('/api/admin/notifications/rules');
+  const rules = await r.json();
+
+  const emailRules = rules.filter(r => r.channel === 'email');
+  const telegramRules = rules.filter(r => r.channel === 'telegram');
+
+  renderRules('rules-email', emailRules);
+  renderRules('rules-telegram', telegramRules);
+}
+
+function renderRules(containerId, rules) {
+  const el = document.getElementById(containerId);
+  if (!rules.length) { el.innerHTML = '<div style="padding:12px;color:#aaa;font-size:13px;">No rules configured</div>'; return; }
+  el.innerHTML = rules.map(r => `
+    <div class="rule-item">
+      <div>
+        <div class="rule-event">${LABELS[r.event_type] || r.event_type}</div>
+        <div class="rule-channel">${r.event_type}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <label class="toggle-switch">
+          <input type="checkbox" ${r.is_enabled ? 'checked' : ''} onchange="toggleRule(${r.id}, this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <button class="btn btn-danger btn-xs" onclick="deleteRule(${r.id})" style="font-size:10px;">x</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function toggleRule(id, enabled) {
+  await fetch(`/api/admin/notifications/rules/${id}`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({is_enabled: enabled})
+  });
+}
+
+async function deleteRule(id) {
+  if (!confirm('Delete this notification rule?')) return;
+  await fetch(`/api/admin/notifications/rules/${id}`, {method:'DELETE'});
+  loadRules();
+}
+
+async function showAddRule() {
+  const r = await fetch('/api/admin/notifications/event-types');
+  const types = await r.json();
+  const event = prompt('Event type:\n' + types.join('\n'));
+  if (!event || !types.includes(event)) { if (event) alert('Invalid event type'); return; }
+  const channel = prompt('Channel (email or telegram):');
+  if (!channel || !['email','telegram'].includes(channel)) { if (channel) alert('Invalid channel'); return; }
+  await fetch('/api/admin/notifications/rules', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({event_type: event, channel})
+  });
+  loadRules();
+}
+
+loadRules();
+</script>
+{% endblock %}

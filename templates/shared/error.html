@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ status_code }} — TradingBonusHub</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #1a1f2e;
+    }
+    .error-wrap { text-align: center; max-width: 480px; padding: 32px; }
+    .error-code { font-size: 96px; font-weight: 800; color: #dde1e8; line-height: 1; }
+    .error-title { font-size: 24px; font-weight: 700; margin: 16px 0 12px; }
+    .error-desc { font-size: 15px; color: #666; line-height: 1.6; margin-bottom: 32px; }
+    .btn-home {
+      display: inline-block; padding: 12px 28px;
+      background: #1a73e8; color: #fff; text-decoration: none;
+      border-radius: 8px; font-weight: 600; font-size: 14px;
+      transition: background .15s;
+    }
+    .btn-home:hover { background: #1558b0; }
+  </style>
+</head>
+<body>
+<div class="error-wrap">
+  <div class="error-code">{{ status_code }}</div>
+  <h1 class="error-title">{{ title }}</h1>
+  <p class="error-desc">{{ message }}</p>
+  <a href="/" class="btn-home">Back to Home</a>
+</div>
+</body>
+</html>

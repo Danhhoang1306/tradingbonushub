@@ -1,0 +1,465 @@
+{% extends "base.html" %}
+{% block title %}Broker Management — Trading Bonus{% endblock %}
+{% block page_title %}Broker Management{% endblock %}
+
+{% block head %}
+<style>
+.bm-desc { font-size: 13px; color: #4b5563; margin-bottom: 20px; }
+
+/* ── Toolbar ── */
+.bm-toolbar {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 20px; flex-wrap: wrap;
+}
+.bm-search {
+  flex: 1; min-width: 200px;
+  padding: 9px 14px; border-radius: 8px;
+  border: 1px solid #c0c6d0; background: #fff;
+  font-size: 13px; font-family: inherit; color: var(--text);
+}
+.bm-search:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(26,115,232,.1); }
+.bm-filter-btn {
+  padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 700;
+  border: 1px solid #c0c6d0; background: #fff; color: #374151;
+  cursor: pointer; transition: all .15s;
+}
+.bm-filter-btn:hover { background: #f3f4f6; border-color: #98a2b3; }
+.bm-filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* ── Broker cards ── */
+.bm-grid {
+  display: flex; flex-direction: column; gap: 12px;
+}
+.bm-card {
+  background: var(--card); border: 1px solid #d0d5dd;
+  border-radius: var(--radius); padding: 20px 24px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06); transition: border-color .2s, box-shadow .2s;
+}
+.bm-card:hover { border-color: #98a2b3; box-shadow: var(--shadow-md); }
+.bm-card.inactive { opacity: .9; }
+.bm-card.hidden-page { border-left: 3px solid #f59e0b; }
+
+/* Header */
+.bm-header {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 16px; padding-bottom: 14px;
+  border-bottom: 1px solid #d0d5dd;
+}
+.bm-rank {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: rgba(26,115,232,.15); color: #1558b0;
+  font-size: 14px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.bm-logo-preview {
+  width: 90px; height: 38px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900; letter-spacing: -.5px;
+  background: #f3f4f6; border: 1px solid #d0d5dd;
+  flex-shrink: 0;
+}
+.bm-name-col { flex: 1; }
+.bm-name { font-size: 15px; font-weight: 700; color: var(--text); }
+.bm-slug { font-size: 12px; color: #6b7280; font-weight: 500; }
+.bm-badges { display: flex; gap: 6px; flex-shrink: 0; }
+.bm-badge {
+  display: inline-block; padding: 3px 10px; border-radius: 10px;
+  font-size: 11px; font-weight: 700;
+}
+.bm-badge.active { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+.bm-badge.off { background: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; }
+.bm-badge.coming { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+.bm-badge.hidden-badge { background: #fff7ed; color: #c2410c; border: 1px solid #fdba74; }
+
+.bm-expand-btn {
+  padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  border: 1px solid #c0c6d0; background: #fff; color: #374151;
+  cursor: pointer; transition: all .15s;
+}
+.bm-expand-btn:hover { background: #f3f4f6; border-color: #98a2b3; }
+
+/* Detail panel */
+.bm-detail { display: none; }
+.bm-detail.open { display: block; }
+
+.bm-section {
+  margin-bottom: 20px;
+}
+.bm-section-title {
+  font-size: 12px; font-weight: 800; color: #374151;
+  text-transform: uppercase; letter-spacing: .6px;
+  margin-bottom: 10px; padding-bottom: 6px;
+  border-bottom: 1px solid #d0d5dd;
+}
+
+/* Form grid */
+.bm-form-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.bm-field label {
+  display: block; font-size: 11px; font-weight: 700;
+  color: #4b5563; text-transform: uppercase;
+  letter-spacing: .5px; margin-bottom: 4px;
+}
+.bm-field input[type="text"],
+.bm-field input[type="number"],
+.bm-field select,
+.bm-field textarea {
+  width: 100%; background: #fff;
+  border: 1px solid #c0c6d0; border-radius: 8px;
+  padding: 9px 12px; color: #1f2937;
+  font-size: 13px; font-family: inherit;
+  transition: border-color .15s;
+}
+.bm-field input:focus, .bm-field select:focus, .bm-field textarea:focus {
+  border-color: var(--primary); outline: none;
+  box-shadow: 0 0 0 3px rgba(26,115,232,.1);
+}
+.bm-field textarea { min-height: 80px; resize: vertical; }
+.bm-field-wide { grid-column: 1 / -1; }
+
+/* Toggle */
+.bm-toggle-row {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+}
+.bm-toggle {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600; color: #374151;
+  cursor: pointer;
+}
+.bm-toggle input { width: 16px; height: 16px; accent-color: var(--primary); }
+
+/* Footer */
+.bm-footer {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 16px; padding-top: 14px;
+  border-top: 1px solid #d0d5dd;
+}
+.btn-save {
+  padding: 8px 22px; border-radius: 8px;
+  font-size: 13px; font-weight: 700;
+  background: #1a73e8; color: #fff;
+  border: none; cursor: pointer; font-family: inherit;
+  transition: all .15s;
+  box-shadow: 0 1px 3px rgba(26,115,232,.4);
+}
+.btn-save:hover { background: #1557b0; }
+.btn-save:disabled { opacity: .4; cursor: default; }
+.save-ok {
+  color: #16a34a; font-size: 13px; font-weight: 600;
+  opacity: 0; transition: opacity .3s;
+}
+.save-ok.show { opacity: 1; }
+
+@media (max-width: 640px) {
+  .bm-form-grid { grid-template-columns: 1fr; }
+  .bm-header { flex-wrap: wrap; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<p class="bm-desc">
+  Manage all broker information displayed on the public <strong>/brokers</strong> page.
+  Toggle visibility, edit profiles, and link review articles.
+</p>
+
+<!-- Toolbar -->
+<div class="bm-toolbar">
+  <input type="text" class="bm-search" id="brokerSearch" placeholder="Search brokers..." oninput="filterBrokers()">
+  <button class="bm-filter-btn active" onclick="setFilter('all')" data-filter="all">All</button>
+  <button class="bm-filter-btn" onclick="setFilter('visible')" data-filter="visible">Visible</button>
+  <button class="bm-filter-btn" onclick="setFilter('hidden')" data-filter="hidden">Hidden</button>
+</div>
+
+<!-- Broker list -->
+<div class="bm-grid" id="brokerGrid">
+{% for b in brokers %}
+<div class="bm-card{% if not b.is_active %} inactive{% endif %}{% if not b.show_on_brokers_page %} hidden-page{% endif %}"
+     data-id="{{ b.id }}" data-name="{{ b.name|lower }}" data-visible="{{ b.show_on_brokers_page|default(1) }}">
+
+  <!-- Header (always visible) -->
+  <div class="bm-header">
+    <div class="bm-rank">{{ b.display_order }}</div>
+    <div class="bm-logo-preview" style="color:{{ b.logo_color or '#666' }}; font-size:{{ b.logo_font_size or 14 }}px;">
+      {{ b.name }}
+    </div>
+    <div class="bm-name-col">
+      <div class="bm-name">{{ b.name }}</div>
+      <div class="bm-slug">/{{ b.slug }}</div>
+    </div>
+    <div class="bm-badges">
+      {% if b.status == 'coming_soon' %}
+        <span class="bm-badge coming">Coming Soon</span>
+      {% elif b.is_active %}
+        <span class="bm-badge active">Active</span>
+      {% else %}
+        <span class="bm-badge off">Inactive</span>
+      {% endif %}
+      {% if not b.show_on_brokers_page %}
+        <span class="bm-badge hidden-badge">Hidden</span>
+      {% endif %}
+      {% if b.badge_text %}
+        <span class="bm-badge active">{{ b.badge_text }}</span>
+      {% endif %}
+    </div>
+    <button class="bm-expand-btn" onclick="toggleDetail({{ b.id }})">Edit</button>
+  </div>
+
+  <!-- Detail panel (collapsed by default) -->
+  <div class="bm-detail" id="detail-{{ b.id }}">
+
+    <!-- Section: Display -->
+    <div class="bm-section">
+      <div class="bm-section-title">Display & Visibility</div>
+      <div class="bm-form-grid">
+        <div class="bm-field">
+          <label>Display Order</label>
+          <input type="number" id="order-{{ b.id }}" value="{{ b.display_order }}">
+        </div>
+        <div class="bm-field">
+          <label>Status</label>
+          <select id="status-{{ b.id }}">
+            <option value="active" {{ 'selected' if b.status == 'active' or not b.status else '' }}>Active</option>
+            <option value="coming_soon" {{ 'selected' if b.status == 'coming_soon' else '' }}>Coming Soon</option>
+          </select>
+        </div>
+        <div class="bm-field">
+          <label>Badge Text</label>
+          <input type="text" id="badge-{{ b.id }}" value="{{ b.badge_text or '' }}" placeholder="Cashback, Trusted...">
+        </div>
+        <div class="bm-field">
+          <label>Rating (1-5)</label>
+          <input type="number" id="rating-{{ b.id }}" value="{{ b.rating or '' }}" step="0.1" min="1" max="5">
+        </div>
+      </div>
+      <div class="bm-toggle-row" style="margin-top: 10px;">
+        <label class="bm-toggle">
+          <input type="checkbox" id="show-{{ b.id }}" {{ 'checked' if b.show_on_brokers_page else '' }}>
+          Show on /brokers page
+        </label>
+        <label class="bm-toggle">
+          <input type="checkbox" id="active-{{ b.id }}" {{ 'checked' if b.is_active else '' }}>
+          Active (available for programs)
+        </label>
+      </div>
+    </div>
+
+    <!-- Section: Appearance -->
+    <div class="bm-section">
+      <div class="bm-section-title">Appearance</div>
+      <div class="bm-form-grid">
+        <div class="bm-field">
+          <label>Logo Color</label>
+          <input type="text" id="color-{{ b.id }}" value="{{ b.logo_color or '' }}" placeholder="#c9a227">
+        </div>
+        <div class="bm-field">
+          <label>Logo Font Size (px)</label>
+          <input type="number" id="fontsize-{{ b.id }}" value="{{ b.logo_font_size or '' }}" placeholder="14">
+        </div>
+        <div class="bm-field">
+          <label>Logo Image URL</label>
+          <input type="text" id="logourl-{{ b.id }}" value="{{ b.logo_url or '' }}" placeholder="/static/brokers/vantage.svg">
+        </div>
+        <div class="bm-field">
+          <label>Licenses</label>
+          <input type="text" id="licenses-{{ b.id }}" value="{{ b.licenses or '' }}" placeholder="ASIC,FCA,VFSC">
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Stats -->
+    <div class="bm-section">
+      <div class="bm-section-title">Stats & Info</div>
+      <div class="bm-form-grid">
+        <div class="bm-field">
+          <label>Assets Count</label>
+          <input type="text" id="assets-{{ b.id }}" value="{{ b.assets_count or '' }}" placeholder="1.000+">
+        </div>
+        <div class="bm-field">
+          <label>Min Deposit</label>
+          <input type="text" id="deposit-{{ b.id }}" value="{{ b.min_deposit or '' }}" placeholder="$50">
+        </div>
+        <div class="bm-field">
+          <label>Extra Stat Label</label>
+          <select id="statlabel-{{ b.id }}">
+            <option value="" {{ 'selected' if not b.extra_stat_label else '' }}>-- None --</option>
+            <option value="speed" {{ 'selected' if b.extra_stat_label == 'speed' else '' }}>Execution Speed</option>
+            <option value="neg_bal" {{ 'selected' if b.extra_stat_label == 'neg_bal' else '' }}>Negative Balance</option>
+            <option value="support" {{ 'selected' if b.extra_stat_label == 'support' else '' }}>Support Hours</option>
+          </select>
+        </div>
+        <div class="bm-field">
+          <label>Extra Stat Value</label>
+          <input type="text" id="statval-{{ b.id }}" value="{{ b.extra_stat_value or '' }}" placeholder="< 40ms">
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Features -->
+    <div class="bm-section">
+      <div class="bm-section-title">Features (one per line)</div>
+      <div class="bm-form-grid">
+        <div class="bm-field bm-field-wide">
+          <label>Features (Vietnamese / Default)</label>
+          <textarea id="features-{{ b.id }}" rows="4">{{ b.features or '' }}</textarea>
+        </div>
+        <div class="bm-field bm-field-wide">
+          <label>Features (English)</label>
+          <textarea id="features_en-{{ b.id }}" rows="4">{{ b.features_en or '' }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Links -->
+    <div class="bm-section">
+      <div class="bm-section-title">Links & Review Article</div>
+      <div class="bm-form-grid">
+        <div class="bm-field">
+          <label>Visit URL (broker website)</label>
+          <input type="text" id="visiturl-{{ b.id }}" value="{{ b.visit_url or '' }}" placeholder="https://www.broker.com">
+        </div>
+        <div class="bm-field">
+          <label>External Review URL</label>
+          <input type="text" id="reviewurl-{{ b.id }}" value="{{ b.review_url or '' }}" placeholder="https://investing.com/reviews/...">
+        </div>
+        <div class="bm-field">
+          <label>Review Article Slug (internal)</label>
+          <input type="text" id="articleslug-{{ b.id }}" value="{{ b.review_article_slug or '' }}" placeholder="danh-gia-vantage">
+        </div>
+        <div class="bm-field">
+          <label>Learn More URL</label>
+          <input type="text" id="learnurl-{{ b.id }}" value="{{ b.learn_more_url or '' }}" placeholder="/blog/huong-dan-{{ b.slug }}">
+        </div>
+        <div class="bm-field">
+          <label>Transfer Guide URL</label>
+          <input type="text" id="transferurl-{{ b.id }}" value="{{ b.transfer_guide_url or '' }}" placeholder="/blog/chuyen-doi-{{ b.slug }}">
+        </div>
+        <div class="bm-field">
+          <label>Settlement Frequency</label>
+          <select id="seq-{{ b.id }}">
+            <option value="per_trade" {{ 'selected' if b.rebate_sequence == 'per_trade' else '' }}>Per Trade</option>
+            <option value="daily" {{ 'selected' if b.rebate_sequence == 'daily' else '' }}>Daily</option>
+            <option value="weekly" {{ 'selected' if b.rebate_sequence == 'weekly' else '' }}>Weekly</option>
+            <option value="monthly" {{ 'selected' if (b.rebate_sequence or 'monthly') == 'monthly' else '' }}>Monthly</option>
+          </select>
+        </div>
+      </div>
+      <p style="font-size:12px; color:#4b5563; margin-top:8px;">
+        When <strong>Review Article Slug</strong> is set, the public page shows a "Read Review" button
+        linking to <code>/blog/{slug}</code> instead of the external visit URL.
+      </p>
+    </div>
+
+    <!-- Save -->
+    <div class="bm-footer">
+      <button class="btn-save" onclick="saveBroker({{ b.id }})">Save Changes</button>
+      <span class="save-ok" id="ok-{{ b.id }}">Saved</span>
+    </div>
+  </div>
+</div>
+{% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleDetail(id) {
+  const el = document.getElementById('detail-' + id);
+  el.classList.toggle('open');
+  const btn = el.closest('.bm-card').querySelector('.bm-expand-btn');
+  btn.textContent = el.classList.contains('open') ? 'Collapse' : 'Edit';
+}
+
+function filterBrokers() {
+  const q = document.getElementById('brokerSearch').value.toLowerCase();
+  document.querySelectorAll('.bm-card').forEach(c => {
+    const name = c.dataset.name;
+    const matchSearch = !q || name.includes(q);
+    const currentFilter = document.querySelector('.bm-filter-btn.active')?.dataset.filter || 'all';
+    const vis = c.dataset.visible;
+    const matchFilter = currentFilter === 'all'
+      || (currentFilter === 'visible' && vis === '1' && vis !== 'True')
+      || (currentFilter === 'visible' && vis === 'True')
+      || (currentFilter === 'hidden' && (vis === '0' || vis === 'False'));
+    c.style.display = (matchSearch && matchFilter) ? '' : 'none';
+  });
+}
+
+function setFilter(f) {
+  document.querySelectorAll('.bm-filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-filter="${f}"]`).classList.add('active');
+  filterBrokers();
+}
+
+async function saveBroker(id) {
+  const g = (prefix) => {
+    const el = document.getElementById(prefix + '-' + id);
+    if (!el) return null;
+    if (el.type === 'checkbox') return el.checked ? 1 : 0;
+    return el.value.trim();
+  };
+
+  const data = {
+    display_order:        parseInt(g('order')) || 0,
+    status:               g('status'),
+    badge_text:           g('badge') || null,
+    rating:               parseFloat(g('rating')) || null,
+    show_on_brokers_page: g('show'),
+    is_active:            g('active'),
+    logo_color:           g('color') || null,
+    logo_font_size:       parseInt(g('fontsize')) || null,
+    logo_url:             g('logourl') || null,
+    licenses:             g('licenses') || null,
+    assets_count:         g('assets') || null,
+    min_deposit:          g('deposit') || null,
+    extra_stat_label:     g('statlabel') || null,
+    extra_stat_value:     g('statval') || null,
+    features:             g('features') || null,
+    features_en:          g('features_en') || null,
+    visit_url:            g('visiturl') || null,
+    review_url:           g('reviewurl') || null,
+    review_article_slug:  g('articleslug') || null,
+    learn_more_url:       g('learnurl') || null,
+    transfer_guide_url:   g('transferurl') || null,
+    rebate_sequence:      g('seq'),
+  };
+
+  const btn = event.target;
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/brokers/' + id, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error('Save failed');
+    const ok = document.getElementById('ok-' + id);
+    ok.classList.add('show');
+    setTimeout(() => ok.classList.remove('show'), 2000);
+
+    // Update visual cues
+    const card = btn.closest('.bm-card');
+    card.dataset.visible = data.show_on_brokers_page;
+    if (!data.show_on_brokers_page) card.classList.add('hidden-page');
+    else card.classList.remove('hidden-page');
+    if (!data.is_active) card.classList.add('inactive');
+    else card.classList.remove('inactive');
+
+    // Update logo preview
+    const preview = card.querySelector('.bm-logo-preview');
+    if (data.logo_color) preview.style.color = data.logo_color;
+    if (data.logo_font_size) preview.style.fontSize = data.logo_font_size + 'px';
+
+    // Update rank
+    card.querySelector('.bm-rank').textContent = data.display_order;
+  } catch (e) {
+    alert('Error: ' + e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+</script>
+{% endblock %}

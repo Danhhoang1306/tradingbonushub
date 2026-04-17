@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% block title %}Customer Segments — TradingBonusHub Admin{% endblock %}
+{% block page_title %}Customer Segments{% endblock %}
+
+{% block head %}
+<style>
+  .seg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .seg-grid { grid-template-columns: 1fr; } }
+  .seg-item { padding: 16px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: all .15s; }
+  .seg-item:hover { border-color: var(--accent); box-shadow: var(--shadow-sm); }
+  .seg-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .seg-desc { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .seg-stats { display: flex; gap: 16px; font-size: 12px; }
+  .seg-stats span { color: var(--accent); font-weight: 700; }
+
+  .rule-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; flex-wrap: wrap; }
+  .rule-row select, .rule-row input { padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; }
+  .rule-row select { min-width: 140px; }
+  .rule-row input { min-width: 100px; }
+
+  .member-table td { font-size: 13px; padding: 8px 10px; }
+  .member-table th { font-size: 11px; text-transform: uppercase; color: var(--muted); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+  <div style="font-size:13px;color:var(--muted);">Create targeted customer groups for campaigns and analysis</div>
+  <button class="btn btn-primary" onclick="showCreateModal()">+ New Segment</button>
+</div>
+
+<div class="seg-grid" id="segments-grid">
+  <div class="empty" style="grid-column:1/-1;padding:40px;text-align:center;">Loading...</div>
+</div>
+
+<!-- Segment Detail -->
+<div class="card" id="seg-detail" style="display:none;margin-top:20px;">
+  <div class="card-header">
+    <div>
+      <div class="card-title" id="sd-title">Segment Members</div>
+      <div class="card-subtitle" id="sd-subtitle"></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-secondary btn-sm" onclick="refreshSegment()">Refresh</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteSegment()">Delete</button>
+    </div>
+  </div>
+  <table class="member-table">
+    <thead><tr><th>Email</th><th>Name</th><th>Active Accounts</th><th>Last Login</th><th>Added</th></tr></thead>
+    <tbody id="members-tbody"></tbody>
+  </table>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header">
+      <h3 id="modal-title">Create Segment</h3>
+      <button class="close-btn" onclick="closeModal()">x</button>
+    </div>
+    <div style="padding:16px;">
+      <div style="margin-bottom:12px;">
+        <label style="font-size:12px;font-weight:700;">Name</label>
+        <input type="text" id="seg-name" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;margin-top:4px;">
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:12px;font-weight:700;">Description</label>
+        <input type="text" id="seg-desc" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;margin-top:4px;">
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:12px;font-weight:700;">Match Mode</label>
+        <select id="seg-match" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;margin-top:4px;">
+          <option value="all">All conditions (AND)</option>
+          <option value="any">Any condition (OR)</option>
+        </select>
+      </div>
+      <label style="font-size:12px;font-weight:700;margin-bottom:8px;display:block;">Conditions</label>
+      <div id="rules-container"></div>
+      <button class="btn btn-secondary btn-sm" onclick="addRule()" style="margin:8px 0 16px;">+ Add Condition</button>
+      <div style="display:flex;justify-content:flex-end;gap:8px;">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveSegment()">Save Segment</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const esc = s => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let segments = [], selectedSegId = null;
+
+const FIELDS = [
+  {value:'country', label:'Country'},
+  {value:'days_since_register', label:'Days Since Register'},
+  {value:'has_active_account', label:'Has Active Account'},
+  {value:'total_volume', label:'Total Volume (lots)'},
+  {value:'last_login_days', label:'Days Since Last Login'},
+  {value:'broker', label:'Broker (slug)'},
+  {value:'program_type', label:'Program Type'},
+  {value:'wallet_balance', label:'Wallet Balance ($)'},
+  {value:'is_verified', label:'Is Verified'},
+  {value:'unsubscribed', label:'Unsubscribed'},
+];
+const OPS = [{value:'eq',label:'='},{value:'neq',label:'!='},{value:'gt',label:'>'},{value:'gte',label:'>='},{value:'lt',label:'<'},{value:'lte',label:'<='}];
+
+async function loadSegments() {
+  const r = await fetch('/api/segments');
+  segments = await r.json();
+  const grid = document.getElementById('segments-grid');
+  if (!segments.length) { grid.innerHTML = '<div class="empty" style="grid-column:1/-1;padding:40px;text-align:center;">No segments yet. Create one to get started.</div>'; return; }
+  grid.innerHTML = segments.map(s => `
+    <div class="seg-item" onclick="viewSegment(${s.id})">
+      <div class="seg-name">${esc(s.name)}</div>
+      <div class="seg-desc">${esc(s.description)}</div>
+      <div class="seg-stats">
+        <div>Members: <span>${s.member_count}</span></div>
+        <div>${s.is_dynamic ? 'Dynamic' : 'Static'}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function viewSegment(id) {
+  selectedSegId = id;
+  const seg = segments.find(s => s.id === id);
+  document.getElementById('seg-detail').style.display = '';
+  document.getElementById('sd-title').textContent = seg.name;
+  document.getElementById('sd-subtitle').textContent = seg.description + ' — ' + seg.member_count + ' members';
+
+  const r = await fetch(`/api/segments/${id}/members?limit=100`);
+  const data = await r.json();
+  const tb = document.getElementById('members-tbody');
+  if (!data.items.length) { tb.innerHTML = '<tr><td colspan="5" class="empty">No members</td></tr>'; return; }
+  tb.innerHTML = data.items.map(m => `<tr>
+    <td>${esc(m.login_email)}</td>
+    <td>${esc(m.name)}</td>
+    <td>${m.active_accounts}</td>
+    <td>${m.last_login_at ? new Date(m.last_login_at).toLocaleDateString() : '—'}</td>
+    <td style="color:var(--muted);font-size:11px;">${new Date(m.added_at).toLocaleDateString()}</td>
+  </tr>`).join('');
+}
+
+async function refreshSegment() {
+  if (!selectedSegId) return;
+  await fetch(`/api/segments/${selectedSegId}/refresh`, {method:'POST'});
+  loadSegments();
+  viewSegment(selectedSegId);
+}
+
+async function deleteSegment() {
+  if (!selectedSegId || !confirm('Delete this segment?')) return;
+  await fetch(`/api/segments/${selectedSegId}`, {method:'DELETE'});
+  selectedSegId = null;
+  document.getElementById('seg-detail').style.display = 'none';
+  loadSegments();
+}
+
+function showCreateModal() {
+  document.getElementById('seg-name').value = '';
+  document.getElementById('seg-desc').value = '';
+  document.getElementById('seg-match').value = 'all';
+  document.getElementById('rules-container').innerHTML = '';
+  addRule();
+  document.getElementById('overlay').classList.add('active');
+}
+function closeModal() { document.getElementById('overlay').classList.remove('active'); }
+
+function addRule() {
+  const container = document.getElementById('rules-container');
+  const div = document.createElement('div');
+  div.className = 'rule-row';
+  div.innerHTML = `
+    <select class="rule-field">${FIELDS.map(f => `<option value="${f.value}">${f.label}</option>`).join('')}</select>
+    <select class="rule-op">${OPS.map(o => `<option value="${o.value}">${o.label}</option>`).join('')}</select>
+    <input type="text" class="rule-value" placeholder="Value">
+    <button class="btn btn-danger btn-xs" onclick="this.parentElement.remove()">x</button>
+  `;
+  container.appendChild(div);
+}
+
+async function saveSegment() {
+  const name = document.getElementById('seg-name').value.trim();
+  const description = document.getElementById('seg-desc').value.trim();
+  const match = document.getElementById('seg-match').value;
+  if (!name) { alert('Name required'); return; }
+
+  const conditions = [...document.querySelectorAll('.rule-row')].map(row => ({
+    field: row.querySelector('.rule-field').value,
+    op: row.querySelector('.rule-op').value,
+    value: row.querySelector('.rule-value').value
+  })).filter(c => c.value);
+
+  // Auto-convert boolean fields
+  conditions.forEach(c => {
+    if (['has_active_account','is_verified','unsubscribed'].includes(c.field)) {
+      c.value = c.value === 'true' || c.value === '1';
+    } else if (['days_since_register','last_login_days','total_volume','wallet_balance'].includes(c.field)) {
+      c.value = parseFloat(c.value);
+    }
+  });
+
+  await fetch('/api/segments', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({name, description, is_dynamic: true, rules: {conditions, match}})
+  });
+  closeModal();
+  loadSegments();
+}
+
+loadSegments();
+</script>
+{% endblock %}

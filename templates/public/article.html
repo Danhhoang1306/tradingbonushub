@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="{{ article.lang or 'en' }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  {% set _title = article.title_en if lang == 'en' and article.title_en else article.title %}
+  {% set _excerpt = article.excerpt_en if lang == 'en' and article.excerpt_en else (article.excerpt or '') %}
+  {% set _seo_title = article.seo_title_en if lang == 'en' and article.seo_title_en else (article.seo_title or '') %}
+  {% set _seo_desc = article.seo_desc_en if lang == 'en' and article.seo_desc_en else (article.seo_desc or '') %}
+  {% set _content = article.content_en if lang == 'en' and article.content_en else article.content %}
+  {% set _cover = article.cover_url_en if lang == 'en' and article.cover_url_en else article.cover_url %}
+  <title>{{ _seo_title or _title }}</title>
+  <meta name="description" content="{{ _seo_desc or _excerpt }}" />
+  <link rel="canonical" href="https://tradingbonushub.com/blog/{{ article.slug }}" />
+  <!-- Open Graph -->
+  <meta property="og:type"        content="article" />
+  <meta property="og:title"       content="{{ _seo_title or _title }}" />
+  <meta property="og:description" content="{{ _seo_desc or _excerpt }}" />
+  <meta property="og:url"         content="https://tradingbonushub.com/blog/{{ article.slug }}" />
+  {% if article.seo_image or _cover %}
+  <meta property="og:image"       content="{{ article.seo_image or _cover }}" />
+  {% endif %}
+  <meta property="article:published_time" content="{{ article.published_at or '' }}" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/logo-tb.png" />
+  <link rel="apple-touch-icon" href="/static/logo-tb.png" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #050d1e; color: rgba(255,255,255,.92); min-height: 100vh; }
+
+    /* Banner bar */
+    .banner-bar { padding: 10px 20px; text-align: center; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .banner-bar a { color: inherit; font-weight: 700; text-decoration: underline; }
+    .banner-info    { background: #0c5460; color: #d1ecf1; }
+    .banner-warning { background: #856404; color: #fff3cd; }
+    .banner-success { background: #0a3622; color: #d1e7dd; }
+    .banner-promo   { background: #4c1d95; color: #ede9fe; }
+    .banner-danger  { background: #842029; color: #f8d7da; }
+
+    /* Header */
+    .header { background: rgba(5,10,22,.92); backdrop-filter: blur(12px); padding: 0 40px; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 200; border-bottom: 1px solid rgba(240,192,64,.18); }
+    .header-logo { font-size: 18px; font-weight: 800; color: #fff; text-decoration: none; }
+    .header-logo span { color: #f0c040; }
+    .nav-link { color: rgba(255,255,255,.8); font-size: 14px; font-weight: 600; text-decoration: none; padding: 8px 14px; border-radius: 6px; }
+    .nav-link:hover { background: rgba(255,255,255,.1); color: #fff; }
+    .header-right { display: flex; align-items: center; gap: 4px; }
+
+    /* Layout */
+    .page-wrap { max-width: 780px; margin: 0 auto; padding: 40px 20px 80px; }
+
+    /* Breadcrumb */
+    .breadcrumb { font-size: 13px; color: rgba(255,255,255,.5); margin-bottom: 24px; }
+    .breadcrumb a { color: rgba(255,255,255,.5); text-decoration: none; }
+    .breadcrumb a:hover { color: #f0c040; }
+    .breadcrumb span { margin: 0 6px; }
+
+    /* Hero */
+    .article-cover { width: 100%; max-height: 420px; object-fit: cover; border-radius: 12px; margin-bottom: 32px; }
+    .article-meta { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: rgba(255,255,255,.5); margin-bottom: 20px; align-items: center; }
+    .article-cat { background: rgba(240,192,64,.15); color: #f0c040; padding: 3px 12px; border-radius: 12px; font-size: 12px; font-weight: 700; }
+    .article-title { font-size: clamp(24px,4vw,38px); font-weight: 800; color: #fff; line-height: 1.25; margin-bottom: 16px; }
+    .article-excerpt { font-size: 17px; color: rgba(255,255,255,.65); line-height: 1.7; margin-bottom: 32px; border-left: 3px solid #f0c040; padding-left: 16px; }
+
+    /* Content */
+    .article-content { font-size: 16px; line-height: 1.8; color: rgba(255,255,255,.85); }
+    .article-content h1, .article-content h2, .article-content h3 { color: #fff; margin: 28px 0 12px; }
+    .article-content h1 { font-size: 28px; }
+    .article-content h2 { font-size: 22px; border-bottom: 1px solid rgba(255,255,255,.1); padding-bottom: 8px; }
+    .article-content h3 { font-size: 18px; color: #f0c040; }
+    .article-content p  { margin-bottom: 16px; }
+    .article-content ul, .article-content ol { margin: 0 0 16px 24px; }
+    .article-content li { margin-bottom: 6px; }
+    .article-content blockquote { border-left: 4px solid #f0c040; margin: 20px 0; padding: 12px 20px; background: rgba(240,192,64,.07); border-radius: 0 8px 8px 0; font-style: italic; color: rgba(255,255,255,.75); }
+    .article-content img { max-width: 100%; border-radius: 8px; margin: 16px 0; }
+    .article-content a { color: #f0c040; text-decoration: underline; }
+    .article-content pre { background: rgba(255,255,255,.05); padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; margin: 16px 0; border: 1px solid rgba(255,255,255,.1); }
+    .article-content code { background: rgba(255,255,255,.08); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+    .article-content hr { border: none; border-top: 1px solid rgba(255,255,255,.1); margin: 32px 0; }
+    .article-content table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    .article-content th, .article-content td { padding: 10px 14px; border: 1px solid rgba(255,255,255,.1); font-size: 14px; }
+    .article-content th { background: rgba(255,255,255,.05); font-weight: 700; }
+
+    /* CTA box */
+    .cta-box { margin: 40px 0; background: linear-gradient(135deg,rgba(240,192,64,.1),rgba(200,150,40,.05)); border: 1px solid rgba(240,192,64,.25); border-radius: 12px; padding: 28px; text-align: center; }
+    .cta-box h3 { font-size: 20px; color: #f0c040; margin-bottom: 10px; }
+    .cta-box p { font-size: 14px; color: rgba(255,255,255,.7); margin-bottom: 18px; }
+    .cta-btn { display: inline-block; padding: 12px 28px; background: linear-gradient(135deg,#c8972a,#f0c040); color: #050d1e; font-weight: 800; border-radius: 8px; text-decoration: none; font-size: 15px; }
+
+    /* Back link */
+    .back-link { display: inline-flex; align-items: center; gap: 6px; color: rgba(255,255,255,.5); text-decoration: none; font-size: 13px; margin-top: 40px; }
+    .back-link:hover { color: #f0c040; }
+
+    /* Related articles */
+    .related-sec { max-width: 1100px; margin: 0 auto; padding: 48px 20px 60px; }
+    .related-sec h3 { font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 24px; text-align: center; }
+    .related-scroll {
+      display: flex; gap: 20px; overflow-x: auto; scroll-snap-type: x mandatory;
+      padding: 4px 0 16px; -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin; scrollbar-color: rgba(240,192,64,.3) transparent;
+    }
+    .related-scroll::-webkit-scrollbar { height: 6px; }
+    .related-scroll::-webkit-scrollbar-track { background: transparent; }
+    .related-scroll::-webkit-scrollbar-thumb { background: rgba(240,192,64,.3); border-radius: 3px; }
+    .related-card {
+      flex: 0 0 280px; scroll-snap-align: start;
+      background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 12px; overflow: hidden; text-decoration: none;
+      display: flex; flex-direction: column; transition: transform .2s, box-shadow .2s;
+    }
+    .related-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,.4); }
+    .related-card-img { width: 100%; height: 160px; object-fit: cover; }
+    .related-card-noimg {
+      width: 100%; height: 160px;
+      background: linear-gradient(135deg, #0d2b4e, #1a4a7a);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; color: rgba(255,255,255,.2);
+    }
+    .related-card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; }
+    .related-card-cat { font-size: 11px; font-weight: 700; color: #f0c040; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+    .related-card-title { font-size: 15px; font-weight: 700; color: #fff; line-height: 1.4; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .related-card-excerpt { font-size: 12px; color: rgba(255,255,255,.5); line-height: 1.5; flex: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .related-card-date { font-size: 11px; color: rgba(255,255,255,.3); margin-top: 10px; }
+    @media(max-width:600px) { .related-card { flex: 0 0 240px; } .related-card-img, .related-card-noimg { height: 130px; } }
+
+    /* ── FOOTER LICENSE STRIP ── */
+    .footer-license { background: rgba(240,192,64,.04); border-top: 1px solid rgba(240,192,64,.12); border-bottom: 1px solid rgba(255,255,255,.05); }
+    .footer-license-inner { max-width: 1160px; margin: 0 auto; padding: 32px 40px; display: flex; align-items: flex-start; gap: 24px; }
+    .footer-license-icon { flex-shrink: 0; width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, rgba(240,192,64,.2), rgba(240,192,64,.08)); border: 1px solid rgba(240,192,64,.3); display: flex; align-items: center; justify-content: center; color: var(--gold); margin-top: 2px; }
+    .footer-license-title { font-size: 13px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; opacity: .9; }
+    .footer-license-text { font-size: 13px; color: rgba(255,255,255,.42); line-height: 1.7; max-width: 820px; }
+    .footer-license-text + .footer-license-text { margin-top: 6px; }
+    /* ── FOOTER ── */
+    .footer { background: #03070f; border-top: 1px solid rgba(240,192,64,.12); padding: 0; }
+    .footer-main { max-width: 1160px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1.4fr; gap: 48px; padding: 60px 40px 48px; }
+    .footer-logo { font-size: 20px; font-weight: 800; color: #fff; text-decoration: none; display: inline-block; margin-bottom: 14px; }
+    .footer-logo span { color: var(--gold); }
+    .footer-desc { font-size: 13.5px; color: rgba(255,255,255,.48); line-height: 1.7; margin-bottom: 24px; max-width: 280px; }
+    .footer-socials { display: flex; gap: 10px; }
+    .footer-social-btn { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); color: rgba(255,255,255,.65); text-decoration: none; transition: background .15s, color .15s, border-color .15s, transform .15s; }
+    .footer-social-btn:hover { background: rgba(240,192,64,.15); border-color: rgba(240,192,64,.4); color: var(--gold); transform: translateY(-2px); }
+    .footer-col-title { font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--gold); margin-bottom: 18px; opacity: .85; }
+    .footer-links { list-style: none; }
+    .footer-links li { margin-bottom: 10px; }
+    .footer-links a { font-size: 13.5px; color: rgba(255,255,255,.55); text-decoration: none; transition: color .15s, padding-left .15s; display: inline-block; }
+    .footer-links a:hover { color: #fff; padding-left: 4px; }
+    .footer-contact-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
+    .footer-contact-icon { width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,.07); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--gold); }
+    .footer-contact-text { font-size: 13px; color: rgba(255,255,255,.55); line-height: 1.5; }
+    .footer-contact-text a { color: rgba(255,255,255,.7); text-decoration: none; }
+    .footer-contact-text a:hover { color: #fff; }
+    .footer-divider { border: none; border-top: 1px solid rgba(255,255,255,.06); margin: 0 40px; }
+    .footer-bottom { max-width: 1160px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 20px 40px 28px; }
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,.28); }
+    .footer-legal { display: flex; gap: 20px; }
+    .footer-legal a { font-size: 12px; color: rgba(255,255,255,.28); text-decoration: none; transition: color .15s; }
+    .footer-legal a:hover { color: rgba(255,255,255,.7); }
+    @media (max-width: 900px) { .footer-main { grid-template-columns: 1fr 1fr; gap: 36px; } .footer-brand-col { grid-column: 1 / -1; } .footer-license-inner { padding: 24px 20px; gap: 16px; } }
+    @media (max-width: 560px) { .footer-main { grid-template-columns: 1fr; padding: 40px 20px 32px; } .footer-divider { margin: 0 20px; } .footer-bottom { padding: 16px 20px 24px; flex-direction: column; align-items: flex-start; gap: 10px; } .footer-license-icon { width: 40px; height: 40px; } }
+
+    @media(max-width:600px) { .header { padding: 0 16px; } .page-wrap { padding: 24px 16px 60px; } }
+  </style>
+  {% include "_tracking_head.html" %}
+</head>
+<body>
+{% include "_tracking_body.html" %}
+
+{% for b in banners %}
+<div class="banner-bar banner-{{ b.style }}">
+  <span>{{ b.text | sanitize | safe }}</span>
+  {% if b.link_text %}<a href="{{ b.link_url }}">{{ b.link_text }}</a>{% endif %}
+</div>
+{% endfor %}
+
+<header class="header">
+  <a href="/" class="header-logo">Trading<span>Bonus</span></a>
+  <nav class="header-right">
+    {% if nav_items %}
+      {% for item in nav_items %}
+        {% if item.is_active %}
+        <a href="{{ item.url }}" class="nav-link"
+           {% if item.target == '_blank' %}target="_blank"{% endif %}>{{ item.label }}</a>
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      <a href="/{% if lang == 'en' %}?lang=en{% endif %}" class="nav-link">{{ t('nav_home', lang) }}</a>
+      <a href="/blog{% if lang == 'en' %}?lang=en{% endif %}" class="nav-link active">Blog</a>
+      <a href="/portal/login{% if lang == 'en' %}?lang=en{% endif %}" class="nav-link">{{ t('portal_login', lang) }}</a>
+    {% endif %}
+  </nav>
+</header>
+
+<div class="page-wrap">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="/{% if lang == 'en' %}?lang=en{% endif %}">{{ t('nav_home', lang) }}</a><span>/</span>
+    <a href="/blog{% if lang == 'en' %}?lang=en{% endif %}">Blog</a><span>/</span>
+    {% if article.category_name %}
+    <a href="/blog?category={{ article.category_slug or article.category_id }}">{{ article.category_name }}</a><span>/</span>
+    {% endif %}
+    <span style="color:rgba(255,255,255,.7);">{{ _title }}</span>
+  </div>
+
+  <!-- Cover -->
+  {% if _cover %}
+  <img class="article-cover" src="{{ _cover }}" alt="{{ _title }}" loading="lazy">
+  {% endif %}
+
+  <!-- Meta -->
+  <div class="article-meta">
+    {% if article.category_name %}<span class="article-cat">{{ article.category_name }}</span>{% endif %}
+    <span>👤 {{ article.author }}</span>
+    {% if article.published_at %}<span>📅 {{ article.published_at[:10] }}</span>{% endif %}
+  </div>
+
+  <!-- Title -->
+  <h1 class="article-title">{{ _title }}</h1>
+
+  <!-- Excerpt -->
+  {% if _excerpt %}
+  <div class="article-excerpt">{{ _excerpt }}</div>
+  {% endif %}
+
+  <!-- Content -->
+  <div class="article-content">
+    {{ _content | sanitize | safe }}
+  </div>
+
+  <!-- CTA box -->
+  <div class="cta-box">
+    <h3>🎁 Start earning cashback today</h3>
+    <p>Sign up for free — earn cashback on every lot of Forex & Gold trading</p>
+    <a href="/portal/register" class="cta-btn">Sign up for free →</a>
+  </div>
+
+  <a href="/blog" class="back-link">← Back to articles</a>
+
+</div>
+
+<!-- ── RELATED ARTICLES ── -->
+{% if related_articles %}
+<div class="related-sec">
+  <h3>Related Articles</h3>
+  <div class="related-scroll">
+    {% for art in related_articles %}
+    <a href="/blog/{{ art.slug }}" class="related-card">
+      {% if art.cover_url %}
+        <img class="related-card-img" src="{{ art.cover_url }}" alt="{{ art.title }}" loading="lazy" />
+      {% else %}
+        <div class="related-card-noimg">📝</div>
+      {% endif %}
+      <div class="related-card-body">
+        {% if art.category_name %}<div class="related-card-cat">{{ art.category_name }}</div>{% endif %}
+        <div class="related-card-title">{{ art.title }}</div>
+        {% if art.excerpt %}<div class="related-card-excerpt">{{ art.excerpt }}</div>{% endif %}
+        <div class="related-card-date">{{ art.published_at[:10] if art.published_at else '' }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- ── FOOTER LICENSE STRIP ── -->
+<div class="footer-license">
+  <div class="footer-license-inner">
+    <div class="footer-license-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z"/><polyline points="9 12 11 14 15 10"/></svg>
+    </div>
+    <div>
+      <div class="footer-license-title">{{ t('footer_license_title', lang) }}</div>
+      <p class="footer-license-text">{{ t('footer_license_p1', lang) }}</p>
+      <p class="footer-license-text">{{ t('footer_license_p2', lang) }}</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── FOOTER ── -->
+<footer class="footer">
+  <div class="footer-main">
+    <div class="footer-brand-col">
+      <a class="footer-logo" href="/">Trading<span>Bonus</span></a>
+      <p class="footer-desc">Cashback & rebate system for Forex & Gold traders — automatic daily payouts, completely free.</p>
+      <div class="footer-socials">
+        <a class="footer-social-btn" href="{{ ps.get('telegram_url') or '#' }}" {% if ps.get('telegram_url') %}target="_blank" rel="noopener"{% endif %} title="Telegram">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/></svg>
+        </a>
+        <a class="footer-social-btn" href="{{ ps.get('facebook_url') or '#' }}" {% if ps.get('facebook_url') %}target="_blank" rel="noopener"{% endif %} title="Facebook">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.791-4.697 4.533-4.697 1.313 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
+        </a>
+        <a class="footer-social-btn" href="{{ ps.get('youtube_url') or '#' }}" {% if ps.get('youtube_url') %}target="_blank" rel="noopener"{% endif %} title="YouTube">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>
+        </a>
+      </div>
+    </div>
+    <div>
+      <div class="footer-col-title">{{ t('footer_nav', lang) }}</div>
+      <ul class="footer-links">
+        <li><a href="/{% if lang == 'en' %}?lang=en{% endif %}">{{ t('nav_home', lang) }}</a></li>
+        <li><a href="/promotions{% if lang == 'en' %}?lang=en{% endif %}">{{ t('nav_promotions', lang) }}</a></li>
+        <li><a href="/#how">{{ t('footer_guide', lang) }}</a></li>
+        <li><a href="/brokers{% if lang == 'en' %}?lang=en{% endif %}">{{ t('nav_brokers', lang) }}</a></li>
+        <li><a href="/blog{% if lang == 'en' %}?lang=en{% endif %}">{{ t('footer_blog', lang) }}</a></li>
+        <li><a href="/about{% if lang == 'en' %}?lang=en{% endif %}">{{ t('nav_contact', lang) }}</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">{{ t('footer_account', lang) }}</div>
+      <ul class="footer-links">
+        <li><a href="/portal/login{% if lang == 'en' %}?lang=en{% endif %}">{{ t('footer_login', lang) }}</a></li>
+        <li><a href="/portal/login{% if lang == 'en' %}?lang=en{% endif %}">{{ t('footer_register', lang) }}</a></li>
+        <li><a href="/portal/dashboard">{{ t('footer_dashboard', lang) }}</a></li>
+        <li><a href="/portal/promotions{% if lang == 'en' %}?lang=en{% endif %}">{{ t('footer_rebate_prog', lang) }}</a></li>
+        <li><a href="/portal/forgot-password{% if lang == 'en' %}?lang=en{% endif %}">{{ t('footer_forgot_pw', lang) }}</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">{{ t('footer_contact', lang) }}</div>
+      <div class="footer-contact-item">
+        <div class="footer-contact-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>
+        </div>
+        <div class="footer-contact-text">
+          {{ t('footer_email_support', lang) }}<br>
+          <a href="mailto:{{ ps.get('support_email') or 'support@tradingbonushub.com' }}">{{ ps.get('support_email') or 'support@tradingbonushub.com' }}</a>
+        </div>
+      </div>
+      <div class="footer-contact-item">
+        <div class="footer-contact-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/></svg>
+        </div>
+        <div class="footer-contact-text">
+          {{ t('footer_tg_support', lang) }}<br>
+          <a href="{{ ps.get('telegram_url') or '#' }}" {% if ps.get('telegram_url') %}target="_blank" rel="noopener"{% endif %}>{{ t('footer_tg_cta', lang) }}</a>
+        </div>
+      </div>
+      <div class="footer-contact-item">
+        <div class="footer-contact-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        </div>
+        <div class="footer-contact-text">
+          {{ t('footer_address', lang) }}<br>
+          <span style="color:rgba(255,255,255,.55);">Toà M3 Masteri Waterfront, KĐT Vinhomes Ocean Park, Đa Tốn, Gia Lâm, Hà Nội</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <hr class="footer-divider">
+  <div class="footer-bottom">
+    <span class="footer-copy">{{ ps.get('footer_text') or '© 2026 TradingBonusHub. All rights reserved.' }}</span>
+    <nav class="footer-legal">
+      <a href="{{ ps.get('privacy_url') or '/privacy' }}{% if lang == 'en' %}{% if '?' in (ps.get('privacy_url') or '/privacy') %}&lang=en{% else %}?lang=en{% endif %}{% endif %}">{{ t('footer_privacy', lang) }}</a>
+      <a href="{{ ps.get('terms_url') or '/terms' }}{% if lang == 'en' %}{% if '?' in (ps.get('terms_url') or '/terms') %}&lang=en{% else %}?lang=en{% endif %}{% endif %}">{{ t('footer_terms', lang) }}</a>
+      <a href="/about{% if lang == 'en' %}?lang=en{% endif %}">{{ t('nav_contact', lang) }}</a>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>

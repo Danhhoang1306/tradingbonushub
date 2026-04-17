@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}Templates — Trading Bonus{% endblock %}
+{% block page_title %}Email Templates{% endblock %}
+
+{% block content %}
+<div class="flex-between">
+  <div></div>
+  <div style="display:flex;gap:10px;">
+    <button class="btn btn-secondary" onclick="document.getElementById('load-file-input').click()">
+      📂 Load from File
+    </button>
+    <input id="load-file-input" type="file" accept=".html,.htm"
+           style="display:none" onchange="loadFromFile(this)" />
+    <button class="btn btn-primary" onclick="showCreate()">+ New Template</button>
+  </div>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>Template Name</th>
+        <th>Created</th>
+        <th>Updated</th>
+        <th style="width:160px;"></th>
+      </tr>
+    </thead>
+    <tbody id="tbody">
+      <tr><td colspan="4" class="empty">Loading...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Create modal -->
+<div class="overlay" id="overlay" onclick="closeModal(event)">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h3>Create New Template</h3>
+      <button class="close-btn" onclick="closeModalDirect()">✕</button>
+    </div>
+    <div class="form-group">
+      <label>Template Name</label>
+      <input id="new-name" placeholder="e.g. March Newsletter" />
+    </div>
+    <div class="form-group">
+      <label>Start From</label>
+      <select id="new-source">
+        <option value="blank">Blank Page</option>
+        <option value="default">Default Template (email-with-button)</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px;">
+      <button class="btn btn-primary" onclick="createTemplate()">Create & Open Editor</button>
+      <button class="btn btn-secondary" onclick="closeModalDirect()">Cancel</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const DEFAULT_HTML = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Email</title></head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;">
+        <tr>
+          <td style="background:#1a73e8;padding:32px 40px;text-align:center;">
+            <h1 style="color:#fff;margin:0;font-size:24px;">Order Confirmation</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:40px;">
+            <p style="color:#333;font-size:16px;">Hello <strong>[Customer Name]</strong>,</p>
+            <p style="color:#555;font-size:15px;margin-top:12px;">
+              Order <strong>[Order ID]</strong> — Amount: <strong>[Amount]</strong>
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+async function load() {
+  const r = await fetch('/api/templates');
+  const data = await r.json();
+  const tbody = document.getElementById('tbody');
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty">No templates yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(t => `
+    <tr>
+      <td><strong>${esc(t.name)}</strong></td>
+      <td class="text-muted">${fmt(t.created_at)}</td>
+      <td class="text-muted">${fmt(t.updated_at)}</td>
+      <td>
+        <a href="/admin/templates/${t.id}/edit" class="btn btn-secondary btn-sm">✏️ Edit</a>
+        <button class="btn btn-danger btn-sm"
+          data-id="${t.id}" data-name="${esc(t.name)}"
+          onclick="delBtn(this)">🗑</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function createTemplate() {
+  const name = document.getElementById('new-name').value.trim();
+  if (!name) { alert('Enter template name!'); return; }
+  const source = document.getElementById('new-source').value;
+
+  let html = DEFAULT_HTML;
+  if (source === 'default') {
+    const res = await fetch('/email-with-button.html').catch(() => null);
+    // fall back: load via API trick — just use DEFAULT_HTML
+    // (static file not served, so we embed the default in create)
+    html = DEFAULT_HTML;
+  }
+
+  const r = await fetch('/api/templates', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ name, html_content: html }),
+  });
+  const d = await r.json();
+  window.location.href = `/admin/templates/${d.id}/edit`;
+}
+
+async function loadFromFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = '';   // reset so same file can be re-picked
+
+  const html = await file.text();
+  // Use filename (without extension) as template name
+  const name = file.name.replace(/\.[^.]+$/, '');
+
+  const r = await fetch('/api/templates', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, html_content: html }),
+  });
+  if (!r.ok) { alert('Error creating template'); return; }
+  const d = await r.json();
+  window.location.href = `/admin/templates/${d.id}/edit`;
+}
+
+function delBtn(btn) { del(btn.dataset.id, btn.dataset.name); }
+async function del(id, name) {
+  if (!confirm(`Delete template "${name}"?`)) return;
+  const r = await fetch(`/api/templates/${id}`, { method: 'DELETE' });
+  if (r.ok) { load(); }
+  else { const d = await r.json().catch(() => ({})); alert('❌ ' + (d.detail || 'Error deleting template')); }
+}
+
+function showCreate() { document.getElementById('overlay').classList.add('active'); }
+function closeModal(e) { if (e.target.id === 'overlay') closeModalDirect(); }
+function closeModalDirect() { document.getElementById('overlay').classList.remove('active'); }
+
+function fmt(iso) {
+  if (!iso) return '—';
+  return new Date(iso.endsWith('Z') ? iso : iso + 'Z')
+    .toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
+}
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+load();
+</script>
+{% endblock %}

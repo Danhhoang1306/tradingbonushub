@@ -1,0 +1,553 @@
+{% extends "base.html" %}
+{% block title %}My Wallet — TradingBonusHub{% endblock %}
+
+{% block head_style %}
+/* ── Wallet page ── */
+.wallet-back {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 13px; color: rgba(255,255,255,.4); text-decoration: none;
+  margin-bottom: 18px; transition: color .15s;
+}
+.wallet-back:hover { color: #f0c040; }
+.wallet-back svg { transition: transform .15s; }
+.wallet-back:hover svg { transform: translateX(-2px); }
+
+.wallet-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 28px; flex-wrap: wrap; gap: 16px;
+}
+.wallet-header h1 { font-size: 22px; font-weight: 700; margin: 0; }
+
+/* ── Balance card ── */
+.wallet-balance {
+  display: flex; align-items: stretch; gap: 0;
+  background: linear-gradient(135deg, #0d1b3e 0%, #162d50 50%, #0d1b3e 100%);
+  border: 1px solid rgba(240,192,64,.2); border-radius: 16px;
+  overflow: hidden; margin-bottom: 28px; position: relative;
+}
+.wallet-balance::before {
+  content: ''; position: absolute; top: -60px; right: -40px;
+  width: 180px; height: 180px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(240,192,64,.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+.wb-main { flex: 1; padding: 28px 32px; }
+.wb-label { font-size: 12px; color: rgba(255,255,255,.45); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+.wb-amount { font-size: 38px; font-weight: 800; color: #f0c040; line-height: 1.1; }
+.wb-amount .wb-currency { font-size: 15px; font-weight: 600; color: rgba(255,255,255,.35); margin-left: 6px; vertical-align: middle; }
+.wb-pending { font-size: 13px; color: rgba(255,255,255,.4); margin-top: 10px; }
+.wb-pending strong { color: rgba(255,193,7,.8); }
+.wb-action {
+  display: flex; align-items: center; padding: 0 32px;
+  border-left: 1px solid rgba(255,255,255,.06);
+}
+.btn-withdraw {
+  padding: 13px 30px; border-radius: 10px; font-size: 14px; font-weight: 700;
+  background: linear-gradient(135deg, #c8972a, #f0c040); color: #0d1b3e;
+  border: none; cursor: pointer; transition: all .2s; white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(240,192,64,.2);
+}
+.btn-withdraw:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(240,192,64,.3); }
+.btn-withdraw:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* ── Tabs ── */
+.wtabs-nav {
+  display: flex; gap: 0; border-bottom: 1px solid rgba(255,255,255,.1);
+  margin-bottom: 20px;
+}
+.wtab-btn {
+  padding: 11px 22px; border: none; background: none; cursor: pointer;
+  font-size: 13px; font-weight: 600; color: rgba(255,255,255,.45);
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: color .15s, border-color .15s;
+}
+.wtab-btn:hover { color: rgba(255,255,255,.75); }
+.wtab-btn.active { color: #f0c040; border-bottom-color: #f0c040; }
+.wtab-panel { display: none; }
+.wtab-panel.active { display: block; }
+
+/* ── Transaction list ── */
+.tx-list { display: flex; flex-direction: column; gap: 6px; }
+.tx-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 18px; background: rgba(255,255,255,.04); border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.06); transition: background .15s;
+}
+.tx-item:hover { background: rgba(255,255,255,.07); }
+.tx-left { display: flex; flex-direction: column; gap: 3px; }
+.tx-type { font-size: 13px; font-weight: 600; color: rgba(255,255,255,.85); }
+.tx-desc { font-size: 12px; color: rgba(255,255,255,.35); }
+.tx-date { font-size: 11px; color: rgba(255,255,255,.25); }
+.tx-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.tx-amount { font-size: 15px; font-weight: 700; }
+.tx-amount.credit { color: #4ade80; }
+.tx-amount.debit { color: #f87171; }
+.tx-status {
+  display: inline-block; padding: 2px 8px; border-radius: 10px;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px;
+}
+.tx-status-completed { background: rgba(74,222,128,.12); color: #4ade80; }
+.tx-status-pending   { background: rgba(255,193,7,.12); color: #ffc107; }
+
+/* ── Withdrawal list ── */
+.wr-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 18px; background: rgba(255,255,255,.04); border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.06); margin-bottom: 6px; transition: background .15s;
+}
+.wr-item:hover { background: rgba(255,255,255,.07); }
+.wr-left { display: flex; flex-direction: column; gap: 3px; }
+.wr-method { font-size: 13px; font-weight: 600; color: rgba(255,255,255,.85); }
+.wr-addr { font-size: 12px; color: rgba(255,255,255,.35); word-break: break-all; }
+.wr-date { font-size: 11px; color: rgba(255,255,255,.25); }
+.wr-right { text-align: right; }
+.wr-amount { font-size: 15px; font-weight: 700; color: #f0c040; }
+.wr-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; margin-top: 4px; text-transform: uppercase; letter-spacing: .3px; }
+.wr-badge-pending    { background: rgba(255,193,7,.12);  color: #ffc107; }
+.wr-badge-approved   { background: rgba(13,110,253,.12); color: #6ea8fe; }
+.wr-badge-processing { background: rgba(111,66,193,.12); color: #b08ef0; }
+.wr-badge-completed  { background: rgba(40,167,69,.12);  color: #66bb6a; }
+.wr-badge-rejected   { background: rgba(220,53,69,.12);  color: #f87171; }
+.wr-badge-cancelled  { background: rgba(108,117,125,.12); color: #adb5bd; }
+
+.btn-cancel-wr {
+  padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 600;
+  background: rgba(220,53,69,.1); color: #f87171; border: 1px solid rgba(220,53,69,.2);
+  cursor: pointer; margin-top: 5px; transition: background .15s;
+}
+.btn-cancel-wr:hover { background: rgba(220,53,69,.2); }
+
+/* ── Modal ── */
+.wd-modal-backdrop { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                     background: rgba(0,0,0,.65); z-index: 1000; align-items: center; justify-content: center; }
+.wd-modal-backdrop.active { display: flex !important; }
+.wd-modal {
+  background: linear-gradient(135deg, #0d1b3e, #162842);
+  border: 1px solid rgba(240,192,64,.2); border-radius: 16px;
+  padding: 32px; min-width: 380px; max-width: 480px; color: #fff;
+}
+.wd-modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 20px; color: #f0c040; }
+.wd-modal label { display: block; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.5); margin-bottom: 5px; margin-top: 14px; }
+.wd-modal input, .wd-modal select, .wd-modal textarea {
+  width: 100%; padding: 10px 12px; border-radius: 8px; font-size: 14px;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.15);
+  color: #fff; outline: none; transition: border-color .15s;
+}
+.wd-modal input:focus, .wd-modal select:focus { border-color: #f0c040; }
+.wd-modal select option { background: #0d1b3e; color: #fff; }
+.wd-modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+.btn-modal-cancel {
+  padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600;
+  background: rgba(255,255,255,.08); color: rgba(255,255,255,.6); border: none; cursor: pointer;
+  transition: background .15s;
+}
+.btn-modal-cancel:hover { background: rgba(255,255,255,.12); }
+.network-hint { font-size: 11px; color: rgba(255,255,255,.35); margin-top: 4px; }
+
+.empty-state { text-align: center; padding: 48px 20px; color: rgba(255,255,255,.3); font-size: 13px; }
+.empty-state .icon { font-size: 32px; margin-bottom: 8px; opacity: .6; }
+
+@media (max-width: 600px) {
+  .wallet-balance { flex-direction: column; }
+  .wb-action { border-left: none; border-top: 1px solid rgba(255,255,255,.06); padding: 16px 24px; justify-content: center; }
+  .wb-main { padding: 22px 24px; }
+  .wb-amount { font-size: 30px; }
+}
+{% endblock %}
+
+{% block content %}
+<div class="content">
+  <a href="/portal" class="wallet-back">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    Profile
+  </a>
+
+  <div class="wallet-header">
+    <h1>My Wallet</h1>
+  </div>
+
+  <div class="wallet-balance">
+    <div class="wb-main">
+      <div class="wb-label">Available Balance</div>
+      <div class="wb-amount" id="wBalance">$0.00<span class="wb-currency">USD</span></div>
+      <div class="wb-pending">Pending withdrawal: <strong id="wPending">$0.00</strong></div>
+    </div>
+    <div class="wb-action">
+      <button class="btn-withdraw" id="btnWithdraw" onclick="openWithdrawModal()">Withdraw</button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="wtabs-nav">
+    <button class="wtab-btn active" onclick="wSwitchTab('transactions', this)">Transaction History</button>
+    <button class="wtab-btn" onclick="wSwitchTab('withdrawals', this)">Withdrawal Requests</button>
+  </div>
+
+  <div id="wtab-transactions" class="wtab-panel active">
+    <div class="tx-list" id="txList">
+      <div class="empty-state"><div class="icon">📋</div>Loading...</div>
+    </div>
+  </div>
+
+  <div id="wtab-withdrawals" class="wtab-panel">
+    <div id="wrList">
+      <div class="empty-state"><div class="icon">📤</div>Loading...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Withdraw Modal -->
+<div class="wd-modal-backdrop" id="wdModal">
+  <div class="wd-modal">
+    <!-- Step 1: Withdrawal form -->
+    <div id="wdStep1">
+      <h3>Withdrawal Request</h3>
+      <label>Amount (USD)</label>
+      <input type="number" id="wdAmount" step="0.01" min="10" placeholder="Minimum $10" oninput="validateWdAmount()" />
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px;">
+        <span id="wdAmountError" style="font-size:12px;color:#f87171;display:none;"></span>
+        <span style="font-size:12px;color:rgba(255,255,255,.4);">Maximum: <strong id="wdMaxAmount" style="color:#f0c040;cursor:pointer;" onclick="fillMaxAmount()">$0.00</strong></span>
+      </div>
+
+      <label>Method</label>
+      <select id="wdMethod" onchange="toggleMethodFields()">
+        <option value="usdt_trc20">USDT (TRC20)</option>
+        <option value="usdt_erc20">USDT (ERC20)</option>
+        <option value="usdt_bep20">USDT (BEP20)</option>
+        <option value="btc">Bitcoin (BTC)</option>
+        <option value="eth">Ethereum (ETH)</option>
+        <option value="other_crypto">Other Crypto</option>
+      </select>
+
+      <div id="cryptoFields">
+        <label>Wallet Address</label>
+        <input type="text" id="wdAddress" placeholder="Enter receiving wallet address..." />
+        <div class="network-hint" id="networkHint">Network: TRC20 (Tron)</div>
+      </div>
+
+      <div id="bankFields" style="display:none;">
+        <label>Bank Information</label>
+        <textarea id="wdBankInfo" rows="3" placeholder="Bank name, account number, account holder name..."></textarea>
+      </div>
+
+      <div class="wd-modal-actions">
+        <button class="btn-modal-cancel" onclick="closeWithdrawModal()">Cancel</button>
+        <button class="btn-withdraw" id="wdNextBtn" onclick="goToOtpStep()">Continue</button>
+      </div>
+    </div>
+
+    <!-- Step 2: OTP verification -->
+    <div id="wdStep2" style="display:none;">
+      <h3>Security Confirmation</h3>
+      <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:6px;">
+        A 6-digit verification code has been sent to <strong style="color:#f0c040;">{{ customer_email }}</strong>
+      </p>
+
+      <div id="wdOtpSummary" style="background:rgba(255,255,255,.04);border-radius:10px;padding:14px 18px;margin:16px 0;border:1px solid rgba(255,255,255,.08);">
+      </div>
+
+      <label>Verification Code</label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" id="wdOtpCode" maxlength="6" inputmode="numeric" pattern="[0-9]*"
+               placeholder="Enter 6 digits"
+               style="font-size:24px;font-weight:800;letter-spacing:8px;text-align:center;max-width:220px;" />
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+        <span id="wdOtpError" style="font-size:12px;color:#f87171;display:none;"></span>
+        <span id="wdOtpTimer" style="font-size:12px;color:rgba(255,255,255,.35);"></span>
+      </div>
+      <div style="margin-top:8px;">
+        <button id="wdResendBtn" onclick="resendOtp()" style="background:none;border:none;color:#f0c040;font-size:13px;cursor:pointer;padding:0;font-weight:600;text-decoration:underline;" disabled>
+          Resend code
+        </button>
+        <span id="wdResendTimer" style="font-size:12px;color:rgba(255,255,255,.35);margin-left:8px;"></span>
+      </div>
+
+      <div class="wd-modal-actions">
+        <button class="btn-modal-cancel" onclick="backToStep1()">Go Back</button>
+        <button class="btn-withdraw" id="wdSubmitBtn" onclick="submitWithdrawal()">Confirm Withdrawal</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/api/wallet';
+let walletData = null;
+
+function fmt(n) { return '$' + Number(n||0).toFixed(2); }
+function fmtDate(d) { return d ? new Date(d).toLocaleString('en') : ''; }
+
+function wSwitchTab(id, btn) {
+  document.querySelectorAll('.wtab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.wtab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('wtab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+const txTypeLabels = {
+  rebate_credit: 'Rebate Commission',
+  bonus_credit: 'Bonus Credit',
+  manual_credit: 'Manual Credit',
+  withdrawal: 'Withdrawal',
+  manual_debit: 'Manual Debit',
+  adjustment: 'Adjustment',
+};
+
+const statusLabels = {
+  completed: 'Completed',
+  pending: 'Pending',
+};
+
+const methodLabels = {
+  bank_transfer: 'Bank Transfer',
+  usdt_trc20: 'USDT (TRC20)', usdt_erc20: 'USDT (ERC20)', usdt_bep20: 'USDT (BEP20)',
+  btc: 'Bitcoin', eth: 'Ethereum', other_crypto: 'Other Crypto',
+};
+
+async function loadWallet() {
+  const r = await fetch(API + '/me');
+  const d = await r.json();
+  walletData = d.wallet;
+  document.getElementById('wBalance').innerHTML = fmt(walletData.balance) + '<span class="wb-currency">USD</span>';
+  document.getElementById('wPending').textContent = fmt(walletData.pending_balance);
+  document.getElementById('btnWithdraw').disabled = parseFloat(walletData.balance) < 10;
+
+  // Withdrawals
+  const wrList = document.getElementById('wrList');
+  if (!d.withdrawals.length) {
+    wrList.innerHTML = '<div class="empty-state"><div class="icon">\ud83d\udce4</div>No withdrawal requests yet</div>';
+  } else {
+    wrList.innerHTML = d.withdrawals.map(w => `
+      <div class="wr-item">
+        <div class="wr-left">
+          <div class="wr-method">${methodLabels[w.method]||w.method}</div>
+          <div class="wr-addr">${w.wallet_address || w.bank_info || ''}</div>
+          <div class="wr-date">${fmtDate(w.created_at)}</div>
+        </div>
+        <div class="wr-right">
+          <div class="wr-amount">${fmt(w.amount)}</div>
+          <div class="wr-badge wr-badge-${w.status}">${w.status}</div>
+          ${w.status === 'pending' ? `<button class="btn-cancel-wr" onclick="cancelWr(${w.id})">Cancel</button>` : ''}
+          ${w.tx_hash ? `<div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:4px;">TX: ${w.tx_hash.substring(0,16)}...</div>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+async function loadTransactions() {
+  const r = await fetch(API + '/me/transactions');
+  const data = await r.json();
+  const el = document.getElementById('txList');
+  if (!data.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">\ud83d\udccb</div>No transactions yet</div>';
+    return;
+  }
+  el.innerHTML = data.map(tx => {
+    const isCredit = parseFloat(tx.amount) > 0;
+    const statusCls = tx.status === 'completed' ? 'tx-status-completed' : 'tx-status-pending';
+    return `<div class="tx-item">
+      <div class="tx-left">
+        <div class="tx-type">${txTypeLabels[tx.tx_type] || tx.tx_type}</div>
+        <div class="tx-desc">${tx.description || ''}</div>
+        <div class="tx-date">${fmtDate(tx.created_at)}</div>
+      </div>
+      <div class="tx-right">
+        <div class="tx-amount ${isCredit ? 'credit' : 'debit'}">${isCredit ? '+' : ''}${fmt(Math.abs(tx.amount))}</div>
+        <span class="tx-status ${statusCls}">${statusLabels[tx.status] || tx.status}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+let otpCountdown = null;
+let resendCountdown = null;
+
+function openWithdrawModal() {
+  const bal = parseFloat(walletData.balance || 0);
+  document.getElementById('wdAmount').max = bal;
+  document.getElementById('wdMaxAmount').textContent = '$' + bal.toFixed(2);
+  document.getElementById('wdAmount').value = '';
+  document.getElementById('wdAmountError').style.display = 'none';
+  document.getElementById('wdStep1').style.display = '';
+  document.getElementById('wdStep2').style.display = 'none';
+  document.getElementById('wdModal').classList.add('active');
+  toggleMethodFields();
+}
+function closeWithdrawModal() {
+  document.getElementById('wdModal').classList.remove('active');
+  clearInterval(otpCountdown); clearInterval(resendCountdown);
+}
+
+function validateWdAmount() {
+  const input = document.getElementById('wdAmount');
+  const err = document.getElementById('wdAmountError');
+  const amount = parseFloat(input.value);
+  const bal = parseFloat(walletData.balance || 0);
+  if (!input.value) { err.style.display = 'none'; return; }
+  if (amount < 10) { err.textContent = 'Minimum $10'; err.style.display = ''; }
+  else if (amount > bal) { err.textContent = 'Exceeds available balance ($' + bal.toFixed(2) + ')'; err.style.display = ''; }
+  else { err.style.display = 'none'; }
+}
+
+function fillMaxAmount() {
+  const bal = parseFloat(walletData.balance || 0);
+  document.getElementById('wdAmount').value = bal.toFixed(2);
+  validateWdAmount();
+}
+
+function validateStep1() {
+  const amount = parseFloat(document.getElementById('wdAmount').value);
+  const bal = parseFloat(walletData.balance || 0);
+  const method = document.getElementById('wdMethod').value;
+  const isBank = method === 'bank_transfer';
+  if (!amount || amount < 10) { alert('Minimum amount is $10'); return false; }
+  if (amount > bal) { alert('Amount exceeds available balance ($' + bal.toFixed(2) + ')'); return false; }
+  if (!isBank && !document.getElementById('wdAddress').value.trim()) { alert('Please enter wallet address'); return false; }
+  if (isBank && !document.getElementById('wdBankInfo').value.trim()) { alert('Please enter bank information'); return false; }
+  return true;
+}
+
+async function goToOtpStep() {
+  if (!validateStep1()) return;
+  const btn = document.getElementById('wdNextBtn');
+  btn.disabled = true; btn.textContent = 'Sending code...';
+  try {
+    const r = await fetch(API + '/me/withdraw/send-otp', { method: 'POST' });
+    const d = await r.json();
+    if (!r.ok) { alert(d.detail || 'Error sending code'); return; }
+
+    const amount = parseFloat(document.getElementById('wdAmount').value);
+    const method = document.getElementById('wdMethod').value;
+    document.getElementById('wdOtpSummary').innerHTML =
+      `<div style="font-size:13px;color:rgba(255,255,255,.6);">Withdraw <strong style="color:#f0c040;">${fmt(amount)}</strong> via <strong style="color:#fff;">${methodLabels[method]||method}</strong></div>`;
+    document.getElementById('wdOtpCode').value = '';
+    document.getElementById('wdOtpError').style.display = 'none';
+    document.getElementById('wdStep1').style.display = 'none';
+    document.getElementById('wdStep2').style.display = '';
+
+    startOtpTimer(d.expires_in || 300);
+    startResendCooldown(60);
+    document.getElementById('wdOtpCode').focus();
+  } finally { btn.disabled = false; btn.textContent = 'Continue'; }
+}
+
+function backToStep1() {
+  document.getElementById('wdStep1').style.display = '';
+  document.getElementById('wdStep2').style.display = 'none';
+  clearInterval(otpCountdown); clearInterval(resendCountdown);
+}
+
+function startOtpTimer(seconds) {
+  clearInterval(otpCountdown);
+  let remaining = seconds;
+  const el = document.getElementById('wdOtpTimer');
+  const tick = () => {
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    el.textContent = `Code expires in ${m}:${s.toString().padStart(2,'0')}`;
+    if (remaining <= 0) { el.textContent = 'Code has expired'; clearInterval(otpCountdown); }
+    remaining--;
+  };
+  tick();
+  otpCountdown = setInterval(tick, 1000);
+}
+
+function startResendCooldown(seconds) {
+  clearInterval(resendCountdown);
+  const btn = document.getElementById('wdResendBtn');
+  const timerEl = document.getElementById('wdResendTimer');
+  let remaining = seconds;
+  btn.disabled = true;
+  const tick = () => {
+    if (remaining <= 0) {
+      btn.disabled = false; timerEl.textContent = '';
+      clearInterval(resendCountdown);
+    } else {
+      timerEl.textContent = `(${remaining}s)`;
+    }
+    remaining--;
+  };
+  tick();
+  resendCountdown = setInterval(tick, 1000);
+}
+
+async function resendOtp() {
+  const btn = document.getElementById('wdResendBtn');
+  btn.disabled = true; btn.textContent = 'Sending...';
+  try {
+    const r = await fetch(API + '/me/withdraw/send-otp', { method: 'POST' });
+    const d = await r.json();
+    if (!r.ok) { alert(d.detail || 'Error sending code'); return; }
+    document.getElementById('wdOtpCode').value = '';
+    document.getElementById('wdOtpError').style.display = 'none';
+    startOtpTimer(d.expires_in || 300);
+    startResendCooldown(60);
+  } finally { btn.textContent = 'Resend code'; }
+}
+
+function toggleMethodFields() {
+  const method = document.getElementById('wdMethod').value;
+  const isBank = method === 'bank_transfer';
+  document.getElementById('cryptoFields').style.display = isBank ? 'none' : '';
+  document.getElementById('bankFields').style.display = isBank ? '' : 'none';
+  const hints = {
+    usdt_trc20: 'Network: TRC20 (Tron)', usdt_erc20: 'Network: ERC20 (Ethereum)',
+    usdt_bep20: 'Network: BEP20 (BSC)', btc: 'Network: Bitcoin',
+    eth: 'Network: Ethereum', other_crypto: 'Enter correct wallet address',
+  };
+  document.getElementById('networkHint').textContent = hints[method] || '';
+}
+
+async function submitWithdrawal() {
+  const btn = document.getElementById('wdSubmitBtn');
+  const otpCode = document.getElementById('wdOtpCode').value.trim();
+  const otpErr = document.getElementById('wdOtpError');
+
+  if (!otpCode || otpCode.length !== 6 || !/^\d{6}$/.test(otpCode)) {
+    otpErr.textContent = 'Please enter all 6 digits'; otpErr.style.display = '';
+    return;
+  }
+
+  const method = document.getElementById('wdMethod').value;
+  const amount = parseFloat(document.getElementById('wdAmount').value);
+  const isBank = method === 'bank_transfer';
+  const address = isBank ? null : document.getElementById('wdAddress').value.trim();
+  const bankInfo = isBank ? document.getElementById('wdBankInfo').value.trim() : null;
+
+  btn.disabled = true; btn.textContent = 'Processing...';
+  otpErr.style.display = 'none';
+  try {
+    const r = await fetch(API + '/me/withdraw', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        amount, method,
+        wallet_address: address,
+        wallet_network: method,
+        bank_info: bankInfo,
+        otp_code: otpCode,
+      })
+    });
+    const d = await r.json();
+    if (!r.ok) {
+      otpErr.textContent = d.detail || 'Error'; otpErr.style.display = '';
+      return;
+    }
+    closeWithdrawModal();
+    loadWallet(); loadTransactions();
+  } finally { btn.disabled = false; btn.textContent = 'Confirm Withdrawal'; }
+}
+
+async function cancelWr(id) {
+  if (!confirm('Are you sure you want to cancel this withdrawal request?')) return;
+  const r = await fetch(API + '/me/withdraw/' + id + '/cancel', { method: 'POST' });
+  const d = await r.json();
+  if (!r.ok) { alert(d.detail || 'Error'); return; }
+  loadWallet(); loadTransactions();
+}
+
+// Init
+loadWallet(); loadTransactions();
+</script>
+{% endblock %}

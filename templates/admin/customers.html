@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+{% block title %}Customers — Trading Bonus{% endblock %}
+{% block page_title %}Manage Customers{% endblock %}
+
+{% block head %}
+<style>
+  .broker-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+  .broker-tab { background:#f1f3f4; border:1px solid #ddd; border-radius:20px; padding:6px 16px; font-size:13px; cursor:pointer; color:#555; transition:all .15s; }
+  .broker-tab.active { background:#1a73e8; border-color:#1a73e8; color:#fff; font-weight:700; }
+  .broker-tab:hover:not(.active) { background:#e8f0fe; border-color:#aac4f0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Create New Account -->
+<div class="card" style="max-width:640px;">
+  <h2>Grant Customer Access</h2>
+  <p style="font-size:13px;color:#555;margin-bottom:14px;">
+    Enter the customer's email. The system will auto-generate a 4-digit password and send it via email.
+  </p>
+  <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+    <div class="form-group" style="margin:0;flex:1;min-width:200px;">
+      <label>Customer Email</label>
+      <input id="new-email" type="email" placeholder="khachhang@example.com" />
+    </div>
+    <div class="form-group" style="margin:0;width:150px;">
+      <label>Vantage UID</label>
+      <input id="new-uid" type="text" placeholder="VD: 8599860" />
+    </div>
+    <button id="btn-add" class="btn btn-primary btn-sm" onclick="addCustomer()" style="margin-bottom:1px;">+ Grant Access</button>
+  </div>
+  <div id="add-msg" style="margin-top:10px;font-size:13px;"></div>
+</div>
+
+
+<!-- ── Import Client Folder ──────────────────────────────────────────────────── -->
+<div class="card">
+  <h2>Import Customer List from Broker Folder</h2>
+
+  <!-- Broker selector -->
+  <div class="broker-tabs" id="client-broker-tabs">
+    <button class="broker-tab active" onclick="switchClientBroker('vantage', this)">🏦 Vantage</button>
+    <button class="broker-tab" onclick="switchClientBroker('exness', this)">📊 Exness</button>
+    <button class="broker-tab" onclick="switchClientBroker('ec', this)">📈 EC</button>
+    <button class="broker-tab" onclick="switchClientBroker('vt-market', this)">🔷 VT Market</button>
+    <button class="broker-tab" onclick="switchClientBroker('dupoin', this)">💎 Dupoin</button>
+  </div>
+
+  <!-- Broker info -->
+  <div id="client-broker-info" style="background:#e8f4fd;border-left:4px solid #1a73e8;padding:10px 14px;border-radius:4px;font-size:13px;margin-bottom:14px;"></div>
+
+  <div id="client-drop-zone" onclick="document.getElementById('client-folder-input').click()"
+    ondragover="event.preventDefault()" ondrop="event.preventDefault();onClientFilesSelected(event.dataTransfer.files)"
+    style="border:2px dashed #ccc;border-radius:10px;padding:28px;text-align:center;cursor:pointer;margin-bottom:14px;transition:border-color .2s;"
+    onmouseenter="this.style.borderColor='#c8972a'" onmouseleave="this.style.borderColor='#ccc'">
+    <div style="font-size:28px;margin-bottom:6px;">📂</div>
+    <div style="font-size:14px;font-weight:600;color:#555;">Click or drag & drop folder here</div>
+    <div id="client-file-count" style="font-size:12px;color:#888;margin-top:6px;">No files selected</div>
+    <input id="client-folder-input" type="file" multiple accept=".csv"
+           webkitdirectory style="display:none" onchange="onClientFilesSelected(this.files)">
+  </div>
+
+  <button id="btn-process-client" class="btn btn-secondary" onclick="processClientFolder()" disabled>
+    ⚙️ Process &amp; Preview
+  </button>
+  <span id="client-process-msg" style="font-size:13px;margin-left:12px;"></span>
+</div>
+
+<!-- ── Client Preview Card ───────────────────────────────────────────────────── -->
+<div id="client-preview-card" class="card" style="display:none;">
+  <h2>Preview — Import Customers</h2>
+
+  <div id="client-stats" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;"></div>
+
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;font-size:12px;">
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#d4edda;border:1px solid #28a745;"></span> Matched by Email</span>
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#fff3cd;border:1px solid #ffc107;"></span> Matched by UID</span>
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#cce5ff;border:1px solid #004085;"></span> New Customer</span>
+  </div>
+
+  <div style="overflow-x:auto;">
+  <table id="client-preview-table" style="min-width:900px;font-size:13px;">
+    <thead>
+      <tr>
+        <th>UID</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>IB Name</th>
+        <th>AFFID</th>
+        <th>Country</th>
+        <th>MT5 Accounts</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="client-preview-body"></tbody>
+  </table>
+  </div>
+
+  <div style="margin-top:20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+    <button class="btn btn-primary" onclick="confirmClientBatch()">✅ Confirm Create/Update Customers</button>
+    <button class="btn btn-secondary" onclick="resetClientPreview()">Cancel / Re-select</button>
+    <span id="client-confirm-msg" style="font-size:13px;"></span>
+  </div>
+</div>
+
+<!-- Link sang CRM -->
+<div class="card" style="background:linear-gradient(135deg,#1a1a2e,#2a2a4e);color:#fff;border:none;">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+    <div>
+      <h2 style="margin:0;color:#fff;">CRM Management</h2>
+      <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,.65);">
+        Imported data from Vantage → goes to <strong>Leads</strong>. After admin approves enrollment → automatically becomes <strong>Client</strong>.
+      </p>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <a href="/api/customers/export" class="btn btn-secondary btn-sm" download>📥 Export Excel</a>
+      <a href="/admin/leads" class="btn btn-secondary btn-sm">🎯 Leads CRM →</a>
+      <a href="/admin/crm" class="btn btn-primary btn-sm">👥 Clients CRM →</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function addCustomer() {
+  const emailEl = document.getElementById('new-email');
+  const uidEl   = document.getElementById('new-uid');
+  const btn = document.getElementById('btn-add');
+  const msg = document.getElementById('add-msg');
+  const email = emailEl.value.trim();
+  const uid   = uidEl ? uidEl.value.trim() : '';
+  if (!email) { msg.style.color='#c5221f'; msg.textContent='Enter email!'; return; }
+  emailEl.value = '';        // Clear immediately to prevent double submit
+  if (uidEl) uidEl.value = '';
+  btn.disabled = true;
+  btn.textContent = 'Processing...';
+  msg.style.color = '#555';
+  msg.textContent = '⏳ Creating account and sending email...';
+  try {
+    const r = await fetch('/api/customers', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ email, vantage_uid: uid || null }),
+    });
+    const d = await r.json();
+    if (r.ok) {
+      if (d.email_sent) {
+        msg.style.color = '#137333';
+        msg.innerHTML = `✅ Account created. Email is being sent to <strong>${esc(email)}</strong>.<br>
+          Temp password: <strong>${esc(d.temp_password)}</strong>`;
+      } else {
+        msg.style.color = '#e37400';
+        msg.innerHTML = `✅ Account created but <strong>email could not be sent</strong>
+          ${d.email_error ? `<span style="font-size:12px;color:#888;">(${esc(d.email_error)})</span>` : ''}.<br>
+          Temp password: <strong>${esc(d.temp_password)}</strong> — please notify the customer manually.`;
+      }
+    } else {
+      msg.style.color = '#c5221f';
+      msg.textContent = '❌ ' + (d.detail || 'Error');
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '+ Grant Access';
+  }
+}
+
+function fmt(iso) {
+  if (!iso) return '—';
+  return new Date(iso.endsWith('Z') ? iso : iso + 'Z')
+    .toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
+}
+function esc(s) { return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmt2(n) { return (+(n||0)).toFixed(2); }
+
+// ── Client folder import ──────────────────────────────────────────────────────
+let _clientFiles = [];
+let _clientPreviewData = null;
+let _currentClientBroker = 'vantage';
+
+const _brokerInfo = {
+  'vantage':   '🏦 <b>Vantage</b> — CSV export from Vantage CRM (<code>table_export_*.csv</code>). Columns used: <b>Sales</b> (User ID), <b>Client Name (IPT)</b> (IB), <b>Client Name (EN)</b> (customer name), <b>Account</b> (email), <b>Register Date</b> (country), <b>Update Date</b> (MT5 account), <b>IB Campaign Source</b> (account type).',
+  'exness':    '📊 <b>Exness</b> — CSV export from Exness Partner Portal. Matched by Email.',
+  'ec':        '📈 <b>EC</b> — CSV export from EC Markets. Matched by Email.',
+  'vt-market': '🔷 <b>VT Market</b> — CSV export from VT Markets. Matched by Email.',
+  'dupoin':    '💎 <b>Dupoin</b> — CSV export from Dupoin. Matched by Email.',
+};
+
+function switchClientBroker(slug, el) {
+  _currentClientBroker = slug;
+  document.querySelectorAll('#client-broker-tabs .broker-tab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('client-broker-info').innerHTML = _brokerInfo[slug] || slug;
+  resetClientPreview();
+}
+
+// Init broker info on load
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('client-broker-info').innerHTML = _brokerInfo['vantage'];
+});
+
+function onClientFilesSelected(fileList) {
+  _clientFiles = Array.from(fileList).filter(f => /\.csv$/i.test(f.name));
+  const cnt = document.getElementById('client-file-count');
+  const btn = document.getElementById('btn-process-client');
+  if (_clientFiles.length) {
+    cnt.textContent = `Selected ${_clientFiles.length} CSV files`;
+    btn.disabled = false;
+  } else {
+    cnt.textContent = 'No files selected';
+    btn.disabled = true;
+  }
+}
+
+async function processClientFolder() {
+  const btn = document.getElementById('btn-process-client');
+  const msg = document.getElementById('client-process-msg');
+  if (!_clientFiles.length) return;
+  btn.disabled = true; btn.textContent = '⏳ Processing...';
+  msg.textContent = '';
+  const form = new FormData();
+  _clientFiles.forEach(f => form.append('files', f));
+  form.append('broker', _currentClientBroker);
+  try {
+    const r    = await fetch('/api/customers/process-client-folder', { method: 'POST', body: form });
+    const data = await r.json();
+    if (!r.ok) { msg.style.color='#c5221f'; msg.textContent = '❌ ' + (data.detail||'Error'); return; }
+    _clientPreviewData = data;
+    renderClientPreview(data);
+    msg.style.color = '#137333';
+    msg.textContent = `✅ Processed ${data.files_processed} files — ${data.rows.length} customers`;
+  } catch(e) {
+    msg.style.color = '#c5221f'; msg.textContent = '❌ ' + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = '⚙️ Process & Preview';
+  }
+}
+
+function renderClientPreview(data) {
+  const s = data.stats;
+  document.getElementById('client-stats').innerHTML = `
+    <div style="background:#f8f9fa;border-radius:8px;padding:12px 18px;min-width:120px;">
+      <div style="font-size:11px;color:#888;text-transform:uppercase;margin-bottom:2px;">Files</div>
+      <div style="font-size:22px;font-weight:800;">${data.files_processed}</div></div>
+    <div style="background:#f8f9fa;border-radius:8px;padding:12px 18px;min-width:120px;">
+      <div style="font-size:11px;color:#888;text-transform:uppercase;margin-bottom:2px;">Total</div>
+      <div style="font-size:22px;font-weight:800;">${s.total_rows}</div></div>
+    <div style="background:#d4edda;border-radius:8px;padding:12px 18px;min-width:120px;">
+      <div style="font-size:11px;color:#155724;text-transform:uppercase;margin-bottom:2px;">Email Match</div>
+      <div style="font-size:22px;font-weight:800;color:#155724;">${s.matched_by_email}</div></div>
+    <div style="background:#fff3cd;border-radius:8px;padding:12px 18px;min-width:120px;">
+      <div style="font-size:11px;color:#856404;text-transform:uppercase;margin-bottom:2px;">UID Match</div>
+      <div style="font-size:22px;font-weight:800;color:#856404;">${s.matched_by_use_id}</div></div>
+    <div style="background:#cce5ff;border-radius:8px;padding:12px 18px;min-width:120px;">
+      <div style="font-size:11px;color:#004085;text-transform:uppercase;margin-bottom:2px;">New Customers</div>
+      <div style="font-size:22px;font-weight:800;color:#004085;">${s.new_accounts}</div></div>
+    <div style="background:#f8f9fa;border-radius:8px;padding:12px 18px;min-width:120px;">
+      <div style="font-size:11px;color:#888;text-transform:uppercase;margin-bottom:2px;">Total MT5</div>
+      <div style="font-size:22px;font-weight:800;">${s.total_mt5}</div></div>
+  `;
+
+  const matchBadge = m => m === 'email'
+    ? '<span style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Email</span>'
+    : m === 'uid'
+    ? '<span style="background:#fff3cd;color:#856404;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">UID</span>'
+    : '<span style="background:#cce5ff;color:#004085;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">New</span>';
+
+  const mt5Badges = arr => (arr||[]).map(m =>
+    `<span style="background:#e8f0fe;color:#1558b0;padding:1px 6px;border-radius:8px;font-size:11px;font-family:monospace;margin:1px;">${esc(m)}</span>`
+  ).join(' ') || '<span style="color:#bbb;">—</span>';
+
+  document.getElementById('client-preview-body').innerHTML = data.rows.map(r => {
+    const bg = r.match_type === 'email' ? 'background:#f0fff4;'
+             : r.match_type === 'uid'   ? 'background:#fffdf0;'
+             : 'background:#f0f8ff;';
+    return `<tr style="${bg}">
+      <td style="font-family:monospace;font-size:12px;color:#555;">${esc(r.use_id||'—')}</td>
+      <td>${esc(r.client_name||'—')}</td>
+      <td style="font-size:12px;">${esc(r.broker_email||'—')}</td>
+      <td style="font-size:12px;color:#555;">${esc(r.ib_name||'—')}</td>
+      <td style="font-family:monospace;font-size:12px;">${esc(r.ib_number||'—')}</td>
+      <td style="font-size:12px;">${esc(r.country||'—')}</td>
+      <td style="max-width:220px;">${mt5Badges(r.mt5_accounts)}</td>
+      <td>${matchBadge(r.match_type)}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('client-preview-card').style.display = 'block';
+  document.getElementById('client-preview-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function confirmClientBatch() {
+  if (!_clientPreviewData) return;
+  const btn = document.querySelector('#client-preview-card .btn-primary');
+  const msg = document.getElementById('client-confirm-msg');
+  btn.disabled = true; btn.textContent = '⏳ Saving...';
+  msg.textContent = '';
+  try {
+    const r    = await fetch('/api/customers/confirm-client-batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rows: _clientPreviewData.rows, broker: _currentClientBroker }),
+    });
+    const data = await r.json();
+    if (!r.ok) { msg.style.color='#c5221f'; msg.textContent='❌ '+(data.detail||'Error'); return; }
+    msg.style.color = '#137333';
+    msg.innerHTML = `✅ Saved <b>${data.upserted}</b> customers — MT5 linked: <b>${data.mt5_linked}</b>`;
+    if (data.created_passwords && data.created_passwords.length) {
+      const list = data.created_passwords.map(p => `${esc(p.email)}: <b>${esc(p.temp_password)}</b>`).join('<br>');
+      msg.innerHTML += `<br><span style="font-size:12px;color:#555;">Temp passwords for new customers:<br>${list}</span>`;
+    }
+    resetClientPreview();
+  } catch(e) {
+    msg.style.color = '#c5221f'; msg.textContent = '❌ ' + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = '✅ Confirm Create/Update Customers';
+  }
+}
+
+function resetClientPreview() {
+  _clientFiles = [];
+  _clientPreviewData = null;
+  document.getElementById('client-file-count').textContent = 'No files selected';
+  document.getElementById('btn-process-client').disabled = true;
+  document.getElementById('client-process-msg').textContent = '';
+  document.getElementById('client-preview-card').style.display = 'none';
+  document.getElementById('client-folder-input').value = '';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Two-Factor Authentication — Trading Bonus</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .login-wrap { width: 100%; max-width: 400px; padding: 16px; }
+    .logo { text-align: center; font-size: 22px; font-weight: 700; color: #1a1f2e; margin-bottom: 28px; }
+    .logo span { color: #1a73e8; }
+    .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.1); padding: 36px 32px; }
+    h2 { font-size: 18px; color: #1a1f2e; margin-bottom: 8px; text-align: center; }
+    .subtitle { font-size: 13px; color: #666; text-align: center; margin-bottom: 24px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; color: #555; margin-bottom: 6px; font-weight: 600; }
+    .form-group input {
+      width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 7px;
+      font-size: 18px; text-align: center; letter-spacing: 8px; outline: none;
+    }
+    .form-group input:focus { border-color: #1a73e8; }
+    .btn-login {
+      width: 100%; padding: 11px; background: #1a73e8; color: #fff; border: none;
+      border-radius: 7px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 8px;
+    }
+    .btn-login:hover { background: #1558b0; }
+    .error { background: #fce8e6; color: #c5221f; border-radius: 6px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; text-align: center; }
+  </style>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="logo">Trading<span>BonusHub</span></div>
+  <div class="card">
+    <h2>Two-Factor Authentication</h2>
+    <p class="subtitle">Enter the 6-digit code from your authenticator app</p>
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+    <form method="post" action="/admin/totp-verify">
+      {{ csrf_input(request) }}
+      <div class="form-group">
+        <label>Authentication Code</label>
+        <input type="text" name="code" maxlength="6" pattern="[0-9]{6}" inputmode="numeric"
+               autocomplete="one-time-code" required autofocus placeholder="000000" />
+      </div>
+      <button type="submit" class="btn-login">Verify</button>
+    </form>
+  </div>
+</div>
+</body>
+</html>

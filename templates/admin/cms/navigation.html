@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}CMS — Navigation{% endblock %}
+{% block page_title %}🧭 Menu Management{% endblock %}
+
+{% block head %}
+<style>
+  .menu-tabs { display:flex; gap:0; margin-bottom:20px; border-bottom:2px solid #e0e0e0; }
+  .menu-tab {
+    padding:9px 22px; cursor:pointer; font-size:13px; font-weight:700;
+    color:#666; border:none; background:none; border-bottom:3px solid transparent;
+    margin-bottom:-2px;
+  }
+  .menu-tab.active { color:#1a73e8; border-bottom-color:#1a73e8; }
+
+  .nav-list { list-style:none; padding:0; }
+  .nav-item {
+    display:flex; align-items:center; gap:10px; padding:10px 12px;
+    background:#fff; border:1px solid #e8e8e8; border-radius:6px;
+    margin-bottom:6px;
+  }
+  .nav-item .drag-handle { cursor:grab; color:#bbb; font-size:16px; }
+  .nav-item .label { flex:1; font-size:14px; font-weight:600; }
+  .nav-item .url { font-size:12px; color:#888; font-family:monospace; }
+  .nav-item .badge-inactive { background:#fce8e6; color:#c5221f; font-size:11px; padding:2px 7px; border-radius:10px; }
+
+  .add-form { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px; }
+  .add-form .span2 { grid-column:1/-1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="menu-tabs">
+  <button class="menu-tab active" onclick="switchMenu('public_header',this)">🌐 Public Header</button>
+  <button class="menu-tab" onclick="switchMenu('public_footer',this)">📋 Public Footer</button>
+  <button class="menu-tab" onclick="switchMenu('portal_header',this)">🔐 Portal header</button>
+</div>
+
+<div class="card">
+  <div class="flex-between">
+    <strong id="menuLabel" style="font-size:14px;">Menu: public_header</strong>
+    <span style="font-size:12px;color:#aaa;">Drag to reorder</span>
+  </div>
+  <ul class="nav-list" id="navList">
+    <li class="empty">Loading...</li>
+  </ul>
+  <button class="btn btn-secondary btn-sm" style="margin-top:12px;" onclick="toggleAddForm()">+ Add Item</button>
+</div>
+
+<!-- Add / edit form -->
+<div class="card" id="addFormCard" style="display:none;">
+  <h2 id="formTitle">Add Menu Item</h2>
+  <div class="add-form">
+    <div class="form-group">
+      <label>Label *</label>
+      <input type="text" id="fLabel" placeholder="Display name">
+    </div>
+    <div class="form-group">
+      <label>URL *</label>
+      <input type="text" id="fUrl" placeholder="/blog or https://...">
+    </div>
+    <div class="form-group">
+      <label>Open In</label>
+      <select id="fTarget">
+        <option value="_self">Same Tab</option>
+        <option value="_blank">New Tab</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Order</label>
+      <input type="number" id="fOrder" value="0">
+    </div>
+    <div class="form-group">
+      <label>Visible</label>
+      <select id="fActive">
+        <option value="1">Yes</option>
+        <option value="0">No</option>
+      </select>
+    </div>
+    <div class="form-group span2" style="display:flex;gap:10px;align-items:flex-end;">
+      <button class="btn btn-primary" onclick="saveItem()">Save</button>
+      <button class="btn btn-secondary" onclick="cancelEdit()">Cancel</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let _menu = 'public_header', _editId = null;
+
+async function load() {
+  const ul = document.getElementById('navList');
+  try {
+    const res  = await fetch('/api/cms/nav?menu=' + _menu);
+    if (!res.ok) {
+      const err = await res.text();
+      ul.innerHTML = `<li class="empty" style="padding:20px;text-align:center;color:#c5221f;">Error loading menu: ${res.status} — ${err}</li>`;
+      return;
+    }
+    var items = await res.json();
+  } catch(e) {
+    ul.innerHTML = `<li class="empty" style="padding:20px;text-align:center;color:#c5221f;">Connection error: ${e.message}</li>`;
+    return;
+  }
+
+  if (!Array.isArray(items) || !items.length) {
+    ul.innerHTML = '<li class="empty" style="padding:20px;text-align:center;color:#aaa;">No items yet.</li>';
+    return;
+  }
+
+  ul.innerHTML = items.map(n => `
+    <li class="nav-item" data-id="${n.id}">
+      <span class="drag-handle">⠿</span>
+      <span class="label">${esc(n.label)}</span>
+      <span class="url">${esc(n.url)}</span>
+      ${n.target === '_blank' ? '<span style="font-size:11px;color:#888;">↗</span>' : ''}
+      ${!n.is_active ? '<span class="badge-inactive">Hidden</span>' : ''}
+      <button class="btn btn-secondary btn-sm" onclick="editItem(${n.id},'${esc(n.label)}','${esc(n.url)}','${n.target}',${n.display_order},${n.is_active})">Edit</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteItem(${n.id})">✕</button>
+    </li>
+  `).join('');
+}
+
+function switchMenu(menu, btn) {
+  _menu = menu;
+  document.querySelectorAll('.menu-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('menuLabel').textContent = 'Menu: ' + menu;
+  cancelEdit();
+  load();
+}
+
+function toggleAddForm() {
+  cancelEdit();
+  document.getElementById('addFormCard').style.display = 'block';
+  document.getElementById('fLabel').focus();
+}
+
+function cancelEdit() {
+  _editId = null;
+  document.getElementById('addFormCard').style.display = 'none';
+  document.getElementById('formTitle').textContent = 'Add Menu Item';
+  ['fLabel','fUrl','fOrder'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('fTarget').value = '_self';
+  document.getElementById('fActive').value = '1';
+}
+
+function editItem(id, label, url, target, order, active) {
+  _editId = id;
+  document.getElementById('addFormCard').style.display = 'block';
+  document.getElementById('formTitle').textContent = 'Edit Menu Item';
+  document.getElementById('fLabel').value  = label;
+  document.getElementById('fUrl').value    = url;
+  document.getElementById('fTarget').value = target;
+  document.getElementById('fOrder').value  = order;
+  document.getElementById('fActive').value = active ? '1' : '0';
+  document.getElementById('fLabel').focus();
+}
+
+async function saveItem() {
+  const label = document.getElementById('fLabel').value.trim();
+  const url   = document.getElementById('fUrl').value.trim();
+  if (!label || !url) { alert('Label and URL are required'); return; }
+
+  const payload = {
+    menu: _menu, label, url,
+    target:        document.getElementById('fTarget').value,
+    display_order: parseInt(document.getElementById('fOrder').value) || 0,
+    is_active:     document.getElementById('fActive').value === '1',
+  };
+
+  if (_editId) {
+    await fetch(`/api/cms/nav/${_editId}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } else {
+    await fetch('/api/cms/nav', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  }
+  cancelEdit();
+  load();
+}
+
+async function deleteItem(id) {
+  if (!confirm('Delete this menu item?')) return;
+  await fetch('/api/cms/nav/' + id, { method: 'DELETE' });
+  load();
+}
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+load();
+</script>
+{% endblock %}

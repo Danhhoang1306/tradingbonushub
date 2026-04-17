@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+{% block title %}Wallet & Withdrawals — Trading Bonus{% endblock %}
+{% block page_title %}Wallet & Withdrawals{% endblock %}
+
+{% block head %}
+<style>
+  /* ── Tabs ── */
+  .tab-nav { display:flex; gap:0; border-bottom:2px solid #e0e0e0; margin-bottom:24px; }
+  .tab-nav button { background:none; border:none; padding:10px 22px; font-size:14px;
+                    cursor:pointer; color:#666; border-bottom:3px solid transparent;
+                    margin-bottom:-2px; font-weight:500; }
+  .tab-nav button.active { color:#1a73e8; border-bottom-color:#1a73e8; font-weight:700; }
+  .tab-pane { display:none; }
+  .tab-pane.active { display:block; }
+
+  /* ── Summary cards ── */
+  .stats-row { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:24px; }
+  .stat-box { background:#fff; border-radius:10px; padding:18px 24px; min-width:150px;
+              box-shadow:0 1px 4px rgba(0,0,0,.08); flex:1; }
+  .stat-box .val { font-size:26px; font-weight:700; color:#1a73e8; }
+  .stat-box .lbl { font-size:12px; color:#888; margin-top:4px; }
+  .stat-box.green .val { color:#137333; }
+  .stat-box.orange .val { color:#e37400; }
+  .stat-box.red .val { color:#c5221f; }
+
+  /* ── Tables ── */
+  .data-table { width:100%; border-collapse:collapse; font-size:13px; }
+  .data-table th { background:#f8f9fa; padding:10px 12px; text-align:left;
+                   font-weight:600; border-bottom:2px solid #dee2e6; white-space:nowrap; }
+  .data-table td { padding:9px 12px; border-bottom:1px solid #f0f0f0; vertical-align:middle; }
+  .data-table tr:hover td { background:#fafbff; }
+
+  /* ── Badges ── */
+  .badge { display:inline-block; padding:3px 9px; border-radius:12px; font-size:11px; font-weight:600; }
+  .badge-pending    { background:#fff3cd; color:#856404; }
+  .badge-approved   { background:#cfe2ff; color:#084298; }
+  .badge-processing { background:#e2d5f1; color:#5a2d82; }
+  .badge-completed  { background:#d1e7dd; color:#0a3622; }
+  .badge-rejected   { background:#f8d7da; color:#842029; }
+  .badge-cancelled  { background:#e9ecef; color:#495057; }
+
+  /* ── Buttons ── */
+  .btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px;
+         border-radius:7px; font-size:13px; font-weight:600; cursor:pointer;
+         border:none; transition:opacity .15s; }
+  .btn:hover { opacity:.85; }
+  .btn-primary { background:#1a73e8; color:#fff; }
+  .btn-success { background:#137333; color:#fff; }
+  .btn-danger  { background:#c5221f; color:#fff; }
+  .btn-outline { background:#fff; color:#1a73e8; border:1.5px solid #1a73e8; }
+  .btn:disabled { opacity:.45; cursor:not-allowed; }
+  .btn-sm { padding:5px 10px; font-size:12px; }
+
+  /* ── Filter ── */
+  .filter-row { display:flex; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+  .filter-row input, .filter-row select {
+    border:1px solid #ddd; border-radius:6px; padding:7px 10px;
+    font-size:13px; background:#fff; }
+
+  /* ── Empty ── */
+  .empty-state { text-align:center; padding:48px 20px; color:#aaa; }
+  .empty-state .icon { font-size:40px; margin-bottom:12px; }
+
+  /* ── Modal ── */
+  .modal-backdrop { display:none; position:fixed; top:0; left:0; right:0; bottom:0;
+                    background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center; }
+  .modal-backdrop.active { display:flex; }
+  .modal { background:#fff; border-radius:12px; padding:28px; min-width:400px; max-width:520px;
+           box-shadow:0 10px 40px rgba(0,0,0,.2); }
+  .modal h3 { margin-bottom:18px; font-size:17px; }
+  .modal label { display:block; font-size:13px; font-weight:600; color:#555; margin-bottom:4px; margin-top:12px; }
+  .modal input, .modal textarea, .modal select { width:100%; border:1px solid #ddd; border-radius:6px;
+    padding:8px 10px; font-size:13px; }
+  .modal textarea { height:60px; resize:vertical; }
+  .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+
+  .spinner { display:inline-block; width:14px; height:14px; border:2px solid #ccc;
+             border-top-color:#1a73e8; border-radius:50%;
+             animation:spin .6s linear infinite; vertical-align:middle; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Stats -->
+<div class="stats-row" id="statsRow">
+  <div class="stat-box"><div class="val" id="statWallets">--</div><div class="lbl">Total Wallets</div></div>
+  <div class="stat-box green"><div class="val" id="statBalance">--</div><div class="lbl">Total Balance (USD)</div></div>
+  <div class="stat-box orange"><div class="val" id="statPending">--</div><div class="lbl">Pending Withdrawal (USD)</div></div>
+  <div class="stat-box red"><div class="val" id="statWrCount">--</div><div class="lbl">Pending Approval</div></div>
+</div>
+
+<!-- Tabs -->
+<div class="tab-nav">
+  <button class="active" onclick="switchTab('wallets',this)">Wallet List</button>
+  <button onclick="switchTab('withdrawals',this)">Withdrawal Requests</button>
+</div>
+
+<!-- Tab: Wallets -->
+<div id="tab-wallets" class="tab-pane active">
+  <div class="filter-row">
+    <input type="text" id="walletSearch" placeholder="Search email or name..." style="min-width:260px;" />
+    <button class="btn btn-primary btn-sm" onclick="loadWallets()">Search</button>
+    <button class="btn btn-success btn-sm" onclick="openCreditModal()">+ Manual Credit</button>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>ID</th><th>Email</th><th>Name</th><th>Balance</th><th>Pending</th><th>Updated</th>
+      </tr>
+    </thead>
+    <tbody id="walletBody">
+      <tr><td colspan="6" class="empty-state"><div class="icon">👛</div>Loading...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Tab: Withdrawals -->
+<div id="tab-withdrawals" class="tab-pane">
+  <div class="filter-row">
+    <select id="wrStatusFilter" onchange="loadWithdrawals()">
+      <option value="">All Statuses</option>
+      <option value="pending" selected>Pending</option>
+      <option value="approved">Approved</option>
+      <option value="completed">Completed</option>
+      <option value="rejected">Rejected</option>
+      <option value="cancelled">Cancelled</option>
+    </select>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>ID</th><th>Email</th><th>Name</th><th>Amount</th><th>Method</th>
+        <th>Wallet/Bank</th><th>Status</th><th>Created</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="wrBody">
+      <tr><td colspan="9" class="empty-state"><div class="icon">📤</div>Loading...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Credit Modal -->
+<div class="modal-backdrop" id="creditModal">
+  <div class="modal">
+    <h3>Credit Wallet</h3>
+    <label>Customer ID</label>
+    <input type="number" id="creditCustomerId" />
+    <label>Amount (USD)</label>
+    <input type="number" id="creditAmount" step="0.01" min="0" />
+    <label>Transaction Type</label>
+    <select id="creditTxType">
+      <option value="manual_credit">Manual Credit</option>
+      <option value="rebate_credit">Rebate Credit</option>
+      <option value="bonus_credit">Bonus Credit</option>
+    </select>
+    <label>Notes</label>
+    <textarea id="creditDesc"></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeCreditModal()">Cancel</button>
+      <button class="btn btn-success" id="creditBtn" onclick="doCredit()">Credit</button>
+    </div>
+  </div>
+</div>
+
+<!-- Withdrawal Action Modal -->
+<div class="modal-backdrop" id="wrActionModal">
+  <div class="modal">
+    <h3 id="wrActionTitle">Process Withdrawal</h3>
+    <div id="wrActionInfo" style="background:#f8f9fa;border-radius:8px;padding:14px 16px;margin-bottom:16px;font-size:13px;line-height:1.7;border:1px solid #e9ecef;"></div>
+    <label>TX Hash (crypto)</label>
+    <input type="text" id="wrTxHash" placeholder="If available..." />
+    <label>Admin Notes</label>
+    <textarea id="wrNote"></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeWrModal()">Close</button>
+      <button class="btn btn-danger" id="wrRejectBtn" onclick="doWrAction('reject')">Reject</button>
+      <button class="btn btn-success" id="wrApproveBtn" onclick="doWrAction('approve')">Approve</button>
+      <button class="btn btn-primary" id="wrCompleteBtn" onclick="doWrAction('complete')">Complete</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const API = '/api/wallet';
+let currentWrId = null;
+
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'withdrawals') loadWithdrawals();
+}
+
+function fmt(n) { return n != null ? '$' + Number(n).toLocaleString('en', {minimumFractionDigits:2, maximumFractionDigits:2}) : '--'; }
+function fmtDate(d) { return d ? new Date(d).toLocaleString('vi') : '--'; }
+
+async function loadStats() {
+  const r = await fetch(API + '/admin/stats');
+  const d = await r.json();
+  document.getElementById('statWallets').textContent = d.total_wallets;
+  document.getElementById('statBalance').textContent = fmt(d.total_balance);
+  document.getElementById('statPending').textContent = fmt(d.total_pending);
+  document.getElementById('statWrCount').textContent = d.pending_withdrawals;
+}
+
+async function loadWallets() {
+  const search = document.getElementById('walletSearch').value;
+  const r = await fetch(API + '/admin/list?search=' + encodeURIComponent(search));
+  const data = await r.json();
+  const body = document.getElementById('walletBody');
+  if (!data.length) {
+    body.innerHTML = '<tr><td colspan="6" class="empty-state"><div class="icon">👛</div>No wallets found</td></tr>';
+    return;
+  }
+  body.innerHTML = data.map(w => `<tr>
+    <td>${w.customer_id}</td>
+    <td>${w.login_email || ''}</td>
+    <td>${w.customer_name || ''}</td>
+    <td style="font-weight:700;color:#137333">${fmt(w.balance)}</td>
+    <td style="color:#e37400">${fmt(w.pending_balance)}</td>
+    <td>${fmtDate(w.updated_at)}</td>
+  </tr>`).join('');
+}
+
+async function loadWithdrawals() {
+  const status = document.getElementById('wrStatusFilter').value;
+  const r = await fetch(API + '/admin/withdrawals?status=' + status);
+  const data = await r.json();
+  const body = document.getElementById('wrBody');
+  if (!data.length) {
+    body.innerHTML = '<tr><td colspan="9" class="empty-state"><div class="icon">📤</div>No requests found</td></tr>';
+    return;
+  }
+  body.innerHTML = data.map(w => {
+    const methodLabel = {
+      bank_transfer:'Bank Transfer', usdt_trc20:'USDT (TRC20)',
+      usdt_erc20:'USDT (ERC20)', usdt_bep20:'USDT (BEP20)',
+      btc:'Bitcoin', eth:'Ethereum', other_crypto:'Other Crypto'
+    }[w.method] || w.method;
+    const addrInfo = w.wallet_address ? w.wallet_address.substring(0,16)+'...' : (w.bank_info || '--');
+    const canAct = ['pending','approved'].includes(w.status);
+    return `<tr>
+      <td>${w.id}</td>
+      <td>${w.login_email || ''}</td>
+      <td>${w.customer_name || ''}</td>
+      <td style="font-weight:700">${fmt(w.amount)}</td>
+      <td>${methodLabel}</td>
+      <td style="font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis" title="${w.wallet_address||w.bank_info||''}">${addrInfo}</td>
+      <td><span class="badge badge-${w.status}">${w.status}</span></td>
+      <td>${fmtDate(w.created_at)}</td>
+      <td>${canAct ? `<button class="btn btn-sm btn-primary" onclick="openWrAction(${w.id},'${w.status}')">Process</button>` : (w.tx_hash ? `<span style="font-size:11px;color:#888">${w.tx_hash.substring(0,12)}...</span>` : '')}</td>
+    </tr>`;
+  }).join('');
+}
+
+function openCreditModal() { document.getElementById('creditModal').classList.add('active'); }
+function closeCreditModal() { document.getElementById('creditModal').classList.remove('active'); }
+
+async function doCredit() {
+  const btn = document.getElementById('creditBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const r = await fetch(API + '/admin/credit', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        customer_id: parseInt(document.getElementById('creditCustomerId').value),
+        amount: parseFloat(document.getElementById('creditAmount').value),
+        tx_type: document.getElementById('creditTxType').value,
+        description: document.getElementById('creditDesc').value,
+      })
+    });
+    const d = await r.json();
+    if (!r.ok) { alert(d.detail || 'Error'); return; }
+    alert('Credit successful! New balance: ' + fmt(d.new_balance));
+    closeCreditModal(); loadWallets(); loadStats();
+  } finally { btn.disabled = false; btn.textContent = 'Credit'; }
+}
+
+async function openWrAction(wrId, status) {
+  currentWrId = wrId;
+  document.getElementById('wrTxHash').value = '';
+  document.getElementById('wrNote').value = '';
+  document.getElementById('wrApproveBtn').style.display = status === 'pending' ? '' : 'none';
+  document.getElementById('wrCompleteBtn').style.display = ['pending','approved'].includes(status) ? '' : 'none';
+  document.getElementById('wrRejectBtn').style.display = ['pending','approved'].includes(status) ? '' : 'none';
+
+  // Fetch withdrawal details
+  const infoEl = document.getElementById('wrActionInfo');
+  infoEl.innerHTML = '<span class="spinner"></span> Loading...';
+  document.getElementById('wrActionModal').classList.add('active');
+
+  try {
+    const r = await fetch(`${API}/admin/withdrawal/${wrId}`);
+    const w = await r.json();
+    const methodLabel = {
+      bank_transfer:'Bank Transfer', usdt_trc20:'USDT (TRC20)',
+      usdt_erc20:'USDT (ERC20)', usdt_bep20:'USDT (BEP20)',
+      btc:'Bitcoin', eth:'Ethereum', other_crypto:'Other Crypto'
+    }[w.method] || w.method;
+    const addr = w.wallet_address || w.bank_info || '';
+
+    infoEl.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="color:#888;">Customer</span>
+        <strong>${w.customer_name || ''} (${w.login_email || ''})</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="color:#888;">Amount</span>
+        <strong style="color:#c5221f;font-size:16px;">${fmt(w.amount)}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="color:#888;">Wallet Balance</span>
+        <span style="color:#137333;font-weight:600;">${fmt(w.wallet_balance)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="color:#888;">Method</span>
+        <strong>${methodLabel}</strong>
+      </div>
+      ${addr ? `
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid #e0e0e0;">
+        <div style="color:#888;font-size:12px;margin-bottom:4px;">Wallet Address</div>
+        <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #ddd;border-radius:6px;padding:8px 10px;">
+          <code style="flex:1;font-size:12px;word-break:break-all;color:#333;" id="wrAddrText">${addr}</code>
+          <button onclick="copyAddr()" style="flex-shrink:0;background:#1a73e8;color:#fff;border:none;border-radius:5px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;transition:background .15s;" title="Copy">
+            <span id="copyBtnText">Copy</span>
+          </button>
+        </div>
+      </div>` : ''}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+        <span style="color:#888;">Created</span>
+        <span>${fmtDate(w.created_at)}</span>
+      </div>
+    `;
+  } catch(e) {
+    infoEl.innerHTML = '<span style="color:#c5221f;">Failed to load information</span>';
+  }
+}
+
+function copyAddr() {
+  const text = document.getElementById('wrAddrText')?.textContent || '';
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyBtnText');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 1500);
+  });
+}
+function closeWrModal() { document.getElementById('wrActionModal').classList.remove('active'); currentWrId = null; }
+
+async function doWrAction(action) {
+  if (!currentWrId) return;
+  const r = await fetch(`${API}/admin/withdrawal/${currentWrId}/${action}`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      tx_hash: document.getElementById('wrTxHash').value || null,
+      admin_note: document.getElementById('wrNote').value,
+    })
+  });
+  const d = await r.json();
+  if (!r.ok) { alert(d.detail || 'Error'); return; }
+  closeWrModal(); loadWithdrawals(); loadStats();
+}
+
+// Init
+loadStats(); loadWallets();
+</script>
+{% endblock %}

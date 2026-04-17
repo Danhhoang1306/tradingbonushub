@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+{% block title %}Analytics — TradingBonusHub Admin{% endblock %}
+{% block page_title %}Analytics Dashboard{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<style>
+  .analytics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  @media (max-width: 1200px) { .analytics-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { .analytics-grid { grid-template-columns: 1fr; } }
+
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 20px; position: relative; overflow: hidden;
+  }
+  .stat-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--sc, var(--accent));
+  }
+  .stat-card .label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .stat-card .value { font-size: 28px; font-weight: 800; color: var(--text); margin: 6px 0 4px; }
+  .stat-card .sub { font-size: 12px; color: var(--muted); }
+
+  .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+  @media (max-width: 900px) { .chart-grid { grid-template-columns: 1fr; } }
+
+  .chart-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 20px;
+  }
+  .chart-card h3 { font-size: 14px; font-weight: 700; margin: 0 0 16px; }
+
+  .perf-table { width: 100%; }
+  .perf-table th { text-align: left; font-size: 11px; text-transform: uppercase; color: var(--muted); padding: 8px 10px; border-bottom: 2px solid var(--border); }
+  .perf-table td { padding: 10px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .perf-table tr:hover { background: var(--bg); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- KPI Cards -->
+<div class="analytics-grid" id="kpi-grid">
+  <div class="stat-card" style="--sc:#1a73e8">
+    <div class="label">Total Customers</div>
+    <div class="value" id="k-customers">--</div>
+    <div class="sub"><span id="k-cust-7d">--</span> new (7d) / <span id="k-cust-30d">--</span> new (30d)</div>
+  </div>
+  <div class="stat-card" style="--sc:#059669">
+    <div class="label">Total Rebate Paid</div>
+    <div class="value" id="k-rebate">--</div>
+    <div class="sub">This month: $<span id="k-rebate-month">--</span></div>
+  </div>
+  <div class="stat-card" style="--sc:#7c3aed">
+    <div class="label">Trading Volume</div>
+    <div class="value" id="k-volume">--</div>
+    <div class="sub">Commission: $<span id="k-commission">--</span></div>
+  </div>
+  <div class="stat-card" style="--sc:#d97706">
+    <div class="label">Wallet Balances</div>
+    <div class="value" id="k-wallet">--</div>
+    <div class="sub">Pending withdrawals: <span id="k-pending-wd">--</span></div>
+  </div>
+</div>
+
+<!-- Charts -->
+<div class="chart-grid">
+  <div class="chart-card">
+    <h3>Customer Registrations (90 days)</h3>
+    <canvas id="chart-customers" height="200"></canvas>
+  </div>
+  <div class="chart-card">
+    <h3>Rebate Payouts (12 months)</h3>
+    <canvas id="chart-rebates" height="200"></canvas>
+  </div>
+  <div class="chart-card">
+    <h3>Trading Volume (12 months)</h3>
+    <canvas id="chart-volume" height="200"></canvas>
+  </div>
+  <div class="chart-card">
+    <h3>Wallet Activity (12 months)</h3>
+    <canvas id="chart-wallet" height="200"></canvas>
+  </div>
+</div>
+
+<!-- Performance Tables -->
+<div class="chart-grid">
+  <div class="chart-card">
+    <h3>Program Performance</h3>
+    <table class="perf-table">
+      <thead><tr><th>Program</th><th>Type</th><th>Enrolled</th><th>Volume</th><th>Rebate</th></tr></thead>
+      <tbody id="prog-perf"></tbody>
+    </table>
+  </div>
+  <div class="chart-card">
+    <h3>Broker Performance</h3>
+    <table class="perf-table">
+      <thead><tr><th>Broker</th><th>Accounts</th><th>Active</th><th>Volume</th><th>Commission</th></tr></thead>
+      <tbody id="broker-perf"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Top Customers -->
+<div class="chart-card" style="margin-bottom:24px;">
+  <h3>Top 20 Customers by Volume</h3>
+  <table class="perf-table">
+    <thead><tr><th>Email</th><th>Name</th><th>Accounts</th><th>Volume</th><th>Rebate</th><th>Wallet</th><th>Joined</th></tr></thead>
+    <tbody id="top-cust"></tbody>
+  </table>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const fmt$ = n => '$' + Number(n||0).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0});
+const fmtN = n => Number(n||0).toLocaleString('en-US', {maximumFractionDigits:0});
+const esc = s => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function loadOverview() {
+  const r = await fetch('/api/analytics/overview');
+  const d = await r.json();
+  document.getElementById('k-customers').textContent = fmtN(d.customers.total);
+  document.getElementById('k-cust-7d').textContent = d.customers.new_7d;
+  document.getElementById('k-cust-30d').textContent = d.customers.new_30d;
+  document.getElementById('k-rebate').textContent = fmt$(d.rebates.total_paid);
+  document.getElementById('k-rebate-month').textContent = fmtN(d.rebates.this_month);
+  document.getElementById('k-volume').textContent = fmtN(d.trading.total_volume) + ' lots';
+  document.getElementById('k-commission').textContent = fmtN(d.trading.total_commission);
+  document.getElementById('k-wallet').textContent = fmt$(d.wallet.total_balance);
+  document.getElementById('k-pending-wd').textContent = d.wallet.pending_withdrawals_count + ' (' + fmt$(d.wallet.pending_withdrawals_amount) + ')';
+}
+
+async function loadCustomerChart() {
+  const r = await fetch('/api/analytics/trends/customers?days=90');
+  const data = await r.json();
+  new Chart(document.getElementById('chart-customers'), {
+    type: 'line', data: {
+      labels: data.map(d => d.date.slice(5)),
+      datasets: [{label: 'New Customers', data: data.map(d => d.count),
+        borderColor: '#1a73e8', backgroundColor: 'rgba(26,115,232,.1)', fill: true, tension: .3}]
+    }, options: {responsive: true, plugins: {legend: {display: false}}, scales: {y: {beginAtZero: true}}}
+  });
+}
+
+async function loadRebateChart() {
+  const r = await fetch('/api/analytics/trends/rebates?months=12');
+  const data = await r.json();
+  new Chart(document.getElementById('chart-rebates'), {
+    type: 'bar', data: {
+      labels: data.map(d => d.month),
+      datasets: [{label: 'Rebate ($)', data: data.map(d => d.total),
+        backgroundColor: '#059669'}]
+    }, options: {responsive: true, plugins: {legend: {display: false}}, scales: {y: {beginAtZero: true}}}
+  });
+}
+
+async function loadVolumeChart() {
+  const r = await fetch('/api/analytics/trends/volume?months=12');
+  const data = await r.json();
+  new Chart(document.getElementById('chart-volume'), {
+    type: 'line', data: {
+      labels: data.map(d => d.month),
+      datasets: [
+        {label: 'Volume (lots)', data: data.map(d => d.volume), borderColor: '#7c3aed', tension: .3, yAxisID: 'y'},
+        {label: 'Commission ($)', data: data.map(d => d.commission), borderColor: '#d97706', tension: .3, yAxisID: 'y1'}
+      ]
+    }, options: {responsive: true, scales: {y: {beginAtZero: true, position: 'left'}, y1: {beginAtZero: true, position: 'right', grid: {drawOnChartArea: false}}}}
+  });
+}
+
+async function loadWalletChart() {
+  const r = await fetch('/api/analytics/wallet/summary');
+  const d = await r.json();
+  const monthly = d.monthly_activity || [];
+  new Chart(document.getElementById('chart-wallet'), {
+    type: 'bar', data: {
+      labels: monthly.map(m => m.month),
+      datasets: [
+        {label: 'Credits', data: monthly.map(m => m.credits), backgroundColor: '#22c55e'},
+        {label: 'Debits', data: monthly.map(m => m.debits), backgroundColor: '#ef4444'}
+      ]
+    }, options: {responsive: true, scales: {y: {beginAtZero: true}}}
+  });
+}
+
+async function loadProgramPerf() {
+  const r = await fetch('/api/analytics/programs/performance');
+  const data = await r.json();
+  const tb = document.getElementById('prog-perf');
+  tb.innerHTML = data.map(p => `<tr>
+    <td><strong>${esc(p.name)}</strong></td>
+    <td>${esc(p.type)}</td>
+    <td>${p.enrolled_accounts}</td>
+    <td>${fmtN(p.total_volume)}</td>
+    <td>${fmt$(p.total_rebate)}</td>
+  </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px;">No data</td></tr>';
+}
+
+async function loadBrokerPerf() {
+  const r = await fetch('/api/analytics/brokers/performance');
+  const data = await r.json();
+  const tb = document.getElementById('broker-perf');
+  tb.innerHTML = data.map(b => `<tr>
+    <td><strong>${esc(b.name)}</strong></td>
+    <td>${b.total_accounts}</td>
+    <td>${b.active_accounts}</td>
+    <td>${fmtN(b.total_volume)}</td>
+    <td>${fmt$(b.total_commission)}</td>
+  </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px;">No data</td></tr>';
+}
+
+async function loadTopCustomers() {
+  const r = await fetch('/api/analytics/top-customers?limit=20');
+  const data = await r.json();
+  const tb = document.getElementById('top-cust');
+  tb.innerHTML = data.map(c => `<tr>
+    <td>${esc(c.login_email)}</td>
+    <td>${esc(c.name)}</td>
+    <td>${c.accounts}</td>
+    <td>${fmtN(c.total_volume)}</td>
+    <td>${fmt$(c.total_rebate)}</td>
+    <td>${fmt$(c.wallet_balance)}</td>
+    <td style="color:var(--muted);font-size:12px">${c.created_at ? new Date(c.created_at).toLocaleDateString() : '—'}</td>
+  </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px;">No data</td></tr>';
+}
+
+// Load all
+Promise.all([loadOverview(), loadCustomerChart(), loadRebateChart(), loadVolumeChart(), loadWalletChart(), loadProgramPerf(), loadBrokerPerf(), loadTopCustomers()]);
+</script>
+{% endblock %}

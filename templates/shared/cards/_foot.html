@@ -1,0 +1,38 @@
+{#
+  Shared card footer.
+  Context vars:
+    p             — program dict (required)
+    enrollment    — enrollment dict (optional, customer portal only)
+    card_register_url — if set, use <a href> instead of JS modal (public pages)
+    card_learn_url    — if set, use <a href> for learn-more (public pages)
+#}
+{% if enrollment and enrollment.status in ['pending', 'active'] %}
+  <div class="pc__actions">
+    {% if enrollment.promotion_id == p.id %}
+      <span class="pc__enrolled">&#10003; Enrolled</span>
+    {% else %}
+      <span class="pc__locked">&#128274; Cancel current program to enroll</span>
+    {% endif %}
+    {% if card_learn_url %}
+      <a class="pc__btn-learn" href="{{ card_learn_url }}">Learn more</a>
+    {% else %}
+      <button class="pc__btn-learn" onclick="scrollToExplain({{ p.id }})">Learn more</button>
+    {% endif %}
+  </div>
+{% else %}
+  <div class="pc__actions">
+    {% if card_register_url %}
+      <a class="pc__btn-register" href="{{ card_register_url }}">&#9889; Get rebate now</a>
+    {% else %}
+      <button class="pc__btn-register"
+        onclick='openEnrollModal({{ p.id }}, {{ p.name|tojson }}, {{ p.broker_name|tojson }}, {{ (p.broker_slug or "")|tojson }})'>
+        &#9889; Get rebate now
+      </button>
+    {% endif %}
+    {% if card_learn_url %}
+      <a class="pc__btn-learn" href="{{ card_learn_url }}">Learn more &rarr;</a>
+    {% else %}
+      <button class="pc__btn-learn" onclick="scrollToExplain({{ p.id }})">Learn more &rarr;</button>
+    {% endif %}
+  </div>
+{% endif %}

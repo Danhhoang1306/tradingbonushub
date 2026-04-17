@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+{% block title %}Customer Portal Layout — Trading Bonus{% endblock %}
+{% block page_title %}Edit Customer Portal Layout{% endblock %}
+
+{% block head %}
+<style>
+  /* Override content area to full bleed */
+  .main .content { padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; height: calc(100vh - 57px); }
+
+  /* ── Editor toolbar ── */
+  .editor-toolbar {
+    display: flex; align-items: center; gap: 4px; padding: 6px 12px;
+    background: #1e2235; border-bottom: 1px solid #111827;
+    flex-shrink: 0; flex-wrap: wrap; min-height: 44px;
+  }
+  .tb-sep { width: 1px; height: 22px; background: rgba(255,255,255,.15); margin: 0 6px; flex-shrink: 0; }
+  .tb-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+    padding: 5px 11px; border-radius: 5px; border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.07); color: rgba(255,255,255,.85);
+    font-size: 13px; cursor: pointer; font-family: inherit;
+    transition: background .15s, border-color .15s; white-space: nowrap; line-height: 1;
+  }
+  .tb-btn:hover { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.28); }
+  .tb-btn:disabled { opacity: .3; cursor: not-allowed; }
+  .tb-btn-save { background: #1a73e8; border-color: #1558b0; color: #fff; font-weight: 700; }
+  .tb-btn-save:hover { background: #1558b0; }
+  .tb-btn-bold  { font-weight: 900; font-size: 14px; }
+  .tb-btn-italic { font-style: italic; }
+
+  /* Color swatch button (wraps a hidden color input) */
+  .tb-color-wrap {
+    position: relative; display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.07); color: rgba(255,255,255,.8);
+    font-size: 12px; cursor: pointer; transition: background .15s;
+  }
+  .tb-color-wrap:hover { background: rgba(255,255,255,.14); }
+  .tb-color-wrap input[type=color] {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    opacity: 0; cursor: pointer; border: none; padding: 0;
+  }
+  .swatch { width: 13px; height: 13px; border-radius: 3px; border: 1px solid rgba(255,255,255,.2); flex-shrink: 0; }
+
+  /* Text color button — A with color underline */
+  .tb-text-color-wrap {
+    position: relative; display: inline-flex; align-items: center; flex-direction: column;
+    padding: 3px 10px 4px; border-radius: 5px; border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.07); color: rgba(255,255,255,.85);
+    font-size: 13px; font-weight: 700; cursor: pointer; line-height: 1.2;
+    transition: background .15s;
+  }
+  .tb-text-color-wrap:hover { background: rgba(255,255,255,.14); }
+  .tb-text-color-wrap.disabled { opacity: .3; pointer-events: none; }
+  .tb-text-color-wrap input[type=color] {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    opacity: 0; cursor: pointer; border: none; padding: 0;
+  }
+  .text-color-bar { width: 14px; height: 3px; border-radius: 2px; background: #ff4444; }
+
+  /* Settings toggle button */
+  .tb-settings-btn { position: relative; }
+  .settings-dropdown {
+    display: none; position: absolute; top: calc(100% + 6px); right: 0; z-index: 500;
+    width: 320px; background: #fff; border-radius: 10px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.25); padding: 16px;
+    border: 1px solid #e0e0e0;
+  }
+  .settings-dropdown.open { display: block; }
+  .sd-title { font-size: 13px; font-weight: 700; color: #1a1f2e; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #f0f0f0; }
+  .sd-field { margin-bottom: 11px; }
+  .sd-field label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; font-weight: 600; }
+  .sd-field input, .sd-field textarea {
+    width: 100%; padding: 7px 9px; border: 1px solid #ddd; border-radius: 6px;
+    font-size: 12px; font-family: inherit; outline: none; transition: border-color .15s;
+  }
+  .sd-field input:focus, .sd-field textarea:focus { border-color: #1a73e8; }
+  .sd-field textarea { resize: vertical; min-height: 55px; }
+
+  /* Status + hint */
+  .save-status { font-size: 12px; font-weight: 600; }
+  .save-status.ok  { color: #4caf7d; }
+  .save-status.err { color: #f87171; }
+  .dirty-dot { display:none; width:7px; height:7px; border-radius:50%; background:#f59e0b; flex-shrink:0; }
+  .mode-hint { font-size: 11px; color: rgba(255,255,255,.3); margin-left: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px; }
+
+  /* Iframe canvas */
+  .editor-iframe { flex: 1; width: 100%; border: none; min-height: 0; display: block; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ── Toolbar ── -->
+<div class="editor-toolbar" id="editor-toolbar">
+
+  <!-- Save -->
+  <button class="tb-btn tb-btn-save" onclick="save()">💾 Save</button>
+  <span class="save-status" id="save-status"></span>
+  <span class="dirty-dot" id="dirty-dot" title="Có changes chưa lưu"></span>
+
+  <div class="tb-sep"></div>
+
+  <!-- Text format (active when selection in iframe) -->
+  <button class="tb-btn tb-btn-bold"   id="tb-bold"   disabled onclick="execIframeCmd('bold')"   title="Bold">B</button>
+  <button class="tb-btn tb-btn-italic" id="tb-italic" disabled onclick="execIframeCmd('italic')" title="In nghiêng">I</button>
+
+  <!-- Text color -->
+  <div class="tb-text-color-wrap disabled" id="tb-text-color" title="Text color — select text first">
+    <span>A</span>
+    <div class="text-color-bar" id="text-color-bar"></div>
+    <input type="color" id="text-color-input" value="#e53935" oninput="onTextColor(this.value)" />
+  </div>
+
+  <div class="tb-sep"></div>
+
+  <!-- Theme colors -->
+  <span style="font-size:11px;color:rgba(255,255,255,.35);flex-shrink:0;">Màu theme:</span>
+
+  <div class="tb-color-wrap" title="Primary color — buttons, values">
+    <div class="swatch" id="swatch-primary" style="background:{{ settings.get('primary_color','#c8972a') }}"></div>
+    <span>Chính</span>
+    <input type="color" id="color-primary" value="{{ settings.get('primary_color','#c8972a') }}"
+           oninput="onThemeColor('primary_color','swatch-primary',this.value)" />
+  </div>
+
+  <div class="tb-color-wrap" title="Dark bg — header, promo card">
+    <div class="swatch" id="swatch-dark" style="background:{{ settings.get('dark_color','#1a1a2e') }}"></div>
+    <span>Dark</span>
+    <input type="color" id="color-dark" value="{{ settings.get('dark_color','#1a1a2e') }}"
+           oninput="onThemeColor('dark_color','swatch-dark',this.value)" />
+  </div>
+
+  <div class="tb-color-wrap" title="Accent color — gold, promo title">
+    <div class="swatch" id="swatch-accent" style="background:{{ settings.get('accent_color','#f0c040') }}"></div>
+    <span>Accent</span>
+    <input type="color" id="color-accent" value="{{ settings.get('accent_color','#f0c040') }}"
+           oninput="onThemeColor('accent_color','swatch-accent',this.value)" />
+  </div>
+
+  <div class="tb-sep"></div>
+
+  <!-- Settings dropdown toggle -->
+  <div class="tb-settings-btn" id="tb-settings-btn">
+    <button class="tb-btn" onclick="toggleSettings(event)" title="Text & notice settings">⚙ Settings</button>
+    <div class="settings-dropdown" id="settings-dropdown">
+      <div class="sd-title">Page Content Settings</div>
+      <div class="sd-field">
+        <label>Name site</label>
+        <input type="text" id="sd-site_name" value="{{ settings.get('site_name','TradingBonusHub') }}" oninput="sdChange('site_name',this.value)" />
+      </div>
+      <div class="sd-field">
+        <label>Name Tab 1</label>
+        <input type="text" id="sd-tab1_name" value="{{ settings.get('tab1_name','Commission History') }}" oninput="sdChange('tab1_name',this.value)" />
+      </div>
+      <div class="sd-field">
+        <label>Name Tab 2</label>
+        <input type="text" id="sd-tab2_name" value="{{ settings.get('tab2_name','Program') }}" oninput="sdChange('tab2_name',this.value)" />
+      </div>
+      <div class="sd-field">
+        <label>Name Tab 3</label>
+        <input type="text" id="sd-tab3_name" value="{{ settings.get('tab3_name','My Profile') }}" oninput="sdChange('tab3_name',this.value)" />
+      </div>
+      <div class="sd-field">
+        <label>Support Email</label>
+        <input type="email" id="sd-support_email" value="{{ settings.get('support_email','support@tradingbonushub.com') }}" oninput="sdChange('support_email',this.value)" />
+      </div>
+      <div class="sd-field">
+        <label>Footer Text</label>
+        <input type="text" id="sd-footer_text" value="{{ settings.get('footer_text','© 2026 TradingBonusHub. All inquiries:') }}" oninput="sdChange('footer_text',this.value)" />
+      </div>
+      <div class="sd-field">
+        <label>Login Page Announcement</label>
+        <textarea id="sd-login_notice" oninput="sdChange('login_notice',this.value)">{{ settings.get('login_notice','') }}</textarea>
+      </div>
+      <div class="sd-field">
+        <label>Customer Portal Announcement</label>
+        <textarea id="sd-portal_notice" oninput="sdChange('portal_notice',this.value)">{{ settings.get('portal_notice','') }}</textarea>
+      </div>
+      <div class="sd-field">
+        <label>Telegram Contact Link (homepage)</label>
+        <input type="url" id="sd-telegram_url" placeholder="https://t.me/..." value="{{ settings.get('telegram_url','') }}" oninput="sdChange('telegram_url',this.value)" />
+      </div>
+      <div class="sd-field">
+        <label>Chat Box Contact Link</label>
+        <input type="url" id="sd-chatbox_url" placeholder="https://..." value="{{ settings.get('chatbox_url','') }}" oninput="sdChange('chatbox_url',this.value)" />
+      </div>
+      <div class="sd-field" style="border-top:1px solid rgba(0,0,0,.08);padding-top:12px;margin-top:4px;">
+        <label style="font-weight:800;color:#1a73e8;">🤖 Telegram Bot (private chat per customer)</label>
+      </div>
+      <div class="sd-field">
+        <label>Bot Token (from @BotFather)</label>
+        <input type="password" id="sd-telegram_bot_token" placeholder="123456:ABC-..." value="{{ settings.get('telegram_bot_token','') }}" oninput="sdChange('telegram_bot_token',this.value)" />
+      </div>
+      <div class="sd-field">
+        <label>Bot Username (không có @)</label>
+        <input type="text" id="sd-telegram_bot_name" placeholder="my_support_bot" value="{{ settings.get('telegram_bot_name','') }}" oninput="sdChange('telegram_bot_name',this.value)" />
+      </div>
+      <div class="sd-field">
+        <label>Admin Chat ID (receiving group)</label>
+        <input type="text" id="sd-telegram_admin_chat_id" placeholder="-100123456789" value="{{ settings.get('telegram_admin_chat_id','') }}" oninput="sdChange('telegram_admin_chat_id',this.value)" />
+      </div>
+      <div class="sd-field">
+        <button type="button" onclick="setTgWebhook()" style="width:100%;padding:8px;background:#1a73e8;color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:13px;">
+          ⚡ Register Webhook with Telegram
+        </button>
+        <div id="tg-webhook-status" style="font-size:12px;margin-top:4px;color:#666;"></div>
+      </div>
+    </div>
+  </div>
+
+  <span class="mode-hint" id="mode-hint">💡 Double-click on text to edit directly</span>
+</div>
+
+<!-- ── Edit-mode iframe ── -->
+<iframe class="editor-iframe" id="editor-iframe" src="/admin/portal-edit-mode"></iframe>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const iframe    = document.getElementById('editor-iframe');
+const pending   = {};   // changes to save
+let   selActive = false; // is text selected in iframe?
+
+// ── Settings dropdown ─────────────────────────────────────────────
+function toggleSettings(e) {
+  e.stopPropagation();
+  document.getElementById('settings-dropdown').classList.toggle('open');
+}
+document.addEventListener('click', () => {
+  document.getElementById('settings-dropdown').classList.remove('open');
+});
+
+async function setTgWebhook() {
+  const status = document.getElementById('tg-webhook-status');
+  status.textContent = 'Đang đăng ký...';
+  // Save current pending settings first
+  await sdSave();
+  try {
+    const r = await fetch('/api/telegram/set-webhook', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ site_url: 'https://tradingbonushub.com' }),
+    });
+    const d = await r.json();
+    status.style.color = d.ok ? '#1e7e34' : '#c0392b';
+    status.textContent = d.ok ? '✅ Registration successful!' : '❌ Failed — check Bot Token';
+  } catch(e) {
+    status.style.color = '#c0392b';
+    status.textContent = '❌ Connection error';
+  }
+}
+
+function sdChange(key, val) {
+  pending[key] = val;
+  markDirty();
+  // Sync to iframe if it has a matching data-edit element
+  iframe.contentWindow.postMessage({ type: 'syncVal', key, value: val }, '*');
+}
+
+// ── Dirty state ───────────────────────────────────────────────────
+function markDirty() {
+  document.getElementById('dirty-dot').style.display = 'inline-block';
+}
+
+// ── Theme color pickers ───────────────────────────────────────────
+function onThemeColor(key, swatchId, color) {
+  document.getElementById(swatchId).style.background = color;
+  pending[key] = color;
+  markDirty();
+  iframe.contentWindow.postMessage({ type: 'themeColor', key, color }, '*');
+}
+
+// ── Text format commands ──────────────────────────────────────────
+function execIframeCmd(cmd) {
+  iframe.contentWindow.postMessage({ type: 'execCmd', cmd }, '*');
+}
+
+function onTextColor(color) {
+  document.getElementById('text-color-bar').style.background = color;
+  iframe.contentWindow.postMessage({ type: 'execCmd', cmd: 'foreColor', value: color }, '*');
+}
+
+// ── iframe → parent messages ──────────────────────────────────────
+window.addEventListener('message', (e) => {
+  if (!iframe.contentWindow || e.source !== iframe.contentWindow) return;
+  const msg = e.data;
+  if (!msg || !msg.type) return;
+
+  if (msg.type === 'edit') {
+    pending[msg.key] = msg.value;
+    markDirty();
+    document.getElementById('save-status').textContent = '';
+  }
+
+  if (msg.type === 'selection') {
+    selActive = !!msg.hasSelection;
+    document.getElementById('tb-bold').disabled   = !selActive;
+    document.getElementById('tb-italic').disabled = !selActive;
+    const tcw = document.getElementById('tb-text-color');
+    if (selActive) tcw.classList.remove('disabled');
+    else           tcw.classList.add('disabled');
+    if (msg.hint) document.getElementById('mode-hint').textContent = msg.hint;
+  }
+});
+
+// ── Save ──────────────────────────────────────────────────────────
+async function save() {
+  const status = document.getElementById('save-status');
+  if (Object.keys(pending).length === 0) {
+    status.className = 'save-status';
+    status.textContent = '(không có changes)';
+    setTimeout(() => status.textContent = '', 2000);
+    return;
+  }
+  status.className = 'save-status';
+  status.textContent = 'Saving...';
+
+  const r = await fetch('/api/portal-settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(pending),
+  });
+
+  if (r.ok) {
+    status.className = 'save-status ok';
+    status.textContent = '✅ Saved';
+    document.getElementById('dirty-dot').style.display = 'none';
+    for (const k of Object.keys(pending)) delete pending[k];
+  } else {
+    status.className = 'save-status err';
+    status.textContent = '❌ Save error';
+  }
+  setTimeout(() => status.textContent = '', 3000);
+}
+
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); save(); }
+});
+window.addEventListener('beforeunload', e => {
+  if (Object.keys(pending).length) { e.preventDefault(); e.returnValue = ''; }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}CMS — Articles{% endblock %}
+{% block page_title %}📰 Articles{% endblock %}
+
+{% block head %}
+<style>
+  .filters { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; align-items:center; }
+  .filters select, .filters input { padding:7px 10px; border:1px solid #ddd; border-radius:6px; font-size:13px; }
+  .filters input { min-width:220px; }
+
+  .status-badge {
+    display:inline-block; padding:2px 10px; border-radius:12px; font-size:11px; font-weight:700;
+  }
+  .s-draft     { background:#e2e3e5; color:#41464b; }
+  .s-review    { background:#fff3cd; color:#856404; }
+  .s-published { background:#d1e7dd; color:#0a3622; }
+  .s-archived  { background:#f8d7da; color:#842029; }
+
+  .type-badge {
+    display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px;
+    background:#e8f0fe; color:#1967d2;
+  }
+
+  .cover-thumb { width:48px; height:36px; object-fit:cover; border-radius:4px; }
+  .no-thumb    { width:48px; height:36px; background:#f0f0f0; border-radius:4px; display:inline-block; }
+
+  .pagination { display:flex; gap:6px; align-items:center; margin-top:16px; }
+  .pagination button { padding:5px 12px; border:1px solid #ddd; border-radius:6px; background:#fff; cursor:pointer; font-size:13px; }
+  .pagination button.active { background:#1a73e8; color:#fff; border-color:#1a73e8; }
+  .pagination button:disabled { opacity:.4; cursor:default; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex-between">
+  <div class="filters">
+    <select id="fStatus" onchange="load()">
+      <option value="">All Statuses</option>
+      <option value="draft">Draft</option>
+      <option value="review">Review</option>
+      <option value="published">Published</option>
+      <option value="archived">Archived</option>
+    </select>
+    <select id="fType" onchange="load()">
+      <option value="">All Types</option>
+      <option value="post">Article</option>
+      <option value="page">Page</option>
+      <option value="announcement">Announcement</option>
+    </select>
+    <select id="fLang" onchange="load()">
+      <option value="">All Languages</option>
+      <option value="vi">🇻🇳 Vietnamese</option>
+      <option value="en">🇬🇧 English</option>
+    </select>
+    <input id="fSearch" type="text" placeholder="Search title..." oninput="debounceLoad()" />
+  </div>
+  <a href="/admin/cms/articles/new" class="btn btn-primary">+ New Article</a>
+</div>
+
+<div class="card">
+  <table id="tbl">
+    <thead>
+      <tr>
+        <th style="width:56px"></th>
+        <th>Subject</th>
+        <th>Type</th>
+        <th>Status</th>
+        <th>Language</th>
+        <th>Author</th>
+        <th>Created</th>
+        <th style="width:130px"></th>
+      </tr>
+    </thead>
+    <tbody id="tbody">
+      <tr><td colspan="8" class="empty">Loading...</td></tr>
+    </tbody>
+  </table>
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<div class="overlay" id="delOverlay">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <h3>Confirm Delete</h3>
+      <button class="close-btn" onclick="closeDelModal()">✕</button>
+    </div>
+    <p style="font-size:14px;margin-bottom:20px;">Are you sure you want to delete this article? This action cannot be undone.</p>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="closeDelModal()">Cancel</button>
+      <button class="btn btn-danger" id="delConfirmBtn">Delete</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let _page = 0, _limit = 20, _total = 0, _delId = null, _debTimer;
+
+const STATUS_LABELS = {
+  draft: '<span class="status-badge s-draft">Draft</span>',
+  review: '<span class="status-badge s-review">Review</span>',
+  published: '<span class="status-badge s-published">Published</span>',
+  archived: '<span class="status-badge s-archived">Archived</span>',
+};
+const TYPE_LABELS = {
+  post: '<span class="type-badge">Article</span>',
+  page: '<span class="type-badge" style="background:#fce8e6;color:#c5221f;">Page</span>',
+  announcement: '<span class="type-badge" style="background:#e6f4ea;color:#137333;">Announcement</span>',
+};
+
+async function load() {
+  _page = 0;
+  await fetchPage();
+}
+
+function debounceLoad() {
+  clearTimeout(_debTimer);
+  _debTimer = setTimeout(load, 350);
+}
+
+async function fetchPage() {
+  const status = document.getElementById('fStatus').value;
+  const type   = document.getElementById('fType').value;
+  const lang   = document.getElementById('fLang').value;
+  const search = document.getElementById('fSearch').value.trim();
+
+  const params = new URLSearchParams({ limit: _limit, offset: _page * _limit });
+  if (status) params.set('status', status);
+  if (type)   params.set('type', type);
+  if (lang)   params.set('lang', lang);
+  if (search) params.set('search', search);
+
+  const res  = await fetch('/api/cms/articles?' + params);
+  const data = await res.json();
+  _total = data.total;
+
+  const tbody = document.getElementById('tbody');
+  if (!data.items.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">No articles found.</td></tr>';
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+
+  tbody.innerHTML = data.items.map(a => `
+    <tr>
+      <td>${a.cover_url
+        ? `<img class="cover-thumb" src="${a.cover_url}" alt="">`
+        : '<span class="no-thumb"></span>'}</td>
+      <td>
+        <strong style="font-size:13px;">${esc(a.title)}</strong>
+        <div class="text-muted">${esc(a.slug)}</div>
+      </td>
+      <td>${TYPE_LABELS[a.type] || a.type}</td>
+      <td>${STATUS_LABELS[a.status] || a.status}</td>
+      <td>${a.lang === 'vi' ? '🇻🇳' : '🇬🇧'} ${a.lang}</td>
+      <td class="text-muted">${esc(a.author)}</td>
+      <td class="text-muted">${fmtDate(a.created_at)}</td>
+      <td>
+        <a href="/admin/cms/articles/${a.id}/edit" class="btn btn-secondary btn-sm">Edit</a>
+        ${a.status === 'published'
+          ? `<button class="btn btn-sm" style="background:#fff3cd;color:#856404;" onclick="togglePublish(${a.id},'unpublish')">Unpublish</button>`
+          : `<button class="btn btn-sm" style="background:#d1e7dd;color:#0a3622;" onclick="togglePublish(${a.id},'publish')">Publish</button>`}
+        <button class="btn btn-danger btn-sm" onclick="openDelModal(${a.id})">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+
+  // Pagination
+  const pages = Math.ceil(_total / _limit);
+  let html = `<button onclick="prevPage()" ${_page===0?'disabled':''}>◀</button>`;
+  for (let i = 0; i < pages; i++) {
+    html += `<button class="${i===_page?'active':''}" onclick="goPage(${i})">${i+1}</button>`;
+  }
+  html += `<button onclick="nextPage()" ${_page>=pages-1?'disabled':''}>▶</button>`;
+  html += `<span style="font-size:12px;color:#888;margin-left:8px;">Total: ${_total}</span>`;
+  document.getElementById('pagination').innerHTML = html;
+}
+
+async function togglePublish(id, action) {
+  await fetch(`/api/cms/articles/${id}/${action}`, { method: 'POST' });
+  fetchPage();
+}
+
+function openDelModal(id) {
+  _delId = id;
+  document.getElementById('delOverlay').classList.add('active');
+  document.getElementById('delConfirmBtn').onclick = confirmDelete;
+}
+function closeDelModal() {
+  document.getElementById('delOverlay').classList.remove('active');
+  _delId = null;
+}
+async function confirmDelete() {
+  if (!_delId) return;
+  await fetch(`/api/cms/articles/${_delId}`, { method: 'DELETE' });
+  closeDelModal();
+  fetchPage();
+}
+
+function prevPage() { if (_page > 0) { _page--; fetchPage(); } }
+function nextPage() { const pages = Math.ceil(_total/_limit); if (_page < pages-1) { _page++; fetchPage(); } }
+function goPage(p)  { _page = p; fetchPage(); }
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function fmtDate(s) {
+  if (!s) return '';
+  return new Date(s).toLocaleDateString('en-US');
+}
+
+fetchPage();
+</script>
+{% endblock %}

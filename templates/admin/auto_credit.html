@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}Auto-Credit Rebates — TradingBonusHub Admin{% endblock %}
+{% block page_title %}Auto-Credit Rebates{% endblock %}
+
+{% block head %}
+<style>
+  .credit-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+  .cb-yes { background: #d1fae5; color: #059669; }
+  .cb-no { background: #fef3c7; color: #d97706; }
+  .cb-draft { background: #f3f4f6; color: #6b7280; }
+  .preview-card { background: var(--bg); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  .preview-stat { font-size: 24px; font-weight: 800; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+  <div class="card-header">
+    <div>
+      <div class="card-title">Rebate Batches — Wallet Credit</div>
+      <div class="card-subtitle">Automatically credit rebate amounts to customer wallets</div>
+    </div>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Batch</th><th>Period</th><th>Broker</th><th>Status</th>
+        <th>Rows</th><th>Total</th><th>Eligible</th><th>Credited</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="batch-tbody">
+      <tr><td colspan="9" class="empty">Loading...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Preview Modal -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-header">
+      <h3 id="modal-title">Credit Preview</h3>
+      <button class="close-btn" onclick="closeModal()">x</button>
+    </div>
+    <div id="modal-body" style="padding:16px;"></div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const esc = s => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt$ = n => '$' + Number(n||0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+async function loadBatches() {
+  const r = await fetch('/api/rebate/credit-history');
+  const data = await r.json();
+  const tb = document.getElementById('batch-tbody');
+  if (!data.length) { tb.innerHTML = '<tr><td colspan="9" class="empty">No rebate batches</td></tr>'; return; }
+  tb.innerHTML = data.map(b => {
+    const credited = b.auto_credited;
+    const isDraft = b.status === 'draft';
+    return `<tr>
+      <td><strong>#${b.id}</strong></td>
+      <td>${b.period_date || '—'}</td>
+      <td>${esc(b.broker)}</td>
+      <td>${b.status}</td>
+      <td>${b.total_rows}</td>
+      <td>${fmt$(b.total_amount)}</td>
+      <td>${b.eligible_credits} (${fmt$(b.eligible_amount)})</td>
+      <td>${credited ? '<span class="credit-badge cb-yes">Credited</span>' : isDraft ? '<span class="credit-badge cb-draft">Draft</span>' : '<span class="credit-badge cb-no">Pending</span>'}</td>
+      <td>
+        ${!credited && !isDraft ? `
+          <button class="btn btn-secondary btn-xs" onclick="previewCredit(${b.id})">Preview</button>
+          <button class="btn btn-primary btn-xs" onclick="doCredit(${b.id})">Credit Now</button>
+        ` : credited ? '<span style="color:var(--muted);font-size:11px;">Done</span>' : '<span style="color:var(--muted);font-size:11px;">Confirm first</span>'}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function previewCredit(batchId) {
+  const r = await fetch(`/api/rebate/batches/${batchId}/credit-preview`);
+  const d = await r.json();
+  document.getElementById('modal-title').textContent = `Credit Preview — Batch #${batchId}`;
+  const el = document.getElementById('modal-body');
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
+      <div class="preview-card"><div class="preview-stat" style="color:#059669;">${d.eligible_count}</div><div style="font-size:11px;color:var(--muted);">Eligible Customers</div></div>
+      <div class="preview-card"><div class="preview-stat" style="color:var(--accent);">${fmt$(d.total_amount)}</div><div style="font-size:11px;color:var(--muted);">Total to Credit</div></div>
+      <div class="preview-card"><div class="preview-stat" style="color:#d97706;">${d.no_customer.length}</div><div style="font-size:11px;color:var(--muted);">No Customer Link</div></div>
+    </div>
+    ${d.already_credited ? '<div style="background:#fef2f2;color:#dc2626;padding:10px;border-radius:6px;margin-bottom:12px;font-size:13px;font-weight:600;">This batch has already been credited.</div>' : ''}
+    <table style="font-size:12px;">
+      <thead><tr><th>Customer</th><th>Broker Email</th><th>Broker</th><th>Current Balance</th><th>Rebate</th></tr></thead>
+      <tbody>
+        ${d.eligible.slice(0, 30).map(r => `<tr>
+          <td>${esc(r.customer_name || r.login_email || '—')}</td>
+          <td>${esc(r.broker_email)}</td>
+          <td>${esc(r.broker_name)}</td>
+          <td>${fmt$(r.current_balance)}</td>
+          <td style="font-weight:700;color:#059669;">${fmt$(r.rebate_amount)}</td>
+        </tr>`).join('')}
+        ${d.eligible.length > 30 ? `<tr><td colspan="5" style="text-align:center;color:var(--muted);">... and ${d.eligible.length - 30} more</td></tr>` : ''}
+      </tbody>
+    </table>
+    ${!d.already_credited ? `<div style="margin-top:16px;text-align:right;"><button class="btn btn-primary" onclick="doCredit(${batchId});closeModal();">Credit All ${d.eligible_count} Customers</button></div>` : ''}
+  `;
+  document.getElementById('overlay').classList.add('active');
+}
+
+async function doCredit(batchId) {
+  if (!confirm(`Credit rebates from batch #${batchId} to all eligible customer wallets?`)) return;
+  try {
+    const r = await fetch(`/api/rebate/batches/${batchId}/auto-credit`, {method:'POST'});
+    const d = await r.json();
+    if (d.ok) {
+      alert(`Success! Credited ${d.credited} customers, total ${fmt$(d.total_amount)}.${d.errors?.length ? ' ' + d.errors.length + ' errors.' : ''}`);
+    } else {
+      alert('Error: ' + (d.detail || 'Unknown error'));
+    }
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+  loadBatches();
+}
+
+function closeModal() { document.getElementById('overlay').classList.remove('active'); }
+
+loadBatches();
+</script>
+{% endblock %}

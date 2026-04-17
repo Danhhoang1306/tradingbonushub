@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+{% block title %}Account Owners{% endblock %}
+{% block page_title %}Account Owners{% endblock %}
+
+{% block head %}
+<style>
+.toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+
+.ao-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.ao-table th { background: #f8f9fa; font-size: 12px; font-weight: 700; color: #555; text-transform: uppercase; padding: 10px 14px; text-align: left; border-bottom: 1px solid #e9ecef; }
+.ao-table td { padding: 11px 14px; font-size: 13px; color: #333; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+.ao-table tr:last-child td { border-bottom: none; }
+.ao-table tr:hover td { background: #fafbff; }
+
+.badge-broker { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 20px; background: rgba(26,115,232,.1); color: #1a73e8; border: 1px solid rgba(26,115,232,.2); }
+.badge-promo  { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 20px; background: rgba(26,115,232,.1); color: #1a73e8; border: 1px solid rgba(26,115,232,.2); white-space: nowrap; }
+.pw-cell { font-family: monospace; font-size: 12px; color: #888; }
+.pw-toggle { cursor: pointer; font-size: 11px; color: #1a73e8; margin-left: 6px; }
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ib-num { font-family: monospace; color: #555; font-size: 11px; }
+.ib-links { display: flex; flex-direction: column; gap: 3px; font-size: 11px; }
+.ib-links a { color: #1a73e8; text-decoration: none; }
+.ib-links a:hover { text-decoration: underline; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+  <div style="font-size:14px;color:#666;">Manage IB / Account Owner</div>
+  <button class="btn btn-primary" onclick="openAdd()">+ Add Account Owner</button>
+</div>
+
+<table class="ao-table" id="ao-table">
+  <thead>
+    <tr>
+      <th>IB Name</th>
+      <th>Broker</th>
+      <th>Program</th>
+      <th>IB Number</th>
+      <th>Referral Link</th>
+      <th>Gmail</th>
+      <th>Password</th>
+      <th>Notes</th>
+      <th>Created</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody id="ao-tbody">
+    <tr><td colspan="10" style="text-align:center;color:#aaa;padding:32px;">Loading...</td></tr>
+  </tbody>
+</table>
+
+<!-- Add / Edit modal -->
+<div class="overlay" id="modal-overlay">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <h3 id="modal-title">Add Account Owner</h3>
+      <button class="close-btn" onclick="closeModal()">×</button>
+    </div>
+    <input type="hidden" id="edit-oid" value="" />
+
+    <div class="form-row-2">
+      <div class="form-group">
+        <label>IB Name <span style="color:#c5221f">*</span></label>
+        <input type="text" id="f-ib-name" placeholder="John Doe" />
+      </div>
+      <div class="form-group">
+        <label>Broker <span style="color:#c5221f">*</span></label>
+        <select id="f-broker-id"></select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Gmail</label>
+      <input type="email" id="f-gmail" placeholder="ib@gmail.com" />
+    </div>
+
+    <div class="form-group">
+      <label>Applicable Program</label>
+      <select id="f-promotion-id">
+        <option value="">-- All Programs (Daily Backcom) --</option>
+      </select>
+    </div>
+
+    <div class="form-row-2">
+      <div class="form-group">
+        <label>IB Number</label>
+        <input type="text" id="f-ib-number" placeholder="IB-001 / 123456" />
+      </div>
+      <div class="form-group">
+        <label>Referral Link</label>
+        <input type="url" id="f-ib-link" placeholder="https://..." />
+      </div>
+    </div>
+
+    <div class="form-row-2">
+      <div class="form-group">
+        <label>Login Password (broker platform)</label>
+        <input type="text" id="f-login-password" placeholder="Broker account password" />
+      </div>
+      <div class="form-group">
+        <label>Minimum Capital (USD)</label>
+        <input type="number" id="f-min-deposit" placeholder="500" min="0" step="100" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Notes</label>
+      <textarea id="f-note" rows="2" placeholder="Internal notes..."></textarea>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="save()">Save</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let owners = [], brokers = [], promotions = [];
+
+async function loadAll() {
+  [owners, brokers, promotions] = await Promise.all([
+    fetch('/api/account-owners').then(r => r.json()),
+    fetch('/api/brokers').then(r => r.json()),
+    fetch('/api/account-owners/programs-for-select').then(r => r.ok ? r.json() : []).catch(() => []),
+  ]);
+  renderTable();
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function fmtDate(s) {
+  if (!s) return '—';
+  return s.slice(0, 16).replace('T', ' ');
+}
+
+function renderTable() {
+  const tbody = document.getElementById('ao-tbody');
+  if (!owners.length) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#aaa;padding:32px;">No account owners yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = owners.map(o => {
+    const promoName = o.promotion_name || '';
+    const ibNum  = o.ib_number || o.ib_non_markup_number || o.ib_ab_number || '';
+    const ibLink = o.reff_link || o.ib_link || o.ib_non_markup_link || o.ib_ab_link || '';
+    return `
+    <tr data-oid="${o.id}">
+      <td><strong>${esc(o.ib_name)}</strong></td>
+      <td>${o.broker_name ? `<span class="badge-broker">${esc(o.broker_name)}</span>` : '—'}</td>
+      <td>${promoName ? `<span class="badge-promo">${esc(promoName)}</span>` : '<span style="color:#aaa;font-size:11px;">All</span>'}</td>
+      <td>${ibNum ? `<span class="ib-num">${esc(ibNum)}</span>` : '—'}</td>
+      <td>${ibLink ? `<div class="ib-links"><a href="${esc(ibLink)}" target="_blank">🔗 ${esc(ibLink.slice(0,40))}${ibLink.length>40?'…':''}</a></div>` : '—'}</td>
+      <td>${esc(o.email || o.gmail) || '—'}</td>
+      <td class="pw-cell">
+        <span class="pw-mask" data-pw="${esc(o.login_password)}">${o.login_password ? '••••••' : '—'}</span>
+        ${o.login_password ? `<span class="pw-toggle" onclick="togglePw(this)">Show</span>` : ''}
+      </td>
+      <td style="color:#888;font-size:12px;">${esc(o.note) || '—'}</td>
+      <td style="font-size:11px;color:#aaa;">${fmtDate(o.created_at)}</td>
+      <td>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-secondary btn-sm" onclick="openEdit(${o.id})">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="del(${o.id})">Delete</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function togglePw(el) {
+  const span = el.previousElementSibling;
+  const pw = span.dataset.pw;
+  if (el.textContent === 'Show') { span.textContent = pw; el.textContent = 'Hide'; }
+  else { span.textContent = '••••••'; el.textContent = 'Show'; }
+}
+
+function populateBrokerSelect(selectedId) {
+  const sel = document.getElementById('f-broker-id');
+  sel.innerHTML = '<option value="">-- Select Broker --</option>' +
+    brokers.map(b => `<option value="${b.id}" ${b.id === selectedId ? 'selected' : ''}>${b.name}</option>`).join('');
+}
+
+function populatePromotionSelect(selectedId) {
+  const sel = document.getElementById('f-promotion-id');
+  sel.innerHTML = '<option value="">-- All Programs (Daily Backcom) --</option>' +
+    (Array.isArray(promotions) ? promotions : [])
+      .map(p => `<option value="${p.id}" ${p.id === selectedId ? 'selected' : ''}>${esc(p.name)}</option>`)
+      .join('');
+}
+
+function clearForm() {
+  ['f-ib-name','f-gmail','f-login-password','f-note','f-ib-number','f-ib-link'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-min-deposit').value = '';
+}
+
+function openAdd() {
+  document.getElementById('edit-oid').value = '';
+  document.getElementById('modal-title').textContent = 'Add Account Owner';
+  clearForm();
+  populateBrokerSelect(null);
+  populatePromotionSelect(null);
+  document.getElementById('modal-overlay').classList.add('active');
+}
+
+function openEdit(oid) {
+  const o = owners.find(x => x.id === oid);
+  if (!o) return;
+  document.getElementById('edit-oid').value    = oid;
+  document.getElementById('modal-title').textContent = 'Edit Account Owner';
+  document.getElementById('f-ib-name').value       = o.ib_name || '';
+  document.getElementById('f-gmail').value         = o.email || o.gmail || '';
+  document.getElementById('f-login-password').value = o.login_password || '';
+  document.getElementById('f-min-deposit').value   = o.min_deposit || '';
+  document.getElementById('f-note').value          = o.note || '';
+  document.getElementById('f-ib-number').value = o.ib_number || o.ib_non_markup_number || o.ib_ab_number || '';
+  document.getElementById('f-ib-link').value   = o.reff_link || o.ib_link || o.ib_non_markup_link || o.ib_ab_link || '';
+  populateBrokerSelect(o.broker_id);
+  populatePromotionSelect(o.promotion_id);
+  document.getElementById('modal-overlay').classList.add('active');
+}
+
+function closeModal() { document.getElementById('modal-overlay').classList.remove('active'); }
+
+async function save() {
+  const oid = document.getElementById('edit-oid').value;
+  const body = {
+    ib_name:        document.getElementById('f-ib-name').value.trim(),
+    gmail:          document.getElementById('f-gmail').value.trim(),
+    login_password: document.getElementById('f-login-password').value.trim(),
+    broker_id:      document.getElementById('f-broker-id').value || null,
+    min_deposit:    parseFloat(document.getElementById('f-min-deposit').value) || 0,
+    note:           document.getElementById('f-note').value.trim(),
+    ib_number:      document.getElementById('f-ib-number').value.trim(),
+    ib_link:        document.getElementById('f-ib-link').value.trim(),
+    promotion_id:   document.getElementById('f-promotion-id').value || null,
+  };
+  if (!body.ib_name) { alert('Please enter IB name'); return; }
+
+  const url    = oid ? `/api/account-owners/${oid}` : '/api/account-owners';
+  const method = oid ? 'PUT' : 'POST';
+  const r = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  if (r.ok) { closeModal(); loadAll(); }
+  else { const e = await r.json(); alert(e.detail || 'Save error'); }
+}
+
+async function del(oid) {
+  const o = owners.find(x => x.id === oid);
+  if (!confirm(`Delete account owner "${o?.ib_name}"?\nAssociated promotions and enrollments will be unlinked.`)) return;
+  const r = await fetch(`/api/account-owners/${oid}`, { method: 'DELETE' });
+  if (r.ok) loadAll();
+  else { const e = await r.json(); alert(e.detail || 'Cannot delete'); }
+}
+
+loadAll();
+</script>
+{% endblock %}

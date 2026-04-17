@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>{{ pc.get('site_title', 'Trading Bonus Hub | Daily Cashback & Forex Bonus for Traders') }}</title>
+  <link rel="canonical" href="https://tradingbonushub.com/" />
+  <link rel="alternate" hreflang="en" href="https://tradingbonushub.com/" />
+  <link rel="alternate" hreflang="en" href="https://tradingbonushub.com/?lang=en" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/logo-tb.png" />
+  <link rel="apple-touch-icon" href="/static/logo-tb.png" />
+  <meta name="description" content="{{ pc.get('site_description', '') }}" />
+  <meta name="keywords" content="trading bonus, trading reward, forex bonus, cashback forex, rebate forex, gold cashback, daily cashback, tradingbonushub" />
+  <meta name="robots" content="index, follow" />
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://tradingbonushub.com/" />
+  <meta property="og:site_name" content="TradingBonusHub" />
+  <meta property="og:title" content="Trading Bonus Hub | Daily Cashback &amp; Forex Bonus for Traders" />
+  <meta property="og:description" content="The best trading bonus program — earn cashback &amp; forex bonus up to $2,000/month from Forex &amp; Gold trading. Sign up for free." />
+  <meta property="og:image" content="{{ ps.get('og_image_url') or 'https://tradingbonushub.com/static/og-image.png' }}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:locale" content="{{ 'en_US' if lang == 'en' else 'vi_VN' }}" />
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Trading Bonus Hub | Daily Cashback &amp; Forex Bonus for Traders" />
+  <meta name="twitter:description" content="The best trading bonus program — earn cashback &amp; forex bonus up to $2,000/month from Forex &amp; Gold trading." />
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://tradingbonushub.com/#website",
+        "url": "https://tradingbonushub.com/",
+        "name": "TradingBonusHub",
+        "description": "Trading bonus system — cashback and forex bonus for Forex & Gold traders",
+        "inLanguage": "{{ lang }}"
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://tradingbonushub.com/#organization",
+        "name": "TradingBonusHub",
+        "url": "https://tradingbonushub.com/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://tradingbonushub.com/static/logo-tb.png",
+          "width": 200,
+          "height": 150
+        },
+        "description": "Trading reward and forex bonus program — cashback for every lot of Forex & Gold trading, daily payouts",
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "email": "support@tradingbonushub.com",
+          "contactType": "customer service",
+          "availableLanguage": ["English", "Vietnamese"]
+        }
+      }{% if faq_generic %},
+      {
+        "@type": "FAQPage",
+        "@id": "https://tradingbonushub.com/#faq",
+        "mainEntity": [
+          {% for item in faq_generic %}
+          {
+            "@type": "Question",
+            "name": "{{ (item.question_en if lang == 'en' and item.question_en else item.question) | e }}",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "{{ (item.answer_en if lang == 'en' and item.answer_en else item.answer) | replace('\n', ' ') | e }}"
+            }
+          }{% if not loop.last %},{% endif %}
+          {% endfor %}
+        ]
+      }
+      {% endif %}
+    ]
+  }
+  </script>
+  <link rel="stylesheet" href="{{ static_url('/static/css/base.css') }}" />
+  <link rel="stylesheet" href="{{ static_url('/static/css/public.css') }}" />
+  {% include "_tracking_head.html" %}
+</head>
+<body>
+{% include "_tracking_body.html" %}
+
+<!-- ── BANNERS ── -->
+{% if banners %}
+{% for b in banners %}
+<div class="banner-bar banner-{{ b.style }}">
+  <span>{{ b.text | sanitize | safe }}</span>
+  {% if b.link_text %}<a href="{{ b.link_url }}">{{ b.link_text }}</a>{% endif %}
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- ── HEADER ── -->
+<!-- ── HERO ── -->{% include "_nav.html" %}
+
+<section class="hero">
+  <div class="hero-eyebrow"{% if edit_mode %} data-edit-field="hero_eyebrow" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('hero_eyebrow', '🏆 Smart Rebate') }}</div>
+  <h1>
+    {% if edit_mode %}<span data-edit-field="hero_title_line1" data-edit-lang="{{ lang }}">{{ pc.get('hero_title_line1', 'Trade Forex & Gold') }}</span>{% else %}{{ pc.get('hero_title_line1', 'Trade Forex & Gold') }}{% endif %}
+    <span class="accent"{% if edit_mode %} data-edit-field="hero_title_accent" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('hero_title_accent', 'Earn cashback on every trade') }}</span>
+  </h1>
+  <p class="hero-sub"{% if edit_mode %} data-edit-field="hero_sub" data-edit-lang="{{ lang }}" data-edit-multiline="1"{% endif %}>
+    {{ pc.get('hero_sub', '') | replace('\n', '<br>') | sanitize | safe }}
+  </p>
+
+  <div class="hero-highlights">
+    <div class="hl-item"><span class="hl-check">✓</span> {% if edit_mode %}<span data-edit-field="hero_hl1" data-edit-lang="{{ lang }}">{{ pc.get('hero_hl1', 'Cashback on every trade') }}</span>{% else %}{{ pc.get('hero_hl1', 'Cashback on every trade') }}{% endif %}</div>
+    <div class="hl-item"><span class="hl-check">✓</span> {% if edit_mode %}<span data-edit-field="hero_hl2" data-edit-lang="{{ lang }}">{{ pc.get('hero_hl2', 'No impact on spread') }}</span>{% else %}{{ pc.get('hero_hl2', 'No impact on spread') }}{% endif %}</div>
+    <div class="hl-item"><span class="hl-check">✓</span> {% if edit_mode %}<span data-edit-field="hero_hl3" data-edit-lang="{{ lang }}">{{ pc.get('hero_hl3', 'Supports MT4 / MT5') }}</span>{% else %}{{ pc.get('hero_hl3', 'Supports MT4 / MT5') }}{% endif %}</div>
+    <div class="hl-item"><span class="hl-check">✓</span> {% if edit_mode %}<span data-edit-field="hero_hl4" data-edit-lang="{{ lang }}">{{ pc.get('hero_hl4', 'Global traders') }}</span>{% else %}{{ pc.get('hero_hl4', 'Global traders') }}{% endif %}</div>
+  </div>
+
+  <div class="hero-cta">
+    <a class="btn-primary" href="/portal/login"{% if edit_mode %} data-edit-field="hero_btn_primary" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('hero_btn_primary', 'Get cashback now') }}</a>
+    <a class="btn-ghost" href="#calculator"{% if edit_mode %} data-edit-field="hero_btn_secondary" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('hero_btn_secondary', 'See how it works ↓') }}</a>
+  </div>
+
+</section>
+
+<!-- ── BROKER MARQUEE ── -->
+<div class="broker-marquee-sec">
+  <div class="broker-marquee-label"{% if edit_mode %} data-edit-field="marquee_label" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('marquee_label', 'Our Partners') }}</div>
+  <div class="marquee-wrap">
+    <div class="marquee-track">
+      <div class="marquee-inner" id="marqueeInner">
+        <!-- set 1 -->
+        <div class="broker-logo"><img src="/static/logo-vantage.png"   alt="Vantage" loading="lazy"></div>
+        <div class="broker-logo"><img src="/static/logo-exness.png"    alt="Exness" loading="lazy"></div>
+        <div class="broker-logo"><img src="/static/logo-dupoin.png"    alt="Dupoin" loading="lazy"></div>
+        <div class="broker-logo"><img src="/static/logo-vtmarkets.png" alt="VT Markets" loading="lazy"></div>
+        <div class="broker-logo"><img src="/static/logo-ecmarkets.png" alt="EC Markets" loading="lazy"></div>
+        <div class="broker-logo"><img src="/static/logo-ultima.png"    alt="Ultima" loading="lazy"></div>
+        <!-- set 2 -->
+        <div class="broker-logo"><img src="/static/logo-vantage.png"   alt="Vantage" loading="lazy"></div>
+        <div class="broker-logo"><img src="/static/logo-exness.png"    alt="Exness" loading="lazy"></div>
+        <div class="broker-logo"><img src="/static/logo-dupoin.png"    alt="Dupoin" loading="lazy"></div>
+        <div class="broker-logo"><img src="/static/logo-vtmarkets.png" alt="VT Markets" loading="lazy"></div>
+        <div class="broker-logo"><img src="/static/logo-ecmarkets.png" alt="EC Markets" loading="lazy"></div>
+        <div class="broker-logo"><img src="/static/logo-ultima.png"    alt="Ultima" loading="lazy"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── HERO PROMO ── -->
+{% if promo_bar %}
+{% if promo_bar.css %}<style>{{ promo_bar.css | safe }}</style>{% endif %}
+{{ promo_bar.html | sanitize | safe }}
+{% else %}
+<section class="hero-promo" id="heroPromo">
+  <div class="promo-inner">
+    <div class="promo-left">
+      <div class="promo-badge">{{ t('promo_badge', lang) }}</div>
+      <h2 class="promo-title">{{ t('promo_title', lang) | sanitize | safe }}</h2>
+      <p class="promo-sub">{{ t('promo_sub', lang) }}</p>
+      <ul class="promo-perks">
+        <li>{{ t('promo_perk1', lang) }}</li>
+        <li>{{ t('promo_perk2', lang) }}</li>
+        <li>{{ t('promo_perk3', lang) }}</li>
+      </ul>
+      <div class="promo-cta-wrap">
+        <a class="promo-cta" href="/portal/login">{{ t('promo_cta', lang) }}</a>
+        <a class="promo-cta-ghost" href="#calculator">{{ t('promo_cta_ghost', lang) }}</a>
+      </div>
+    </div>
+    <div class="promo-right">
+      <div class="promo-big">
+        <div class="promo-number">100%</div>
+        <div class="promo-number-label">{{ t('promo_number_label', lang) }}</div>
+        <div class="promo-countdown" id="promoCountdown">
+          <div class="promo-cd-item"><div class="promo-cd-val" id="cdDays">00</div><div class="promo-cd-lbl">{{ t('cd_days', lang) }}</div></div>
+          <div class="promo-cd-item"><div class="promo-cd-val" id="cdHours">00</div><div class="promo-cd-lbl">{{ t('cd_hours', lang) }}</div></div>
+          <div class="promo-cd-item"><div class="promo-cd-val" id="cdMins">00</div><div class="promo-cd-lbl">{{ t('cd_mins', lang) }}</div></div>
+          <div class="promo-cd-item"><div class="promo-cd-val" id="cdSecs">00</div><div class="promo-cd-lbl">{{ t('cd_secs', lang) }}</div></div>
+        </div>
+        <div class="promo-social">{{ t('promo_social', lang) }} <strong id="traderCount">{{ "{:,}".format(trader_count) }}</strong> {{ t('promo_social_suffix', lang) }}</div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- Sticky promo bar -->
+{% if ps.get('sticky_enabled', '1') == '1' %}
+<style>
+#promoSticky { position:fixed; top:-60px; left:0; right:0; z-index:9999;
+  background:{{ ps.get('sticky_bg', 'linear-gradient(90deg,#7c1d2e,#dc3545,#7c1d2e)') }};
+  padding:8px 24px; padding-top:calc(8px + env(safe-area-inset-top, 0px));
+  display:flex; align-items:center; justify-content:center; gap:12px;
+  font-size:14px; font-weight:700; color:#fff;
+  box-shadow:0 2px 12px rgba(0,0,0,.3); transition:top .35s ease; }
+#promoSticky .sticky-cta { padding:4px 16px; border-radius:50px; font-size:12px;
+  font-weight:800; background:#fff; color:#dc3545; text-decoration:none; white-space:nowrap; }
+@media(max-width:600px){
+  #promoSticky { padding:6px 12px; padding-top:calc(6px + env(safe-area-inset-top, 0px));
+    gap:6px; font-size:12px; flex-wrap:wrap; }
+  #promoSticky .sticky-cta { padding:3px 10px; font-size:11px; }
+}
+</style>
+<div id="promoSticky">
+  <span>{% if lang == 'vi' %}{{ ps.get('sticky_text_vi', '🔥 100% REBATE cho khách đăng ký mới') }}{% else %}{{ ps.get('sticky_text_en', '🔥 100% REBATE for new sign-ups') }}{% endif %}</span>
+  <span id="stickyTimer" style="font-variant-numeric:tabular-nums;"></span>
+  <a class="sticky-cta" href="{{ ps.get('sticky_link', '/portal/login') }}">{% if lang == 'vi' %}{{ ps.get('sticky_cta_vi', 'Nhận ngay') }}{% else %}{{ ps.get('sticky_cta_en', 'Claim Now') }}{% endif %}</a>
+</div>
+{% endif %}
+
+<!-- ── BENEFITS SLIDER ── -->
+<section class="sec benefits-sec">
+  <div class="sec-inner">
+    <div class="sec-head" data-sa>
+      <div class="sec-tag"{% if edit_mode %} data-edit-field="benefits_tag" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('benefits_tag', 'Benefits') }}</div>
+      <h2{% if edit_mode %} data-edit-field="benefits_title" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('benefits_title', 'Why traders choose TradingBonusHub') }}</h2>
+      <p{% if edit_mode %} data-edit-field="benefits_sub" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('benefits_sub', 'Trade as usual — earn extra cashback every day') }}</p>
+    </div>
+
+    <!-- Tab nav -->
+    <div class="bslider-tabs" role="tablist">
+      <button class="bslider-tab active" data-tab="0" role="tab">
+        <span class="bslider-tab__icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 0 1 0 4H8"/><path d="M12 18V6"/></svg></span>
+        <span class="bslider-tab__label">{{ t('ben_tab1', lang) }}</span>
+      </button>
+      <button class="bslider-tab" data-tab="1" role="tab">
+        <span class="bslider-tab__icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg></span>
+        <span class="bslider-tab__label">{{ t('ben_tab2', lang) }}</span>
+      </button>
+      <button class="bslider-tab" data-tab="2" role="tab">
+        <span class="bslider-tab__icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>
+        <span class="bslider-tab__label">{{ t('ben_tab3', lang) }}</span>
+      </button>
+      <button class="bslider-tab" data-tab="3" role="tab">
+        <span class="bslider-tab__icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+        <span class="bslider-tab__label">{{ t('ben_tab4', lang) }}</span>
+      </button>
+      <button class="bslider-tab" data-tab="4" role="tab">
+        <span class="bslider-tab__icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg></span>
+        <span class="bslider-tab__label">{{ t('ben_tab5', lang) }}</span>
+      </button>
+    </div>
+
+    <!-- Slide panels -->
+    <div class="bslider-wrap">
+
+      <div class="bslider-panel" data-panel="0">
+        <div class="bslider-content">
+          <div class="bslider-text">
+            <div class="bslider-kicker">{{ t('ben1_kicker', lang) }}</div>
+            <div class="bslider-title">{{ t('ben1_title', lang) | sanitize | safe }}</div>
+            <div class="bslider-desc">{{ t('ben1_desc', lang) }}</div>
+            <a class="btn-primary bslider-cta" href="/portal/register">{{ t('ben1_cta', lang) }}</a>
+          </div>
+          <div class="bslider-img">
+            <img src="/static/slide1.jpg?v=2" alt="Cashback" loading="lazy">
+          </div>
+        </div>
+      </div>
+
+      <div class="bslider-panel" data-panel="1">
+        <div class="bslider-content">
+          <div class="bslider-text">
+            <div class="bslider-kicker">{{ t('ben2_kicker', lang) }}</div>
+            <div class="bslider-title">{{ t('ben2_title', lang) | sanitize | safe }}</div>
+            <div class="bslider-desc">{{ t('ben2_desc', lang) }}</div>
+            <a class="btn-primary bslider-cta" href="/portal/register">{{ t('ben2_cta', lang) }}</a>
+          </div>
+          <div class="bslider-img">
+            <img src="/static/slide2.jpg?v=2" alt="Simple registration" loading="lazy">
+          </div>
+        </div>
+      </div>
+
+      <div class="bslider-panel" data-panel="2">
+        <div class="bslider-content">
+          <div class="bslider-text">
+            <div class="bslider-kicker">{{ t('ben3_kicker', lang) }}</div>
+            <div class="bslider-title">{{ t('ben3_title', lang) | sanitize | safe }}</div>
+            <div class="bslider-desc">{{ t('ben3_desc', lang) }}</div>
+            <a class="btn-primary bslider-cta" href="/portal/register">{{ t('ben3_cta', lang) }}</a>
+          </div>
+          <div class="bslider-img">
+            <img src="/static/slide3.jpg?v=2" alt="Automatic payments" loading="lazy">
+          </div>
+        </div>
+      </div>
+
+      <div class="bslider-panel" data-panel="3">
+        <div class="bslider-content">
+          <div class="bslider-text">
+            <div class="bslider-kicker">{{ t('ben4_kicker', lang) }}</div>
+            <div class="bslider-title">{{ t('ben4_title', lang) | sanitize | safe }}</div>
+            <div class="bslider-desc">{{ t('ben4_desc', lang) }}</div>
+            <a class="btn-primary bslider-cta" href="/portal/register">{{ t('ben4_cta', lang) }}</a>
+          </div>
+          <div class="bslider-img">
+            <img src="/static/slide4.jpg?v=2" alt="Transparent history" loading="lazy">
+          </div>
+        </div>
+      </div>
+
+      <div class="bslider-panel" data-panel="4">
+        <div class="bslider-content">
+          <div class="bslider-text">
+            <div class="bslider-kicker">{{ t('ben5_kicker', lang) }}</div>
+            <div class="bslider-title">{{ t('ben5_title', lang) | sanitize | safe }}</div>
+            <div class="bslider-desc">{{ t('ben5_desc', lang) }}</div>
+            <a class="btn-primary bslider-cta" href="/portal/register">{{ t('ben5_cta', lang) }}</a>
+          </div>
+          <div class="bslider-img">
+            <img src="/static/slide5.jpg?v=2" alt="Trusted partners" loading="lazy">
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /bslider-wrap -->
+  </div>
+</section>
+
+
+
+<!-- ── CALCULATOR ── -->
+<section class="sec calc-sec" id="calculator">
+  <div class="sec-inner">
+
+    <!-- Comparison table — FTMO style -->
+    <div class="calc-brokers-header" data-sa>
+      <span class="calc-brokers-label"{% if edit_mode %} data-edit-field="calc_brokers_label" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('calc_brokers_label', 'best offers for you') }}</span>
+    </div>
+
+    <div class="cmp-wrap" data-sa>
+      <div class="cmp-scroll">
+        <div class="cmp-layout">
+
+          <!-- Left: labels -->
+          <div class="cmp-labels">
+            <div class="cmp-lbl-head"></div>
+            <div class="cmp-lbl cmp-lbl--hero"><span class="cmp-lbl-icon">&#9889;</span> {{ t('cmp_rebate_rate', lang) }}</div>
+            <div class="cmp-lbl cmp-lbl--normal"><span class="cmp-lbl-icon">&#11088;</span> {{ t('cmp_xau_lot', lang) }}</div>
+            <div class="cmp-lbl cmp-lbl--normal"><span class="cmp-lbl-icon">&#128200;</span> {{ t('cmp_leverage', lang) }}</div>
+            <div class="cmp-lbl cmp-lbl--normal"><span class="cmp-lbl-icon">&#128196;</span> {{ t('cmp_license', lang) }}</div>
+            <div class="cmp-lbl cmp-lbl--normal"><span class="cmp-lbl-icon">&#128338;</span> {{ t('cmp_payment', lang) }}</div>
+            <div class="cmp-lbl-foot"></div>
+          </div>
+
+          <!-- Columns: one per program -->
+          {% for p in top_programs %}
+          <div class="cmp-col{% if loop.first %} cmp-col--top{% endif %}">
+
+            <div class="cmp-col-head">
+              <div class="cmp-col-rank">{{ p.rank }}</div>
+              {% if p.broker_slug %}<img class="cmp-col-logo" src="/static/logo-{{ p.broker_slug }}.png" alt="{{ p.broker_name }}" loading="lazy" onerror="this.style.display='none'">{% endif %}
+              <div class="cmp-col-name">{{ p.broker_name }}</div>
+              <div class="cmp-col-sub">{{ p.name }}</div>
+            </div>
+
+            <div class="cmp-cell cmp-cell--hero">
+              <div class="cmp-hero-val">{{ p.rebate_pct | default(0) | int }}%</div>
+              <div class="cmp-hero-unit">{{ t('cmp_commission', lang) }}</div>
+            </div>
+            <div class="cmp-cell">{{ p.rebate_xau_label or '—' }}</div>
+            <div class="cmp-cell">{{ p.leverage or '—' }}</div>
+            <div class="cmp-cell">
+              {% if p.licenses %}{% for lic in p.licenses.split(',') %}<span class="cmp-pill">{{ lic.strip() }}</span>{% endfor %}{% else %}—{% endif %}
+            </div>
+            <div class="cmp-cell"><span class="cmp-pill cmp-pill--green">{{ freq_label(p.rebate_frequency, lang) }}</span></div>
+
+            <div class="cmp-col-foot">
+              <a class="cmp-btn" href="/portal/register?broker={{ p.broker_slug }}">{{ t('cmp_get_rebate', lang) }}</a>
+              <a class="cmp-link" href="{{ p.broker_learn_more_url or '/promotions' }}">{{ t('cmp_learn_more', lang) }} &rarr;</a>
+            </div>
+          </div>
+          {% endfor %}
+
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-head" data-sa>
+      <div class="sec-tag gold-bg"{% if edit_mode %} data-edit-field="calc_tag" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('calc_tag', '🧮 Calculate') }}</div>
+      <h2{% if edit_mode %} data-edit-field="calc_title" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('calc_title', 'How much can you earn?') }}</h2>
+      <p{% if edit_mode %} data-edit-field="calc_sub" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('calc_sub', 'Drag the slider to see estimated monthly rebate + bonus') }}</p>
+    </div>
+
+    <div class="calc-card" data-sa="scale">
+      <div class="calc-slider-wrap">
+        <div class="calc-slider-top">
+          <span class="calc-slider-title"{% if edit_mode %} data-edit-field="calc_slider_title" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('calc_slider_title', 'Gold volume / month') }}</span>
+          <span class="calc-slider-val" id="slider-display"><small style="font-size:.55em;opacity:.7">Best rebate</small> $750</span>
+        </div>
+        <div class="cslider-wrap-inner">
+          <input type="range" class="cslider" id="lots-slider" min="0" max="500" value="100" step="10" oninput="onSlider(this.value)">
+          <div class="cslider-bubble" id="slider-bubble">100 lot</div>
+        </div>
+      </div>
+
+      <!-- Broker rebate comparison -->
+      <div class="rebate-cmp">
+        <div class="rebate-cmp-title">{{ t('rebate_cmp_title', lang) }}</div>
+        <table>
+          <thead>
+            <tr>
+              <th>{{ t('rebate_broker', lang) }}</th>
+              <th>{{ t('rebate_per_lot', lang) }}</th>
+              <th>{{ t('rebate_estimate', lang) }}</th>
+            </tr>
+          </thead>
+          <tbody id="rebate-cmp-body">
+            {% for p in backcom_promos %}
+            <tr data-rebate-per-lot="{{ p.rebate_usd_per_lot or 0 }}" data-broker-slug="{{ p.broker_slug or '' }}">
+              <td>
+                <div class="rebate-cmp-broker">
+                  {% if p.broker_slug %}<img class="rebate-cmp-logo" src="/static/logo-{{ p.broker_slug }}.png" alt="{{ p.broker_name }}" loading="lazy" onerror="this.style.display='none'">{% endif %}
+                  <span class="rebate-cmp-name">{{ p.broker_name or p.name }}</span>
+                </div>
+              </td>
+              <td class="rebate-cmp-rate-cell">~${{ "%.1f" | format(p.rebate_usd_per_lot or 0) }} / lot</td>
+              <td><span class="rebate-cmp-val" data-rebate-val>$0</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <a class="btn-calc-go" href="/portal/register" id="cr-cta"{% if edit_mode %} data-edit-field="calc_cta" data-edit-lang="{{ lang }}"{% endif %}>Get Rebate now →</a>
+      <div class="calc-note"{% if edit_mode %} data-edit-field="calc_note" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('calc_note', '⚡ Estimated based on actual rebate rates. Actual amounts may vary depending on trading conditions.') }}</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── LEADERBOARD ── -->
+<section class="sec lb-sec">
+  <div class="sec-inner">
+    <div class="sec-head" data-sa>
+      <div class="sec-tag"{% if edit_mode %} data-edit-field="lb_tag" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('lb_tag', '🏆 Top Gold Traders This Month') }}</div>
+      <h2{% if edit_mode %} data-edit-field="lb_title" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('lb_title', 'Top Gold Traders Leaderboard') }}</h2>
+      <p{% if edit_mode %} data-edit-field="lb_sub" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('lb_sub', 'Top traders earning the most cashback this month') }}</p>
+    </div>
+    <div class="lb-wrap" data-sa>
+      <table class="lb-table">
+        <thead>
+          <tr>
+            <th{% if edit_mode %} data-edit-field="lb_col1" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('lb_col1', 'Rank') }}</th>
+            <th{% if edit_mode %} data-edit-field="lb_col2" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('lb_col2', 'Trader') }}</th>
+            <th{% if edit_mode %} data-edit-field="lb_col3" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('lb_col3', 'Gold Volume (lot)') }}</th>
+            <th{% if edit_mode %} data-edit-field="lb_col4" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('lb_col4', 'Total Cashback') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set lb_rows = [
+            ('r1','🥇','lb_r1','Trader***21','520 lot','$4,600'),
+            ('r2','🥈','lb_r2','Gold***Pro','480 lot','$4,400'),
+            ('r3','🥉','lb_r3','FX***King','430 lot','$4,150'),
+            ('rn','4','lb_r4','VN***Trader','210 lot','$1,650'),
+            ('rn','5','lb_r5','Pro***FX','160 lot','$1,050'),
+            ('rn','6','lb_r6','Asia***Trade','140 lot','$900'),
+            ('rn','7','lb_r7','MT5***Star','115 lot','$750'),
+            ('rn','8','lb_r8','Viet***FX','95 lot','$620'),
+            ('rn','9','lb_r9','Cash***Pro','80 lot','$520'),
+            ('rn','10','lb_r10','HN***Trader','65 lot','$425'),
+          ] %}
+          {% for cls, rank, key, def_name, def_vol, def_reward in lb_rows %}
+          <tr>
+            <td class="lb-rank {{ cls }}">{{ rank }}</td>
+            <td class="lb-name"{% if edit_mode %} data-edit-field="{{ key }}_name" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get(key+'_name', def_name) }}</td>
+            <td class="lb-vol"{% if edit_mode %} data-edit-field="{{ key }}_vol" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get(key+'_vol', def_vol) }}</td>
+            <td class="lb-reward"{% if edit_mode %} data-edit-field="{{ key }}_reward" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get(key+'_reward', def_reward) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="lb-foot">
+        <span{% if edit_mode %} data-edit-field="lb_foot" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('lb_foot', 'You could also appear on this leaderboard.') }}</span> &nbsp;
+        <a href="/portal/login" style="color:var(--gold);font-weight:800;"{% if edit_mode %} data-edit-field="lb_foot_link" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('lb_foot_link', 'Start earning cashback now →') }}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ── -->
+<section class="sec how-sec" id="how">
+  <div class="sec-inner">
+    <div class="sec-head" data-sa>
+      <div class="sec-tag"{% if edit_mode %} data-edit-field="how_tag" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('how_tag', 'Guide') }}</div>
+      <h2{% if edit_mode %} data-edit-field="how_title" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('how_title', 'Start earning cashback in just 4 steps') }}</h2>
+      <p{% if edit_mode %} data-edit-field="how_sub" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('how_sub', 'It only takes a few minutes to set up — then you can earn cashback on every trade') }}</p>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card" data-sa data-sa-delay="0">
+        <div class="step-num">1</div>
+        <h4{% if edit_mode %} data-edit-field="step1_title" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('step1_title', 'Register an account') }}</h4>
+        <p{% if edit_mode %} data-edit-field="step1_desc" data-edit-lang="{{ lang }}" data-edit-multiline="1"{% endif %}>{{ pc.get('step1_desc', 'Create a free TradingBonusHub account') }}</p>
+      </div>
+      <div class="step-card" data-sa data-sa-delay="120">
+        <div class="step-num">2</div>
+        <h4{% if edit_mode %} data-edit-field="step2_title" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('step2_title', 'Transfer account to rebate system') }}</h4>
+        <p{% if edit_mode %} data-edit-field="step2_desc" data-edit-lang="{{ lang }}" data-edit-multiline="1"{% endif %}>{{ pc.get('step2_desc', 'This process may vary for each broker.') }}</p>
+      </div>
+      <div class="step-card" data-sa data-sa-delay="240">
+        <div class="step-num">3</div>
+        <h4{% if edit_mode %} data-edit-field="step3_title" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('step3_title', 'Register for a program') }}</h4>
+        <p{% if edit_mode %} data-edit-field="step3_desc" data-edit-lang="{{ lang }}" data-edit-multiline="1"{% endif %}>{{ pc.get('step3_desc', 'Choose a suitable program and click register.') }}</p>
+      </div>
+      <div class="step-card" data-sa data-sa-delay="360">
+        <div class="step-num">4</div>
+        <h4{% if edit_mode %} data-edit-field="step4_title" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('step4_title', 'Trade & earn cashback') }}</h4>
+        <p{% if edit_mode %} data-edit-field="step4_desc" data-edit-lang="{{ lang }}" data-edit-multiline="1"{% endif %}>{{ pc.get('step4_desc', 'Continue trading as usual. Cashback is automatically calculated based on your trading volume.') }}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── TESTIMONIALS (disabled) ──
+<section class="sec testimonial-sec" id="testimonials">
+  <div class="sec-inner">
+    <div class="sec-head" data-sa>
+      <div class="sec-tag">What traders say</div>
+      <h2>Real trader testimonials</h2>
+      <p>Hundreds of traders are earning daily cashback through TradingBonusHub</p>
+    </div>
+    <div class="testi-grid" data-sa>
+      <div class="testi-card">
+        <div class="testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p class="testi-text">"Quick registration, done in just 1 day. Now I earn a few hundred dollars extra each month from rebates without changing anything about my trading."</p>
+        <div class="testi-author">
+          <div class="testi-avatar">T.A</div>
+          <div>
+            <div class="testi-name">Trader Anh</div>
+            <div class="testi-meta">Gold trading — Vantage</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p class="testi-text">"I didn't know I could earn cashback from trading before. Support is very dedicated, resolving all issues with the broker."</p>
+        <div class="testi-author">
+          <div class="testi-avatar">M.H</div>
+          <div>
+            <div class="testi-name">Minh Hoang</div>
+            <div class="testi-meta">Forex trading — Vantage RAW ECN</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p class="testi-text">"My volume is quite large so the Gold tier bonus is very attractive. I get extra cash bonus on top of daily rebates each month. Very satisfied."</p>
+        <div class="testi-author">
+          <div class="testi-avatar">D.K</div>
+          <div>
+            <div class="testi-name">Duc Khang</div>
+            <div class="testi-meta">Full-time trader — Gold & Forex</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+-->
+
+<!-- ── LATEST BLOG ── -->
+{% if latest_articles %}
+<section class="sec blog-sec" id="blog-latest">
+  <div class="sec-inner">
+    <div class="sec-head" data-sa>
+      <div class="sec-tag">Blog</div>
+      <h2>{{ t('blog_title', lang) }}</h2>
+      <p>{{ t('blog_sub', lang) }}</p>
+    </div>
+    <div class="blog-scroll-wrap" data-sa>
+      <div class="blog-scroll">
+        {% for art in latest_articles %}
+        {% set _t = art.title_en if lang == 'en' and art.title_en else art.title %}
+        {% set _e = art.excerpt_en if lang == 'en' and art.excerpt_en else (art.excerpt or '') %}
+        {% set _cover = art.cover_url_en if lang == 'en' and art.cover_url_en else art.cover_url %}
+        <a href="/blog/{{ art.slug }}{% if lang == 'en' %}?lang=en{% endif %}" class="blog-card">
+          {% if _cover %}
+            <img class="blog-card-img" src="{{ _cover }}" alt="{{ _t }}" loading="lazy" />
+          {% else %}
+            <div class="blog-card-noimg">📝</div>
+          {% endif %}
+          <div class="blog-card-body">
+            {% if art.category_name %}<div class="blog-card-cat">{{ art.category_name }}</div>{% endif %}
+            <div class="blog-card-title">{{ _t }}</div>
+            {% if _e %}<div class="blog-card-excerpt">{{ _e }}</div>{% endif %}
+            <div class="blog-card-date">{{ art.published_at[:10] if art.published_at else '' }}</div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="view-all" style="text-align:center;">
+      <a href="/blog{% if lang == 'en' %}?lang=en{% endif %}">{{ t('blog_view_all', lang) }}</a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ── FAQ ── -->
+{% if faq_generic %}
+<section class="sec faq-sec" id="faq">
+  <div class="sec-inner">
+    <div class="sec-head" data-sa>
+      <div class="sec-tag"{% if edit_mode %} data-edit-field="faq_tag" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('faq_tag', 'Q&A') }}</div>
+      <h2{% if edit_mode %} data-edit-field="faq_title" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('faq_title', 'Frequently Asked Questions') }}</h2>
+    </div>
+    <div class="faq-list" data-sa>
+      {% for item in faq_generic %}
+      {% set faq_q = item.question_en if lang == 'en' and item.question_en else item.question %}
+      {% set faq_a = item.answer_en if lang == 'en' and item.answer_en else item.answer %}
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span>{{ faq_q }}</span>
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-a">{% for line in faq_a.split('\n') %}{% if line.strip() %}<p>{{ line }}</p>{% endif %}{% endfor %}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ── FINAL CTA ── -->
+<section class="final-sec">
+  <h2{% if edit_mode %} data-edit-field="final_title" data-edit-lang="{{ lang }}"{% endif %} data-sa>{{ pc.get('final_title', 'Start earning rebates today') }}</h2>
+  <p{% if edit_mode %} data-edit-field="final_sub" data-edit-lang="{{ lang }}" data-edit-multiline="1"{% endif %} data-sa data-sa-delay="100">{{ pc.get('final_sub', '') | replace('\n', '<br>') | sanitize | safe }}</p>
+  <a class="btn-final" href="/portal/login" data-sa data-sa-delay="200"{% if edit_mode %} data-edit-field="final_btn" data-edit-lang="{{ lang }}"{% endif %}>{{ pc.get('final_btn', 'Sign up now →') }}</a>
+  <div class="final-chips" data-sa data-sa-delay="300">
+    <div class="final-chip"><span class="ck">✓</span> {% if edit_mode %}<span data-edit-field="final_chip1" data-edit-lang="{{ lang }}">{{ pc.get('final_chip1', 'Free to sign up') }}</span>{% else %}{{ pc.get('final_chip1', 'Free to sign up') }}{% endif %}</div>
+    <div class="final-chip"><span class="ck">✓</span> {% if edit_mode %}<span data-edit-field="final_chip2" data-edit-lang="{{ lang }}">{{ pc.get('final_chip2', 'No spread changes') }}</span>{% else %}{{ pc.get('final_chip2', 'No spread changes') }}{% endif %}</div>
+    <div class="final-chip"><span class="ck">✓</span> {% if edit_mode %}<span data-edit-field="final_chip3" data-edit-lang="{{ lang }}">{{ pc.get('final_chip3', 'MT4 & MT5') }}</span>{% else %}{{ pc.get('final_chip3', 'MT4 & MT5') }}{% endif %}</div>
+    <div class="final-chip"><span class="ck">✓</span> {% if edit_mode %}<span data-edit-field="final_chip4" data-edit-lang="{{ lang }}">{{ pc.get('final_chip4', 'Daily payouts') }}</span>{% else %}{{ pc.get('final_chip4', 'Daily payouts') }}{% endif %}</div>
+  </div>
+</section>
+
+<!-- ── FOOTER LICENSE STRIP ── -->
+<div class="footer-license">
+  <div class="footer-license-inner">
+    <div class="footer-license-icon">
+      <!-- Shield check icon -->
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z"/>
+        <polyline points="9 12 11 14 15 10"/>
+      </svg>
+    </div>
+    <div class="footer-license-body">
+      <div class="footer-license-title">{{ t('footer_license_title', lang) }}</div>
+      <p class="footer-license-text">{{ t('footer_license_p1', lang) }}</p>
+      <p class="footer-license-text">{{ t('footer_license_p2', lang) }}</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── FOOTER ── -->
+<footer class="footer">
+  <div class="footer-main">
+
+    <!-- Brand & description -->
+    <div class="footer-brand-col">
+      <a class="footer-logo" href="/">Trading<span>Bonus</span></a>
+      <p class="footer-desc">{{ pc.get('footer_tagline', 'Cashback & rebate system for Forex & Gold traders — automatic daily payouts, completely free.') }}</p>
+      <div class="footer-socials">
+        <!-- Telegram -->
+        <a class="footer-social-btn" href="{{ ps.get('telegram_url') or '#' }}" {% if ps.get('telegram_url') %}target="_blank" rel="noopener"{% endif %} title="Telegram">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/></svg>
+        </a>
+        <!-- Facebook -->
+        <a class="footer-social-btn" href="{{ ps.get('facebook_url') or '#' }}" {% if ps.get('facebook_url') %}target="_blank" rel="noopener"{% endif %} title="Facebook">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.791-4.697 4.533-4.697 1.313 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
+        </a>
+        <!-- YouTube -->
+        <a class="footer-social-btn" href="{{ ps.get('youtube_url') or '#' }}" {% if ps.get('youtube_url') %}target="_blank" rel="noopener"{% endif %} title="YouTube">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- Quick links -->
+    <div>
+      <div class="footer-col-title">{{ t('footer_nav', lang) }}</div>
+      <ul class="footer-links">
+        <li><a href="/{% if lang == 'en' %}?lang=en{% endif %}">{{ t('nav_home', lang) }}</a></li>
+        <li><a href="/promotions{% if lang == 'en' %}?lang=en{% endif %}">{{ t('nav_promotions', lang) }}</a></li>
+        <li><a href="/#how">{{ t('footer_guide', lang) }}</a></li>
+        <li><a href="/brokers{% if lang == 'en' %}?lang=en{% endif %}">{{ t('nav_brokers', lang) }}</a></li>
+        <li><a href="/blog{% if lang == 'en' %}?lang=en{% endif %}">{{ t('footer_blog', lang) }}</a></li>
+        <li><a href="/about{% if lang == 'en' %}?lang=en{% endif %}">{{ t('nav_contact', lang) }}</a></li>
+      </ul>
+    </div>
+
+    <!-- Account -->
+    <div>
+      <div class="footer-col-title">{{ t('footer_account', lang) }}</div>
+      <ul class="footer-links">
+        <li><a href="/portal/login">{{ t('footer_login', lang) }}</a></li>
+        <li><a href="/portal/login">{{ t('footer_register', lang) }}</a></li>
+        <li><a href="/portal/dashboard">{{ t('footer_dashboard', lang) }}</a></li>
+        <li><a href="/portal/promotions">{{ t('footer_rebate_prog', lang) }}</a></li>
+        <li><a href="/portal/forgot-password">{{ t('footer_forgot_pw', lang) }}</a></li>
+      </ul>
+    </div>
+
+    <!-- Contact -->
+    <div>
+      <div class="footer-col-title">{{ t('footer_contact', lang) }}</div>
+      <div class="footer-contact-item">
+        <div class="footer-contact-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>
+        </div>
+        <div class="footer-contact-text">
+          {{ t('footer_email_support', lang) }}<br>
+          <a href="mailto:support@tradingbonushub.com">support@tradingbonushub.com</a>
+        </div>
+      </div>
+      <div class="footer-contact-item">
+        <div class="footer-contact-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/></svg>
+        </div>
+        <div class="footer-contact-text">
+          {{ t('footer_tg_support', lang) }}<br>
+          <a href="{{ ps.get('telegram_url') or '#' }}" {% if ps.get('telegram_url') %}target="_blank" rel="noopener"{% endif %}>{{ t('footer_tg_cta', lang) }}</a>
+        </div>
+      </div>
+      <div class="footer-contact-item">
+        <div class="footer-contact-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        </div>
+        <div class="footer-contact-text">
+          {{ t('footer_address', lang) }}<br>
+          <span style="color:rgba(255,255,255,.55);">Toà M3 Masteri Waterfront, KĐT Vinhomes Ocean Park, Đa Tốn, Gia Lâm, Hà Nội</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <hr class="footer-divider">
+
+  <div class="footer-bottom">
+    <span class="footer-copy">{{ pc.get('footer_copy', '© 2026 TradingBonusHub. All rights reserved.') }}</span>
+    <nav class="footer-legal">
+      <a href="{{ ps.get('privacy_url') or '/privacy' }}{% if lang == 'en' %}?lang=en{% endif %}">{{ t('footer_privacy', lang) }}</a>
+      <a href="{{ ps.get('terms_url') or '/terms' }}{% if lang == 'en' %}?lang=en{% endif %}">{{ t('footer_terms', lang) }}</a>
+      <a href="/about{% if lang == 'en' %}?lang=en{% endif %}">{{ t('nav_contact', lang) }}</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+// ── Navbar dropdown ──
+function toggleNav(ddId, btnId) {
+  const dd = document.getElementById(ddId), btn = document.getElementById(btnId);
+  const isOpen = dd.classList.contains('open');
+  document.querySelectorAll('.nav-dropdown').forEach(d => d.classList.remove('open'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('open'));
+  if (!isOpen) { dd.classList.add('open'); btn.classList.add('open'); }
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.nav-item')) {
+    document.querySelectorAll('.nav-dropdown').forEach(d => d.classList.remove('open'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('open'));
+  }
+});
+
+// ── Promotions data from DB ──
+const _PROMOS = {{ calc_promos | tojson }};
+
+// ── Bonus tiers from DB (bonus_tiers table) ──
+const _BONUS_TIERS = {{ bonus_tiers | tojson }};
+
+// Rebate rate per lot: read from commission_rates for gold instrument
+// Falls back to 5 if not configured in DB
+function _getGoldRebatePerLot() {
+  for (const p of _PROMOS) {
+    if (!p.rates) continue;
+    for (const r of p.rates) {
+      if (r.instrument === 'gold' && r.rebate_per_lot_usd > 0) {
+        return parseFloat(r.rebate_per_lot_usd);
+      }
+    }
+  }
+  return 5; // default fallback
+}
+const REBATE_GOLD = _getGoldRebatePerLot();
+
+// Formula: rebate = lots × fixed_rate
+function calcRebate(goldLots) {
+  return goldLots * REBATE_GOLD;
+}
+
+function calcBonus(goldLots) {
+  const tiers = [..._BONUS_TIERS].sort((a, b) =>
+    parseFloat(a.min_lots) - parseFloat(b.min_lots)
+  );
+  let bonus = 0;
+  for (const t of tiers) {
+    if (goldLots >= parseFloat(t.min_lots)) bonus = parseFloat(t.bonus_usd);
+  }
+  return bonus;
+}
+
+function fmt(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
+
+function updateBubble(slider, val) {
+  var bubble = document.getElementById('slider-bubble');
+  var min = parseFloat(slider.min), max = parseFloat(slider.max);
+  var pct = (val - min) / (max - min);
+  var thumbW = 56;
+  var sliderW = slider.offsetWidth;
+  var left = pct * (sliderW - thumbW) + thumbW / 2;
+  bubble.style.left = left + 'px';
+  bubble.textContent = val + ' lot';
+}
+
+function onSlider(val) {
+  val = parseInt(val);
+  var slider = document.getElementById('lots-slider');
+  updateBubble(slider, val);
+  const rebate = calcRebate(val);
+  const bonus  = calcBonus(val);
+  const total  = rebate + bonus;
+  document.getElementById('cr-cta').textContent    = '{{ t("calc_get_rebate", lang) }}';
+
+  // Update broker comparison table
+  var rows = document.querySelectorAll('#rebate-cmp-body tr');
+  var maxVal = 0;
+  rows.forEach(function(row) {
+    var rate = parseFloat(row.getAttribute('data-rebate-per-lot')) || 0;
+    var est = val * rate;
+    if (est > maxVal) maxVal = est;
+    row.querySelector('[data-rebate-val]').textContent = fmt(est);
+    row.classList.remove('rebate-cmp-best');
+  });
+  rows.forEach(function(row) {
+    var rate = parseFloat(row.getAttribute('data-rebate-per-lot')) || 0;
+    if (val * rate === maxVal && maxVal > 0) row.classList.add('rebate-cmp-best');
+  });
+
+  // Show best rebate value in header
+  var display = document.getElementById('slider-display');
+  display.innerHTML = '<small style="font-size:.55em;opacity:.7">{{ t("slider_best", lang) }}</small> ' + fmt(maxVal);
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  onSlider(document.getElementById('lots-slider').value);
+});
+
+// ── Scroll Animations ──
+(function() {
+  if (!window.IntersectionObserver) return;
+  const obs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (!entry.isIntersecting) return;
+      const el = entry.target;
+      const delay = parseInt(el.dataset.saDelay || 0, 10);
+      setTimeout(function() { el.classList.add('sa-in'); }, delay);
+      obs.unobserve(el);
+    });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('[data-sa]').forEach(function(el) { obs.observe(el); });
+})();
+
+// ── FAQ ──
+function toggleFaq(btn) {
+  const item = btn.closest('.faq-item');
+  const answer = item.querySelector('.faq-a');
+  const isOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item.open').forEach(el => {
+    el.classList.remove('open');
+    el.querySelector('.faq-a').style.display = 'none';
+  });
+  if (!isOpen) { item.classList.add('open'); answer.style.display = 'block'; }
+}
+</script>
+{% if edit_mode %}<script src="/static/js/public-inline-editor.js"></script>{% endif %}
+
+<script>
+/* ── BENEFITS SLIDER ── */
+(function(){
+  const SWIPE_MIN = 50, DELAY = 3000;
+  let current = 0, busy = false, timer = null;
+  const tabs   = document.querySelectorAll('.bslider-tab');
+  const panels = document.querySelectorAll('.bslider-panel');
+  const wrap   = document.querySelector('.bslider-wrap');
+  const total  = tabs.length;
+  if (!total) return;
+
+  function norm(i){ return ((i % total) + total) % total; }
+  function schedule(){ clearTimeout(timer); timer = setTimeout(function(){ goTo(current + 1, 1); }, DELAY); }
+
+  function goTo(idx, dir) {
+    idx = norm(idx);
+    if (busy || idx === current) return;
+    busy = true;
+    dir  = (dir !== undefined) ? dir : (idx > current ? 1 : -1);
+
+    const prev   = panels[current];
+    const next   = panels[idx];
+    const outCls = dir > 0 ? 'slide-out-left' : 'slide-out-right';
+
+    /* set start position of new panel (no animation) */
+    next.style.transition = 'none';
+    next.style.transform  = dir > 0 ? 'translateX(60px)' : 'translateX(-60px)';
+    next.style.opacity    = '0';
+    next.classList.add('active');
+
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){
+      /* enable animation: new panel slides in */
+      next.style.transition = '';
+      next.style.transform  = '';
+      next.style.opacity    = '';
+      /* old panel slides out */
+      prev.classList.add(outCls);
+
+      setTimeout(function(){
+        prev.classList.remove('active', outCls);
+        tabs.forEach(function(t){ t.classList.remove('active'); });
+        tabs[idx].classList.add('active');
+        current = idx;
+        busy    = false;
+        schedule();
+      }, 370);
+    }); });
+  }
+
+  tabs.forEach(function(tab, i){
+    tab.addEventListener('click', function(){ clearTimeout(timer); goTo(i); });
+  });
+
+  /* drag / swipe */
+  var startX = 0, startY = 0, dragging = false;
+
+  wrap.addEventListener('mousedown', function(e){
+    if (e.button !== 0) return;
+    e.preventDefault();
+    startX = e.clientX; startY = e.clientY; dragging = true;
+    wrap.classList.add('dragging');
+  });
+  wrap.addEventListener('mousemove', function(e){ if (dragging) e.preventDefault(); });
+  wrap.addEventListener('mouseup', function(e){
+    if (!dragging) return;
+    dragging = false; wrap.classList.remove('dragging');
+    var dx = e.clientX - startX;
+    if (Math.abs(dx) < SWIPE_MIN) return;
+    goTo(dx < 0 ? current + 1 : current - 1, dx < 0 ? 1 : -1);
+  });
+  wrap.addEventListener('mouseleave', function(){ dragging = false; wrap.classList.remove('dragging'); });
+
+  wrap.addEventListener('touchstart', function(e){
+    startX = e.touches[0].clientX; startY = e.touches[0].clientY; dragging = true;
+  }, {passive: true});
+  wrap.addEventListener('touchmove', function(e){
+    if (!dragging) return;
+    if (Math.abs(e.touches[0].clientX - startX) > Math.abs(e.touches[0].clientY - startY))
+      e.preventDefault();
+  }, {passive: false});
+  wrap.addEventListener('touchend', function(e){
+    if (!dragging) return;
+    dragging = false;
+    var dx = e.changedTouches[0].clientX - startX;
+    if (Math.abs(dx) < SWIPE_MIN) return;
+    goTo(dx < 0 ? current + 1 : current - 1, dx < 0 ? 1 : -1);
+  });
+
+  /* init */
+  panels[0].classList.add('active');
+  tabs[0].classList.add('active');
+  schedule();
+})();
+</script>
+
+<script>
+/* ── TRADER COUNT — +1 every 5-10 min, saved to DB ── */
+(function(){
+  var el = document.getElementById('traderCount');
+  if (!el) return;
+  function bump() {
+    fetch('/api/trader-count-bump', {method:'POST'})
+      .then(function(r){ return r.json(); })
+      .then(function(d){ if(d.count) el.textContent = d.count.toLocaleString('en-US'); })
+      .catch(function(){});
+    setTimeout(bump, (300 + Math.random() * 300) * 1000);
+  }
+  setTimeout(bump, (300 + Math.random() * 300) * 1000);
+})();
+
+/* ── PROMO COUNTDOWN + STICKY BAR ── */
+(function(){
+  // Countdown: end of current month (rolling urgency)
+  function getEndOfMonth() {
+    var now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+  }
+  var deadline = getEndOfMonth();
+
+  function pad(n){ return n < 10 ? '0' + n : '' + n; }
+
+  function tick() {
+    var now = new Date();
+    var diff = Math.max(0, Math.floor((deadline - now) / 1000));
+    var d = Math.floor(diff / 86400);
+    var h = Math.floor((diff % 86400) / 3600);
+    var m = Math.floor((diff % 3600) / 60);
+    var s = diff % 60;
+
+    var dEl = document.getElementById('cdDays');
+    var hEl = document.getElementById('cdHours');
+    var mEl = document.getElementById('cdMins');
+    var sEl = document.getElementById('cdSecs');
+    if (dEl) dEl.textContent = pad(d);
+    if (hEl) hEl.textContent = pad(h);
+    if (mEl) mEl.textContent = pad(m);
+    if (sEl) sEl.textContent = pad(s);
+
+    var st = document.getElementById('stickyTimer');
+    if (st) st.textContent = pad(d) + ':' + pad(h) + ':' + pad(m) + ':' + pad(s);
+
+    if (diff <= 0) deadline = getEndOfMonth();
+  }
+
+  tick();
+  setInterval(tick, 1000);
+
+  // Sticky bar: show on scroll
+  var promoSec = document.getElementById('heroPromo');
+  var sticky   = document.getElementById('promoSticky');
+  if (sticky) {
+    window.addEventListener('scroll', function() {
+      var show = promoSec
+        ? promoSec.getBoundingClientRect().bottom < 0
+        : window.scrollY > 400;
+      sticky.style.top = show ? '0px' : '-60px';
+    }, {passive: true});
+  }
+})();
+</script>
+</body>
+</html>

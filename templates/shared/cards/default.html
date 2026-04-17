@@ -1,0 +1,64 @@
+{#
+  Card: default
+  Context vars: p (program dict), enrollment (optional), customer (optional)
+  Usage: {% include "cards/default.html" %}
+#}
+<div class="pc pc--default" data-broker="{{ p.broker_slug }}">
+  <div class="pc__head">
+    {% if 'tier' in (p.type or '') %}
+    <span class="pc__badge pc__badge--tier">&#9733; Cumulative Tier</span>
+    {% else %}
+    <span class="pc__badge pc__badge--backcom">&#9889; Backcom</span>
+    {% endif %}
+    <div class="pc__logo">
+      {% if p.broker_slug %}<img src="/static/logo-{{ p.broker_slug }}.png" alt="{{ p.broker_name }}" onerror="this.style.display='none'">{% endif %}
+    </div>
+    <div class="pc__title">{{ p.name }}</div>
+    <div class="pc__broker">{{ p.broker_name }}</div>
+    {% if p.short_desc %}<div class="pc__desc">{{ p.short_desc }}</div>{% endif %}
+  </div>
+
+  <div class="pc__body">
+    {% if p.licenses %}
+    <div class="pc__info-row">
+      <span class="pc__info-key">License</span>
+      <span class="pc__info-val">
+        {% for lic in p.licenses.split(',') %}<span class="pc__pill">{{ lic.strip() }}</span>{% endfor %}
+      </span>
+    </div>
+    {% endif %}
+    {% if p.leverage %}
+    <div class="pc__info-row">
+      <span class="pc__info-key">Leverage</span>
+      <span class="pc__info-val">{{ p.leverage }}</span>
+    </div>
+    {% endif %}
+
+    {% if p.features %}
+    <ul class="pc__features">
+      {% for feat in p.features.split('\n') %}{% if feat.strip() %}<li>{{ feat.strip() }}</li>{% endif %}{% endfor %}
+    </ul>
+    {% endif %}
+
+    <div class="pc__rebate-box">
+      <div class="pc__rebate-item">
+        <div class="pc__rebate-lbl">Backcom Rate</div>
+        <div class="pc__rebate-val">{{ p.rebate_pct | int }}%</div>
+      </div>
+      {% if p.rebate_xau_label or p.rebate_usd_per_lot %}
+      <div class="pc__rebate-item">
+        <div class="pc__rebate-lbl">XAUUSD</div>
+        <div class="pc__rebate-val">{{ p.rebate_xau_label or ('~$%s/lot' % p.rebate_usd_per_lot) }}</div>
+      </div>
+      {% endif %}
+      <div class="pc__rebate-item">
+        <div class="pc__rebate-lbl">Payout</div>
+        <div class="pc__rebate-val pc__rebate-val--freq">{{ freq_label(p.rebate_frequency) }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pc__foot">
+    {% include "cards/_foot.html" %}
+  </div>
+</div>

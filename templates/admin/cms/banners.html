@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+{% block title %}CMS — Banners{% endblock %}
+{% block page_title %}📢 Banners & Announcement{% endblock %}
+
+{% block head %}
+<style>
+  .banner-preview {
+    padding:10px 16px; border-radius:6px; font-size:14px;
+    margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;
+  }
+  .banner-info    { background:#e8f4fd; color:#0c5460; border-left:4px solid #17a2b8; }
+  .banner-warning { background:#fff3cd; color:#856404; border-left:4px solid #ffc107; }
+  .banner-success { background:#d1e7dd; color:#0a3622; border-left:4px solid #198754; }
+  .banner-promo   { background:#f8e7fb; color:#6b21a8; border-left:4px solid #a855f7; }
+  .banner-danger  { background:#f8d7da; color:#842029; border-left:4px solid #dc3545; }
+
+  .status-dot {
+    display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px;
+  }
+  .dot-on  { background:#198754; }
+  .dot-off { background:#aaa; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex-between">
+  <div></div>
+  <button class="btn btn-primary" onclick="openForm(null)">+ New Banner</button>
+</div>
+
+<div class="card">
+  <div id="bannerList"><div class="empty">Loading...</div></div>
+</div>
+
+<!-- Banner form modal -->
+<div class="overlay" id="formOverlay">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <h3 id="formTitle">New Banner</h3>
+      <button class="close-btn" onclick="closeForm()">✕</button>
+    </div>
+
+    <div class="form-group">
+      <label>Content * <span style="color:#888;font-weight:400;font-size:12px;">(HTML allowed)</span></label>
+      <textarea id="fText" rows="3" placeholder="🎉 New program is open! Sign up now for offers."></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Button Text (optional)</label>
+        <input type="text" id="fLinkText" placeholder="Sign Up Now">
+      </div>
+      <div class="form-group">
+        <label>Link URL</label>
+        <input type="text" id="fLinkUrl" placeholder="/portal/register">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Style</label>
+        <select id="fStyle" onchange="updatePreview()">
+          <option value="info">Info (blue)</option>
+          <option value="warning">Warning (yellow)</option>
+          <option value="success">Success (green)</option>
+          <option value="promo">Promo (purple)</option>
+          <option value="danger">Danger (red)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Show on Page</label>
+        <select id="fPages">
+          <option value="*">All Pages</option>
+          <option value="index">Homepage Only</option>
+          <option value="portal">Portal Only</option>
+          <option value="blog">Blog Only</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Start (optional)</label>
+        <input type="datetime-local" id="fStartsAt">
+      </div>
+      <div class="form-group">
+        <label>End (optional)</label>
+        <input type="datetime-local" id="fEndsAt">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Status</label>
+      <select id="fActive">
+        <option value="1">On</option>
+        <option value="0">Off</option>
+      </select>
+    </div>
+
+    <div id="fPreview" class="banner-preview banner-info" style="margin-top:4px;">
+      <span>Preview will show here</span>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+      <button class="btn btn-secondary" onclick="closeForm()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveBanner()">Save Banner</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete confirm -->
+<div class="overlay" id="delOverlay">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-header">
+      <h3>Delete Banner</h3>
+      <button class="close-btn" onclick="document.getElementById('delOverlay').classList.remove('active')">✕</button>
+    </div>
+    <p style="margin-bottom:20px;font-size:14px;">Confirm delete this banner?</p>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="document.getElementById('delOverlay').classList.remove('active')">Cancel</button>
+      <button class="btn btn-danger" id="delBtn">Delete</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let _editId = null;
+
+async function loadBanners() {
+  const res  = await fetch('/api/cms/banners');
+  const list = await res.json();
+  const el   = document.getElementById('bannerList');
+
+  if (!list.length) {
+    el.innerHTML = '<div class="empty">No banners yet.</div>';
+    return;
+  }
+
+  el.innerHTML = list.map(b => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f0f0f0;">
+      <span class="status-dot ${b.is_active ? 'dot-on' : 'dot-off'}"></span>
+      <div style="flex:1;">
+        <div class="banner-preview banner-${b.style}" style="margin-bottom:0;">
+          <span>${b.text}${b.link_text ? ` <a href="${esc(b.link_url)}" style="font-weight:700;">${esc(b.link_text)}</a>` : ''}</span>
+        </div>
+        <div style="font-size:11px;color:#aaa;margin-top:4px;">
+          Page: ${b.pages} · ${b.starts_at ? 'From: '+fmtDt(b.starts_at) : ''} ${b.ends_at ? 'To: '+fmtDt(b.ends_at) : ''}
+        </div>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="openForm(${b.id})">Edit</button>
+      <button class="btn btn-danger btn-sm" onclick="openDel(${b.id})">✕</button>
+    </div>
+  `).join('');
+}
+
+function openForm(id) {
+  _editId = id;
+  document.getElementById('formTitle').textContent = id ? 'Edit Banner' : 'New Banner';
+  document.getElementById('fText').value      = '';
+  document.getElementById('fLinkText').value  = '';
+  document.getElementById('fLinkUrl').value   = '';
+  document.getElementById('fStyle').value     = 'info';
+  document.getElementById('fPages').value     = '*';
+  document.getElementById('fStartsAt').value  = '';
+  document.getElementById('fEndsAt').value    = '';
+  document.getElementById('fActive').value    = '1';
+
+  if (id) {
+    fetch('/api/cms/banners').then(r => r.json()).then(list => {
+      const b = list.find(x => x.id === id);
+      if (!b) return;
+      document.getElementById('fText').value      = b.text;
+      document.getElementById('fLinkText').value  = b.link_text;
+      document.getElementById('fLinkUrl').value   = b.link_url;
+      document.getElementById('fStyle').value     = b.style;
+      document.getElementById('fPages').value     = b.pages;
+      document.getElementById('fStartsAt').value  = fmtInput(b.starts_at);
+      document.getElementById('fEndsAt').value    = fmtInput(b.ends_at);
+      document.getElementById('fActive').value    = b.is_active ? '1' : '0';
+      updatePreview();
+    });
+  } else {
+    updatePreview();
+  }
+
+  document.getElementById('formOverlay').classList.add('active');
+}
+function closeForm() { document.getElementById('formOverlay').classList.remove('active'); }
+
+function updatePreview() {
+  const style = document.getElementById('fStyle').value;
+  const text  = document.getElementById('fText').value || 'Preview';
+  const lt    = document.getElementById('fLinkText').value;
+  const lu    = document.getElementById('fLinkUrl').value;
+  const p = document.getElementById('fPreview');
+  p.className = `banner-preview banner-${style}`;
+  p.innerHTML = `<span>${text}${lt ? ` <strong>${lt}</strong>` : ''}</span>`;
+}
+
+document.getElementById('fText').addEventListener('input', updatePreview);
+document.getElementById('fStyle').addEventListener('change', updatePreview);
+
+async function saveBanner() {
+  const text = document.getElementById('fText').value.trim();
+  if (!text) { alert('Content cannot be empty'); return; }
+
+  const payload = {
+    text, link_text: document.getElementById('fLinkText').value,
+    link_url:  document.getElementById('fLinkUrl').value,
+    style:     document.getElementById('fStyle').value,
+    pages:     document.getElementById('fPages').value,
+    is_active: document.getElementById('fActive').value === '1',
+    starts_at: document.getElementById('fStartsAt').value || null,
+    ends_at:   document.getElementById('fEndsAt').value   || null,
+  };
+
+  if (_editId) {
+    await fetch(`/api/cms/banners/${_editId}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } else {
+    await fetch('/api/cms/banners', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  }
+  closeForm(); loadBanners();
+}
+
+function openDel(id) {
+  document.getElementById('delOverlay').classList.add('active');
+  document.getElementById('delBtn').onclick = async () => {
+    await fetch('/api/cms/banners/' + id, { method: 'DELETE' });
+    document.getElementById('delOverlay').classList.remove('active');
+    loadBanners();
+  };
+}
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtDt(s) { return s ? new Date(s).toLocaleDateString('en-US') : ''; }
+function fmtInput(s) {
+  if (!s) return '';
+  return new Date(s).toISOString().slice(0,16);
+}
+
+loadBanners();
+</script>
+{% endblock %}

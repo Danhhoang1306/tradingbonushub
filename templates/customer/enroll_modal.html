@@ -1,0 +1,788 @@
+{#
+  Enrollment Modal — simplified 3-step wizard.
+  Call openEnrollModal(promoId, promoName, brokerName) to open.
+  Flow:
+    - No linked vantage_email → Step 1 (ask if has account)
+      · No account → reg link → "Registration complete" → redirect dashboard (registered_new)
+      · Already has → Step 2 (enter Vantage email) → Step T (transfer)
+    - Already linked vantage_email → Step T directly
+#}
+
+<!-- ── Enrollment Modal Overlay ─────────────────────────────────────── -->
+<div id="enroll-overlay" style="
+  display:none; position:fixed; inset:0; z-index:1000;
+  background:rgba(0,0,0,.55); align-items:flex-start; justify-content:center;
+  overflow-y:auto; -webkit-overflow-scrolling:touch; padding:16px 0;
+">
+  <div style="
+    background:#12192e; border-radius:14px; width:calc(100% - 32px); max-width:480px;
+    margin:auto; box-shadow:0 8px 40px rgba(0,0,0,.5); overflow:hidden; flex-shrink:0;
+  ">
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#1a1a2e,#0f3460);padding:20px 24px;display:flex;align-items:flex-start;justify-content:space-between;">
+      <div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:.8px;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:4px;">Enroll in Program</div>
+        <div id="em-promo-name" style="font-size:17px;font-weight:700;color:#f0c040;"></div>
+        <div id="em-broker-name" style="font-size:12px;color:rgba(255,255,255,.6);margin-top:2px;"></div>
+      </div>
+      <button onclick="closeEnrollModal()" style="background:none;border:none;color:rgba(255,255,255,.7);font-size:24px;cursor:pointer;padding:0;line-height:1;margin-top:2px;">×</button>
+    </div>
+
+    <!-- ── STEP 0: Ineligible ──────────────────────────────────────── -->
+    <div id="em-step-0" class="em-step" style="display:none;padding:28px;">
+      <div style="background:rgba(197,34,31,.15);border:1.5px solid rgba(197,34,31,.4);border-radius:10px;padding:18px 20px;margin-bottom:20px;">
+        <p style="font-size:15px;font-weight:700;color:#c5221f;margin-bottom:8px;">⛔ Not Eligible to Enroll</p>
+        <p id="em-ineligible-msg" style="font-size:13px;color:rgba(255,255,255,.7);line-height:1.7;margin:0;"></p>
+      </div>
+      <button onclick="closeEnrollModal()" style="width:100%;padding:11px;border-radius:8px;border:none;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);font-size:13px;font-weight:600;cursor:pointer;">Close</button>
+    </div>
+
+    <!-- ── STEP 1: Already have a broker account? ──────────────────────── -->
+    <div id="em-step-1" class="em-step" style="display:none;padding:28px 28px 24px;">
+      <p style="font-size:14px;font-weight:600;color:#fff;margin-bottom:20px;">
+        Do you already have a trading account with <span id="em-s1-broker-name" style="color:#f0c040;"></span>?
+      </p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+        <button class="em-type-btn" id="em-btn-no" onclick="emSelectHasAccount(false)">
+          <span style="font-size:26px;display:block;margin-bottom:6px;">🆕</span>
+          <span style="font-size:13px;font-weight:700;color:rgba(255,255,255,.85);">Not Yet</span>
+          <span style="font-size:11px;color:rgba(255,255,255,.4);display:block;margin-top:3px;">Open New Account</span>
+        </button>
+        <button class="em-type-btn" id="em-btn-yes" onclick="emSelectHasAccount(true)">
+          <span style="font-size:26px;display:block;margin-bottom:6px;">✅</span>
+          <span style="font-size:13px;font-weight:700;color:rgba(255,255,255,.85);">Yes, I Have One</span>
+          <span style="font-size:11px;color:rgba(255,255,255,.4);display:block;margin-top:3px;">Continue Enrollment</span>
+        </button>
+      </div>
+
+      <!-- Panel when "Not Yet" -->
+      <div id="em-reg-panel" style="display:none;background:rgba(26,115,232,.12);border:1px solid rgba(26,115,232,.35);border-radius:10px;padding:16px 18px;">
+        <p style="font-size:13px;font-weight:700;color:#7ab4f5;margin-bottom:10px;">📎 Open a broker account through our IB:</p>
+        <a id="em-reg-link" href="#" target="_blank" style="
+          display:block;padding:11px 16px;background:#1a73e8;color:#fff;border-radius:8px;
+          font-size:14px;font-weight:700;text-align:center;text-decoration:none;margin-bottom:12px;">
+          Open Account Now →
+        </a>
+        <p style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:12px;">
+          After registering, click the button below. We will contact you to confirm via email.
+        </p>
+        <button onclick="emSubmitNewAccount()" style="
+          width:100%;padding:11px;border-radius:8px;border:none;
+          background:linear-gradient(135deg,#c8972a,#f0c040);color:#1a1a2e;font-size:13px;font-weight:700;cursor:pointer;">
+          I Have Registered ✓
+        </button>
+      </div>
+    </div>
+
+    <!-- ── STEP 2: Enter broker email ─────────────────────────────────── -->
+    <div id="em-step-2" class="em-step" style="display:none;padding:28px 28px 24px;">
+      <p style="font-size:14px;font-weight:600;color:#fff;margin-bottom:6px;">Link Account <span id="em-s2-broker-name" style="color:#f0c040;"></span></p>
+      <p style="font-size:13px;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:18px;">
+        Enter the email you used to register your account with <span class="em-s2-broker-name-ref"></span>.
+      </p>
+      <input id="em-vantage-email-input" type="email" placeholder="email@example.com"
+        style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid rgba(255,255,255,.2);border-radius:8px;font-size:14px;outline:none;transition:border-color .15s;margin-bottom:6px;background:#1e2a3a;color:#fff;"
+        onfocus="this.style.borderColor='#c8972a'" onblur="this.style.borderColor='rgba(255,255,255,.2)'"
+        onkeydown="if(event.key==='Enter')emSaveVantageEmail()" />
+      <p id="em-link-error" style="display:none;font-size:12px;color:#c5221f;margin-bottom:12px;"></p>
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button onclick="emGoStep1()" style="flex:1;padding:11px;border-radius:8px;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);font-size:13px;font-weight:600;cursor:pointer;">← Go Back</button>
+        <button id="em-save-btn" onclick="emSaveVantageEmail()" style="flex:2;padding:11px;border-radius:8px;border:none;background:linear-gradient(135deg,#c8972a,#f0c040);color:#1a1a2e;font-size:14px;font-weight:700;cursor:pointer;">Save & Continue →</button>
+      </div>
+    </div>
+
+    <!-- ── STEP T: Backcom — transfer to IB ───────────────────────── -->
+    <div id="em-step-t" class="em-step" style="display:none;padding:24px 28px;">
+
+      <!-- Shown when already under valid IB (alreadyUnderIb=true) -->
+      <div id="em-t-already-ib" style="display:none;">
+        <p style="font-size:13px;color:#4caf50;font-weight:600;line-height:1.7;margin-bottom:10px;">
+          ✅ Click <strong>Confirm Enrollment</strong> to continue.
+        </p>
+        <p style="font-size:11px;color:#e65c00;line-height:1.6;margin-bottom:14px;">
+          ⚠️ Note: After confirming enrollment, you cannot change for <strong>1 day</strong>.
+        </p>
+      </div>
+
+      <!-- Shown when account transfer is required (transfer_required=true) -->
+      <div id="em-t-transfer-section">
+        <!-- IB number still needed for JS email body, hidden from UI -->
+        <span id="em-t-ib-name-transfer" style="display:none;"></span>
+        <span id="em-t-ib-number-transfer" style="display:none;"></span>
+
+        <p style="font-size:13px;font-weight:700;color:#fff;margin-bottom:10px;">📋 Pre-written email — just click Send:</p>
+        <div style="background:rgba(26,115,232,.1);border:1px solid rgba(26,115,232,.3);border-radius:8px;padding:12px 14px;font-size:12px;color:rgba(255,255,255,.85);line-height:1.9;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <div><span style="color:rgba(255,255,255,.4);">To:</span> <strong id="em-t-to-display">—</strong></div>
+            <button type="button" id="em-t-to-copy-btn" onclick="emCopy(document.getElementById('em-t-to-display').textContent,this)" style="flex-shrink:0;padding:2px 8px;font-size:11px;border:1px solid rgba(255,255,255,.25);border-radius:5px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);cursor:pointer;">Copy</button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <div><span style="color:rgba(255,255,255,.4);">Subject:</span> <strong>Change account owner</strong></div>
+            <button type="button" onclick="emCopy('Change account owner',this)" style="flex-shrink:0;padding:2px 8px;font-size:11px;border:1px solid rgba(255,255,255,.25);border-radius:5px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);cursor:pointer;">Copy</button>
+          </div>
+          <hr style="border:none;border-top:1px solid #dde;margin:8px 0;" />
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+            <div id="em-t-body-display" style="white-space:pre-line;">—</div>
+            <button type="button" id="em-copy-body-btn" onclick="emCopyBody(this)" style="flex-shrink:0;padding:2px 8px;font-size:11px;border:1px solid rgba(255,255,255,.25);border-radius:5px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);cursor:pointer;">Copy</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          <a id="em-t-mailto" href="#" target="_blank"
+             style="flex:1;min-width:130px;padding:10px 12px;background:#1a73e8;color:#fff;border-radius:7px;font-size:13px;font-weight:700;text-align:center;text-decoration:none;display:none;">
+            📨 Open Mail App
+          </a>
+          <a id="em-t-gmail" href="#" target="_blank"
+             style="flex:1;min-width:130px;padding:10px 12px;background:#ea4335;color:#fff;border-radius:7px;font-size:13px;font-weight:700;text-align:center;text-decoration:none;display:block;">
+            ✉️ Open Gmail
+          </a>
+        </div>
+        <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 14px;margin-bottom:14px;">
+          <p style="font-size:12px;color:rgba(255,255,255,.6);line-height:1.7;margin:0;">
+            ⚠️ The IB transfer request email must be sent from <strong style="color:rgba(255,255,255,.85);">the email address registered with the broker</strong>.<br>
+            If the email app opens with a different account, please resend the email with the same content from the correct registered email address.
+          </p>
+        </div>
+        <p style="font-size:11px;color:rgba(255,255,255,.4);line-height:1.6;margin-bottom:16px;">
+          ⏱ After sending the email, click Confirm below. Broker processes in <strong>1-2 business days</strong>.
+        </p>
+      </div>
+
+      <form id="em-final-form" method="post" action="/portal/enroll">
+        {{ csrf_input(request) }}
+        <input type="hidden" name="promotion_id"    id="em-f-promo-id" />
+        <input type="hidden" name="owner_id"        id="em-f-owner-id" />
+        <input type="hidden" name="mt5_account"     value="" />
+        <input type="hidden" name="transfer_method" id="em-f-transfer-method" value="mailto_send" />
+        <button type="submit" style="width:100%;padding:13px;border-radius:8px;border:none;background:linear-gradient(135deg,#c8972a,#f0c040);color:#1a1a2e;font-size:14px;font-weight:700;cursor:pointer;">
+          ✅ Confirm Enrollment
+        </button>
+      </form>
+    </div>
+
+    <!-- ── STEP V: Volume promo — select MT5 ──────────────────────────── -->
+    <div id="em-step-v" class="em-step" style="display:none;padding:24px 28px;">
+
+      <!-- Sub-section A: has MT5 → dropdown -->
+      <div id="em-v-has-mt5">
+        <p style="font-size:14px;font-weight:600;color:#fff;margin-bottom:6px;">Select MT5 Account to Participate</p>
+        <p style="font-size:13px;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:18px;">
+          Volume accumulation program — only eligible accounts are shown.
+        </p>
+        <label style="display:block;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);margin-bottom:7px;">
+          MT5 Account <span style="color:#c5221f;">*</span>
+        </label>
+        <select id="em-v-mt5-select" style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid rgba(255,255,255,.2);border-radius:8px;font-size:14px;outline:none;background:#1e2a3a;color:#fff;margin-bottom:20px;">
+          <option value="">-- Select Account --</option>
+        </select>
+      </div>
+
+      <!-- Sub-section B: no MT5 → guide to create + manual input -->
+      <div id="em-v-no-mt5" style="display:none;">
+        <div style="background:rgba(26,115,232,.12);border:1px solid rgba(26,115,232,.35);border-radius:10px;padding:14px 16px;margin-bottom:18px;">
+          <p style="font-size:13px;font-weight:700;color:#7ab4f5;margin-bottom:6px;">📋 Instructions</p>
+          <p style="font-size:13px;color:rgba(255,255,255,.85);line-height:1.7;margin:0;">
+            Please create a new MT5 account of type <strong id="em-v-actype-label">—</strong> at Vantage.<br>
+            After creating, enter the account number in the field below.<br>
+            We will confirm the program as soon as possible.
+          </p>
+        </div>
+        <label style="display:block;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);margin-bottom:7px;">
+          MT5 Account Number <span style="color:#c5221f;">*</span>
+        </label>
+        <input id="em-v-mt5-input" type="text" placeholder="e.g. 12345678"
+          style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;outline:none;margin-bottom:6px;"
+          onfocus="this.style.borderColor='#c8972a'" onblur="this.style.borderColor='#ddd'" />
+        <p id="em-v-input-error" style="display:none;font-size:12px;color:#c5221f;margin-bottom:8px;"></p>
+      </div>
+
+      <form id="em-volume-form" method="post" action="/portal/enroll" onsubmit="return emVolumeFinalValidate()">
+        {{ csrf_input(request) }}
+        <input type="hidden" name="promotion_id"    id="em-v-promo-id" />
+        <input type="hidden" name="owner_id"        id="em-v-owner-id" />
+        <input type="hidden" name="vantage_email"   value="" />
+        <input type="hidden" name="mt5_account"     id="em-v-mt5-account" value="" />
+        <input type="hidden" name="transfer_method" id="em-v-transfer-method" value="already_ib" />
+        <button type="submit" style="width:100%;padding:13px;border-radius:8px;border:none;background:linear-gradient(135deg,#c8972a,#f0c040);color:#1a1a2e;font-size:14px;font-weight:700;cursor:pointer;">
+          ✅ Confirm Enrollment
+        </button>
+      </form>
+    </div>
+
+    <!-- ── STEP D: Dupoin ──────────────────────────────────────────── -->
+    <div id="em-step-d" class="em-step" style="display:none;padding:24px 28px;">
+
+      <!-- Question: already have Dupoin account? -->
+      <p style="font-size:14px;font-weight:600;color:#fff;margin-bottom:16px;">Do you already have a Dupoin account?</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+        <button class="em-type-btn" id="em-d-btn-no" onclick="emDupoinSelectHasAccount(false)">
+          <span style="font-size:26px;display:block;margin-bottom:6px;">🆕</span>
+          <span style="font-size:13px;font-weight:700;color:rgba(255,255,255,.85);">Not Yet</span>
+          <span style="font-size:11px;color:rgba(255,255,255,.4);display:block;margin-top:3px;">Open New Account</span>
+        </button>
+        <button class="em-type-btn" id="em-d-btn-yes" onclick="emDupoinSelectHasAccount(true)">
+          <span style="font-size:26px;display:block;margin-bottom:6px;">✅</span>
+          <span style="font-size:13px;font-weight:700;color:rgba(255,255,255,.85);">Yes, I Have One</span>
+          <span style="font-size:11px;color:rgba(255,255,255,.4);display:block;margin-top:3px;">Continue Enrollment</span>
+        </button>
+      </div>
+
+      <!-- Panel: No account yet -->
+      <div id="em-d-panel-new" style="display:none;">
+        <div style="background:rgba(26,115,232,.12);border:1px solid rgba(26,115,232,.35);border-radius:10px;padding:14px 16px;margin-bottom:14px;">
+          <p style="font-size:13px;font-weight:700;color:#7ab4f5;margin-bottom:8px;">📎 Open a Dupoin account through our IB:</p>
+          <a id="em-d-reg-link" href="#" target="_blank" style="
+            display:block;padding:11px 14px;background:#1a73e8;color:#fff;border-radius:8px;
+            font-size:14px;font-weight:700;text-align:center;text-decoration:none;margin-bottom:10px;">
+            Open Registration Link →
+          </a>
+          <p style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:12px;">
+            After registering, enter your Dupoin email below to complete.
+          </p>
+          <input id="em-d-email-input" type="email" placeholder="Your Dupoin email"
+            style="width:100%;box-sizing:border-box;padding:10px 13px;border:1.5px solid rgba(76,175,80,.4);border-radius:7px;font-size:14px;outline:none;transition:border-color .15s;margin-bottom:4px;background:#1e2a3a;color:#fff;"
+            onfocus="this.style.borderColor='#4caf50'" onblur="this.style.borderColor='rgba(76,175,80,.4)'"
+            onkeydown="if(event.key==='Enter')emDupoinSubmit()" />
+          <p id="em-d-error" style="display:none;font-size:12px;color:#c5221f;margin-top:4px;margin-bottom:0;"></p>
+        </div>
+        <form id="em-d-form" method="post" action="/portal/enroll">
+          {{ csrf_input(request) }}
+          <input type="hidden" name="promotion_id"    id="em-d-promo-id" />
+          <input type="hidden" name="owner_id"        id="em-d-owner-id" />
+          <input type="hidden" name="vantage_email"   id="em-d-vantage-email" value="" />
+          <input type="hidden" name="mt5_account"     value="" />
+          <input type="hidden" name="transfer_method" value="dupoin_new_account" />
+          <button type="button" onclick="emDupoinSubmit()" style="width:100%;padding:13px;border-radius:8px;border:none;background:linear-gradient(135deg,#c8972a,#f0c040);color:#1a1a2e;font-size:14px;font-weight:700;cursor:pointer;">
+            ✅ Confirm Enrollment
+          </button>
+        </form>
+      </div>
+
+      <!-- Panel: Has account → send deletion email -->
+      <div id="em-d-panel-has" style="display:none;">
+        <div style="background:rgba(200,151,42,.1);border:1px solid rgba(200,151,42,.35);border-radius:10px;padding:16px 18px;margin-bottom:14px;">
+          <p style="font-size:13px;font-weight:700;color:#f0c040;margin-bottom:6px;">⚠️ Must delete old account first</p>
+          <p style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.6;margin:0;">
+            Fill in the details below, then click to send the account deletion request to Dupoin. After deletion, come back and select "Not Yet" to register again.
+          </p>
+        </div>
+        <div style="margin-bottom:10px;">
+          <label style="font-size:12px;color:rgba(255,255,255,.5);display:block;margin-bottom:4px;">Your Name (My Name)</label>
+          <input id="em-d-del-name" type="text" placeholder="John Doe"
+            style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);color:#fff;font-size:14px;box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="font-size:12px;color:rgba(255,255,255,.5);display:block;margin-bottom:4px;">Dupoin Account UID</label>
+          <input id="em-d-del-uid" type="text" placeholder="123456"
+            style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);color:#fff;font-size:14px;box-sizing:border-box;">
+        </div>
+        <div id="em-d-del-error" style="display:none;color:#f87171;font-size:12px;margin-bottom:10px;"></div>
+        <button id="em-d-del-btn" onclick="emDupoinOpenDeleteEmail()" style="width:100%;padding:13px;border-radius:8px;border:none;background:linear-gradient(135deg,#c8972a,#f0c040);color:#1a1a2e;font-size:14px;font-weight:700;cursor:pointer;">
+          ✉️ Open email to send account deletion request →
+        </button>
+
+        <!-- Choose email app (mobile) -->
+        <div id="em-d-del-preview" style="display:none;margin-top:14px;">
+          <p style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:10px;text-align:center;">Choose app to send email:</p>
+          <a id="em-d-del-gmail-btn" href="#" target="_blank"
+            style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px;border-radius:8px;background:#fff;color:#444;font-size:14px;font-weight:700;text-decoration:none;margin-bottom:10px;box-sizing:border-box;">
+            <img src="https://www.google.com/gmail/about/static/images/logo-gmail.png" alt="Gmail"
+              onerror="this.style.display='none'"
+              style="height:20px;width:auto;">
+            Open Gmail
+          </a>
+          <a id="em-d-del-mailto-btn" href="#"
+            style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px;border-radius:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:14px;font-weight:700;text-decoration:none;box-sizing:border-box;">
+            📨 Open Default Mail App
+          </a>
+          <p style="font-size:11px;color:rgba(255,255,255,.3);margin-top:10px;margin-bottom:0;text-align:center;">After deletion, come back and select "Not Yet" to register again.</p>
+        </div>
+        <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 14px;margin-top:14px;">
+          <p style="font-size:12px;color:rgba(255,255,255,.6);line-height:1.7;margin:0;">
+            ⚠️ The account deletion email must be sent from <strong style="color:rgba(255,255,255,.85);">the email address registered with Dupoin</strong>.<br>
+            If the email app opens with a different account, please resend the email with the same content from the correct registered email address.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Hidden form for new-account submission -->
+    <form id="em-new-account-form" method="post" action="/portal/enroll" style="display:none;">
+      {{ csrf_input(request) }}
+      <input type="hidden" name="promotion_id"    id="em-na-promo-id" />
+      <input type="hidden" name="owner_id"        id="em-na-owner-id" />
+      <input type="hidden" name="vantage_email"   value="" />
+      <input type="hidden" name="mt5_account"     value="" />
+      <input type="hidden" name="transfer_method" value="new_account" />
+    </form>
+
+  </div>
+</div>
+
+<!-- ── Success Modal ────────────────────────────────────────────────── -->
+<div id="enroll-success-overlay" style="
+  display:none; position:fixed; inset:0; z-index:1100;
+  background:rgba(0,0,0,.6); align-items:center; justify-content:center; padding:16px;">
+  <div style="background:rgba(26,26,46,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+              border:1px solid rgba(255,255,255,.18);
+              border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.6);
+              padding:36px 32px;max-width:400px;width:100%;text-align:center;">
+    <div style="font-size:52px;margin-bottom:12px;">🎉</div>
+    <h3 style="font-size:20px;font-weight:700;color:#fff;margin-bottom:8px;">Congratulations!</h3>
+    <p style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.7;margin-bottom:6px;">
+      You have enrolled in <strong id="em-success-promo-name"></strong> successfully.
+    </p>
+    <p style="font-size:13px;color:rgba(255,255,255,.6);line-height:1.7;margin-bottom:24px;">
+      We will notify you via email when your enrollment is confirmed.
+    </p>
+    <a href="/portal/" style="display:inline-block;padding:12px 28px;
+       background:linear-gradient(135deg,#c8972a,#f0c040);color:#1a1a2e;
+       border-radius:8px;font-size:14px;font-weight:700;text-decoration:none;">
+      Return to Profile
+    </a>
+  </div>
+</div>
+
+<style>
+.em-type-btn {
+  border:2px solid rgba(255,255,255,.15); border-radius:10px; padding:16px 10px; cursor:pointer;
+  background:rgba(255,255,255,.05); text-align:center; transition:all .15s;
+  display:block; width:100%; box-sizing:border-box;
+}
+.em-type-btn:hover, .em-type-btn.selected { border-color:#c8972a; background:rgba(200,151,42,.12); }
+</style>
+
+<script>
+let _emPromoId = null, _emIbName = '', _emIbNumber = '', _emRegLink = '', _emOwnerId = null, _emBrokerName = '', _emBrokerId = null;
+let _emMt5Accounts = [], _emTransferRequired = false, _emHasBrokerEmail = false, _emIsVolumePromo = false, _emAccountType = '', _emRequiredTypes = [], _emRequiredTypeLabels = [], _emRegistrationType = '', _emBrokerSlug = '', _emIbStatus = '';
+
+const _emAtLabel = {ab: 'STP AB', non_markup: 'STP Non Markup', markup: 'STP Mark Up'};
+
+async function openEnrollModal(promoId, promoName, brokerName, brokerSlug) {
+  _emPromoId = promoId;
+  _emBrokerSlug = (brokerSlug || '').toLowerCase();
+  _emBrokerName = brokerName || '';
+  _emMt5Accounts = [];
+  _emTransferRequired = false;
+  _emHasBrokerEmail = false;
+  _emRegistrationType = '';
+
+  document.getElementById('em-promo-name').textContent  = promoName;
+  document.getElementById('em-broker-name').textContent = brokerName;
+  // Fill broker name into step-specific spans
+  const bname = brokerName || '';
+  document.getElementById('em-s1-broker-name').textContent = bname;
+  document.getElementById('em-s2-broker-name').textContent = bname;
+  document.querySelectorAll('.em-s1-broker-name-ref, .em-s2-broker-name-ref').forEach(el => { el.textContent = bname; });
+  document.getElementById('em-btn-yes').classList.remove('selected');
+  document.getElementById('em-btn-no').classList.remove('selected');
+  document.getElementById('em-reg-panel').style.display = 'none';
+  document.getElementById('em-link-error').style.display = 'none';
+  const emailInput = document.getElementById('em-vantage-email-input');
+  if (emailInput) emailInput.value = '';
+
+  let startStep = '1';
+  try {
+    const r = await fetch('/api/enrollments/check-promo', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({promotion_id: promoId, broker_slug: brokerSlug}),
+    });
+    const d = await r.json();
+
+    if (d.eligible === false) {
+      document.getElementById('em-ineligible-msg').textContent = d.message || 'You are not eligible to enroll in this program.';
+      startStep = '0';
+    } else {
+      _emIbName           = d.owner_ib_name || '';
+      _emIbNumber         = d.ib_number || '';
+      _emRegLink          = d.registration_link || '';
+      _emOwnerId          = d.owner_id;
+      _emBrokerId         = d.broker_id || null;
+      _emMt5Accounts      = Array.isArray(d.mt5_accounts) ? d.mt5_accounts : [];
+      _emTransferRequired = !!d.transfer_required;
+      _emHasBrokerEmail  = !!d.has_broker_email;
+      _emIsVolumePromo       = !!d.is_volume_promo;
+      _emAccountType         = d.account_type || '';
+      _emRequiredTypes       = Array.isArray(d.required_types) ? d.required_types : [];
+      _emRequiredTypeLabels  = Array.isArray(d.required_type_labels) ? d.required_type_labels : [];
+      _emRegistrationType    = d.registration_type || '';
+      _emIbStatus            = d.ib_status || '';
+      const alreadyUnderIb   = !!d.already_under_ib;
+
+      if (_emBrokerSlug === 'dupoin') {
+        _emSetupDupoinStep();
+        startStep = 'd';
+      } else if (_emIsVolumePromo) {
+        // Volume tier: skip IB transfer — show MT5 selector or manual input
+        _emSetupVolumeStep();
+        startStep = 'v';
+      } else if (alreadyUnderIb && _emHasBrokerEmail) {
+        // Already under valid IB + linked broker email → enroll directly, no transfer needed
+        startStep = 't';
+        _emSetupTransferStep();
+      } else if (_emHasBrokerEmail) {
+        // Linked broker email but no IB or IB mismatch → need transfer
+        startStep = 't';
+        _emSetupTransferStep();
+      } else if (_emRegistrationType === 'existing_account') {
+        // Has account at this broker → skip question, go to email step
+        startStep = '2';
+      } else {
+        // No account → ask new or existing
+        startStep = '1';
+        const regLink = document.getElementById('em-reg-link');
+        regLink.href = _emRegLink || '#';
+      }
+    }
+  } catch(e) {
+    _emIbName = _emIbNumber = _emRegLink = '';
+    if (_emBrokerSlug === 'dupoin') {
+      _emSetupDupoinStep();
+      startStep = 'd';
+    } else {
+      startStep = '1';
+    }
+  }
+
+  _emShowStep(startStep);
+  document.getElementById('enroll-overlay').style.display = 'flex';
+}
+
+function _emShowStep(n) {
+  ['0', '1', '2', 't', 'v', 'd'].forEach(s => {
+    const el = document.getElementById('em-step-' + s);
+    if (el) el.style.display = (String(s) === String(n)) ? 'block' : 'none';
+  });
+}
+
+function _emSetupVolumeStep() {
+  document.getElementById('em-v-promo-id').value = _emPromoId;
+  document.getElementById('em-v-owner-id').value = _emOwnerId || '';
+
+  const hasMt5 = _emMt5Accounts.length > 0;
+  document.getElementById('em-v-has-mt5').style.display = hasMt5 ? 'block' : 'none';
+  document.getElementById('em-v-no-mt5').style.display  = hasMt5 ? 'none'  : 'block';
+  document.getElementById('em-v-transfer-method').value = hasMt5 ? 'already_ib' : 'mailto_send';
+
+  if (hasMt5) {
+    const sel = document.getElementById('em-v-mt5-select');
+    sel.innerHTML = '<option value="">-- Select Account --</option>' +
+      _emMt5Accounts.map(a => {
+        const lbl = (a.display_name || a.account_type) ? ` (${a.display_name || a.account_type})` : '';
+        return `<option value="${a.mt5_number}">${a.mt5_number}${lbl}</option>`;
+      }).join('');
+    if (_emMt5Accounts.length === 1) sel.value = _emMt5Accounts[0].mt5_number;
+  } else {
+    // Use display names from DB (required_type_labels) — e.g. "Raw ECN"
+    const atLabel = _emRequiredTypeLabels.length > 0
+      ? _emRequiredTypeLabels.join(' / ')
+      : (_emAtLabel[_emAccountType] || _emAccountType || 'compatible');
+    document.getElementById('em-v-actype-label').textContent = atLabel;
+    document.getElementById('em-v-mt5-input').value = '';
+    document.getElementById('em-v-input-error').style.display = 'none';
+  }
+}
+
+function emVolumeFinalValidate() {
+  const hasMt5 = _emMt5Accounts.length > 0;
+  if (hasMt5) {
+    const sel = document.getElementById('em-v-mt5-select');
+    if (!sel.value) {
+      sel.style.borderColor = '#c5221f';
+      sel.focus();
+      return false;
+    }
+    sel.style.borderColor = '#ddd';
+    document.getElementById('em-v-mt5-account').value = sel.value;
+  } else {
+    const inp = document.getElementById('em-v-mt5-input');
+    const val = (inp.value || '').trim();
+    const errEl = document.getElementById('em-v-input-error');
+    if (!val) {
+      inp.style.borderColor = '#c5221f';
+      errEl.textContent = 'Please enter your MT5 account number.';
+      errEl.style.display = 'block';
+      inp.focus();
+      return false;
+    }
+    inp.style.borderColor = '#ddd';
+    errEl.style.display = 'none';
+    document.getElementById('em-v-mt5-account').value = val;
+  }
+  return true;
+}
+
+function _emSetupTransferStep() {
+  const alreadyUnderIb = !_emTransferRequired;
+
+  // Show/hide corresponding section
+  document.getElementById('em-t-already-ib').style.display      = alreadyUnderIb ? 'block' : 'none';
+  document.getElementById('em-t-transfer-section').style.display = alreadyUnderIb ? 'none'  : 'block';
+
+  if (!alreadyUnderIb) {
+    document.getElementById('em-t-ib-name-transfer').textContent   = _emIbName   || '—';
+    document.getElementById('em-t-ib-number-transfer').textContent = _emIbNumber || '—';
+
+    // Broker-specific transfer email config — keep in sync with
+    // BROKER_TRANSFER_CONFIG in app/services/gmail.py
+    const _brokerTransferCfg = {
+      vantage: {
+        to:   'vietnam.support@vantagemarkets.com',
+        body: `Hi team,\n\nPlease transfer my account to under IB ${_emIbNumber || '—'}\n\nThank you.`,
+      },
+      ultima: {
+        to:   'vietnam.cs@ultimamarkets.com',
+        body: `Dear team,\n\nPlease transfer me to under ${_emIbNumber || '—'}.\n\nThank you.`,
+      },
+      dupoin: {
+        to:   'support@dupoin.com',
+        body: `Hi Support,\n\nPlease transfer my account to under IB ${_emIbNumber || '—'}.\n\nThank you.`,
+      },
+    };
+    const _tcfg = _brokerTransferCfg[_emBrokerSlug];
+    if (!_tcfg) {
+      // Unknown broker — show warning instead of wrong email address
+      document.getElementById('em-t-transfer-section').innerHTML =
+        '<div style="background:rgba(197,34,31,.15);border:1.5px solid rgba(197,34,31,.4);border-radius:10px;padding:18px 20px;">' +
+        '<p style="font-size:13px;color:#c5221f;font-weight:600;">⚠️ No IB transfer email configuration for this broker. Please contact support.</p></div>';
+    }
+    const _tcfgSafe = _tcfg || _brokerTransferCfg['vantage'];
+    const to      = _tcfgSafe.to;
+    const body    = _tcfgSafe.body;
+    const subject = 'Change account owner';
+
+    document.getElementById('em-t-to-display').textContent  = to;
+    document.getElementById('em-t-body-display').textContent = body;
+
+    const mailtoUrl = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const gmailUrl  = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    document.getElementById('em-t-mailto').href = mailtoUrl;
+    document.getElementById('em-t-gmail').href  = gmailUrl;
+    // Mobile: show both buttons; PC: show Gmail only
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    document.getElementById('em-t-mailto').style.display = isMobile ? 'block' : 'none';
+  }
+
+  document.getElementById('em-f-promo-id').value        = _emPromoId;
+  document.getElementById('em-f-owner-id').value        = _emOwnerId || '';
+  document.getElementById('em-f-transfer-method').value = alreadyUnderIb ? 'already_ib' : 'mailto_send';
+}
+
+function _emSetupDupoinStep() {
+  document.getElementById('em-d-promo-id').value = _emPromoId;
+  document.getElementById('em-d-owner-id').value = _emOwnerId || '';
+  document.getElementById('em-d-email-input').value = '';
+  document.getElementById('em-d-error').style.display = 'none';
+  document.getElementById('em-d-panel-new').style.display = 'none';
+  document.getElementById('em-d-panel-has').style.display = 'none';
+  document.getElementById('em-d-btn-no').classList.remove('selected');
+  document.getElementById('em-d-btn-yes').classList.remove('selected');
+  document.getElementById('em-d-del-name').value            = '';
+  document.getElementById('em-d-del-uid').value             = '';
+  document.getElementById('em-d-del-error').style.display   = 'none';
+  document.getElementById('em-d-del-preview').style.display = 'none';
+  document.getElementById('em-d-del-btn').style.display     = '';
+  document.getElementById('em-d-del-gmail-btn').href        = '#';
+  document.getElementById('em-d-del-mailto-btn').href       = '#';
+
+  const regLinkEl = document.getElementById('em-d-reg-link');
+  if (_emRegLink) {
+    regLinkEl.href = _emRegLink;
+    regLinkEl.style.opacity = '1';
+    regLinkEl.style.pointerEvents = '';
+  } else {
+    regLinkEl.href = '#';
+    regLinkEl.style.opacity = '0.45';
+    regLinkEl.style.pointerEvents = 'none';
+  }
+}
+
+function emDupoinSelectHasAccount(hasAccount) {
+  document.getElementById('em-d-btn-yes').classList.toggle('selected', hasAccount);
+  document.getElementById('em-d-btn-no').classList.toggle('selected', !hasAccount);
+  document.getElementById('em-d-panel-new').style.display = hasAccount ? 'none' : 'block';
+  document.getElementById('em-d-panel-has').style.display = hasAccount ? 'block' : 'none';
+}
+
+function emDupoinOpenDeleteEmail() {
+  const name = (document.getElementById('em-d-del-name').value || '').trim();
+  const uid  = (document.getElementById('em-d-del-uid').value  || '').trim();
+  const errEl = document.getElementById('em-d-del-error');
+  if (!name || !uid) {
+    errEl.textContent = 'Please fill in both Name and UID.';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+  const to      = 'support@dupoin.com';
+  const subject = 'Delete account';
+  const body    = `Hi Support,\nMy Name: ${name}\nUID: ${uid}\nPlease help me delete this trading account\nThank you`;
+
+  const gmailUrl  = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  const mailtoUrl = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+  const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  if (isMobile) {
+    document.getElementById('em-d-del-gmail-btn').href  = gmailUrl;
+    document.getElementById('em-d-del-mailto-btn').href = mailtoUrl;
+    document.getElementById('em-d-del-preview').style.display = 'block';
+    document.getElementById('em-d-del-btn').style.display     = 'none';
+  } else {
+    window.open(gmailUrl, '_blank');
+  }
+}
+
+function emDupoinSubmit() {
+  const inp = document.getElementById('em-d-email-input');
+  const email = (inp.value || '').trim();
+  const errEl = document.getElementById('em-d-error');
+  if (!email || !email.includes('@')) {
+    errEl.textContent = 'Please enter a valid Dupoin email.';
+    errEl.style.display = 'block';
+    inp.focus();
+    return;
+  }
+  errEl.style.display = 'none';
+  document.getElementById('em-d-vantage-email').value = email;
+  document.getElementById('em-d-form').dispatchEvent(new Event('submit', {bubbles: true, cancelable: true}));
+}
+
+function closeEnrollModal() {
+  document.getElementById('enroll-overlay').style.display = 'none';
+}
+
+// AJAX submit helper for all enrollment forms
+async function _emAjaxSubmit(form) {
+  const btn = form.querySelector('button[type=submit]');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Processing...'; }
+  try {
+    const fd = new FormData(form);
+    const r = await fetch('/portal/enroll', { method: 'POST', body: fd });
+    let d;
+    try { d = await r.json(); } catch(_) { d = {}; }
+    if (d.ok) {
+      document.getElementById('enroll-overlay').style.display = 'none';
+      document.getElementById('em-success-promo-name').textContent = d.promo_name || '';
+      document.getElementById('enroll-success-overlay').style.display = 'flex';
+    } else {
+      var msg = (typeof d.detail === 'string') ? d.detail
+               : Array.isArray(d.detail) ? d.detail.map(function(e){ return e.msg || JSON.stringify(e); }).join(', ')
+               : 'An error occurred. Please try again.';
+      alert(msg);
+      if (btn) { btn.disabled = false; btn.textContent = '✅ Confirm Enrollment'; }
+    }
+  } catch(err) {
+    alert('An error occurred. Please try again.');
+    if (btn) { btn.disabled = false; btn.textContent = '✅ Confirm Enrollment'; }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  ['em-final-form', 'em-volume-form', 'em-d-form'].forEach(fid => {
+    const form = document.getElementById(fid);
+    if (!form) return;
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      if (fid === 'em-volume-form' && !emVolumeFinalValidate()) return;
+      await _emAjaxSubmit(form);
+    });
+  });
+});
+
+function emGoStep1() {
+  document.getElementById('em-btn-yes').classList.remove('selected');
+  document.getElementById('em-btn-no').classList.remove('selected');
+  document.getElementById('em-reg-panel').style.display = 'none';
+  _emShowStep('1');
+}
+
+function emSelectHasAccount(hasAccount) {
+  document.getElementById('em-btn-yes').classList.toggle('selected', hasAccount);
+  document.getElementById('em-btn-no').classList.toggle('selected', !hasAccount);
+
+  if (!hasAccount) {
+    // Show registration link panel
+    document.getElementById('em-reg-panel').style.display = 'block';
+    const regLink = document.getElementById('em-reg-link');
+    regLink.href = _emRegLink || '#';
+  } else {
+    document.getElementById('em-reg-panel').style.display = 'none';
+    _emShowStep('2');
+    setTimeout(() => {
+      const inp = document.getElementById('em-vantage-email-input');
+      if (inp) inp.focus();
+    }, 100);
+  }
+}
+
+async function emSubmitNewAccount() {
+  document.getElementById('em-na-promo-id').value = _emPromoId;
+  document.getElementById('em-na-owner-id').value = _emOwnerId || '';
+  await _emAjaxSubmit(document.getElementById('em-new-account-form'));
+}
+
+async function emSaveVantageEmail() {
+  const inp = document.getElementById('em-vantage-email-input');
+  const email = (inp.value || '').trim();
+  const errEl = document.getElementById('em-link-error');
+
+  if (!email || !email.includes('@')) {
+    errEl.textContent = 'Please enter a valid email.';
+    errEl.style.display = 'block';
+    inp.focus();
+    return;
+  }
+  errEl.style.display = 'none';
+
+  const btn = document.getElementById('em-save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  try {
+    const r = await fetch('/portal/api/link-vantage-email', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({vantage_email: email, broker_id: _emBrokerId}),
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || 'Unknown error');
+
+    if (d.pending && d.message) {
+      errEl.style.color = '#f0c040';
+      errEl.textContent = d.message;
+      errEl.style.display = 'block';
+    }
+    _emSetupTransferStep();
+    _emShowStep('t');
+  } catch(e) {
+    errEl.textContent = 'Error: ' + e.message;
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save & Continue →';
+  }
+}
+
+
+document.getElementById('enroll-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeEnrollModal();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeEnrollModal();
+});
+
+function emCopy(text, btn) {
+  navigator.clipboard.writeText(text).then(function() {
+    var orig = btn.textContent;
+    btn.textContent = '✓';
+    btn.style.color = '#66bb6a';
+    setTimeout(function() { btn.textContent = orig; btn.style.color = ''; }, 1500);
+  });
+}
+
+function emCopyBody(btn) {
+  var text = document.getElementById('em-t-body-display').textContent || '';
+  emCopy(text, btn);
+}
+</script>

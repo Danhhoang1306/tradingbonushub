@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Editor — Trading Bonus{% endblock %}
+{% block page_title %}HTML Editor{% endblock %}
+
+{% block head %}
+<style>
+  .main .content {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .editor-bar {
+    background: #fff; border-bottom: 1px solid #e0e0e0;
+    padding: 10px 20px; display: flex; align-items: center; gap: 12px;
+    flex-shrink: 0;
+  }
+  #template-name-input {
+    font-size: 15px; font-weight: 700; border: 1px solid transparent;
+    border-radius: 6px; padding: 4px 8px; flex: 1; max-width: 340px; color: #1a1f2e;
+  }
+  #template-name-input:focus { outline: none; border-color: #1a73e8; }
+  .placeholder-hint {
+    background: #fff8e1; border-left: 3px solid #f9a825;
+    padding: 8px 14px; font-size: 12px; color: #555;
+    display: flex; gap: 16px; align-items: center; flex-shrink: 0;
+  }
+  .placeholder-hint code { background: #eee; padding: 1px 5px; border-radius: 3px; }
+  .editor-wrap {
+    display: flex; flex: 1; min-height: 0; overflow: hidden;
+  }
+  #html-input {
+    flex: 1; min-width: 0;
+    border: none; border-right: 3px solid #e0e0e0; outline: none;
+    resize: none; padding: 14px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 13px; line-height: 1.6;
+    background: #282a36; color: #f8f8f2;
+    tab-size: 2;
+  }
+  #html-input::placeholder { color: #666; }
+  .preview-pane { flex: 1; overflow: hidden; min-width: 0; position: relative; }
+  .preview-pane iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="editor-bar">
+  <a href="/admin/templates" class="btn btn-secondary btn-sm">← Back</a>
+  <input id="template-name-input" type="text" value="Loading..." />
+  <button class="btn btn-primary btn-sm" onclick="save()">💾 Save</button>
+  <span id="save-status" style="font-size:12px;color:#888;"></span>
+  <div style="margin-left:auto;font-size:12px;color:#888;">
+    Ctrl+S to save
+  </div>
+</div>
+
+<div class="placeholder-hint">
+  <span>Placeholders auto-replaced when sending:</span>
+  <code>[Customer Name]</code>
+  <code>[Order ID]</code>
+  <code>[Amount]</code>
+</div>
+
+<div class="editor-wrap">
+  <textarea id="html-input" placeholder="Paste HTML here..."></textarea>
+  <div class="preview-pane">
+    <iframe id="preview-frame" sandbox="allow-same-origin"></iframe>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const TEMPLATE_ID = {{ template_id }};
+const input = document.getElementById('html-input');
+let debounceTimer;
+
+async function load() {
+  const r = await fetch(`/api/templates/${TEMPLATE_ID}`);
+  const t = await r.json();
+  document.getElementById('template-name-input').value = t.name;
+  input.value = t.html_content;
+  updatePreview();
+}
+
+function updatePreview() {
+  const iframe = document.getElementById('preview-frame');
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
+  doc.open(); doc.write(input.value); doc.close();
+}
+
+async function save() {
+  const name = document.getElementById('template-name-input').value.trim();
+  const status = document.getElementById('save-status');
+  status.textContent = 'Saving...';
+  const r = await fetch(`/api/templates/${TEMPLATE_ID}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, html_content: input.value }),
+  });
+  status.style.color = r.ok ? '#137333' : '#c5221f';
+  status.textContent = r.ok ? '✅ Saved' : '❌ Error';
+  setTimeout(() => status.textContent = '', 3000);
+}
+
+input.addEventListener('input', () => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(updatePreview, 400);
+});
+
+input.addEventListener('keydown', e => {
+  // Tab key → insert 2 spaces instead of switching focus
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const s = input.selectionStart, end = input.selectionEnd;
+    input.value = input.value.substring(0, s) + '  ' + input.value.substring(end);
+    input.selectionStart = input.selectionEnd = s + 2;
+  }
+  // Ctrl+S / Cmd+S → save
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    save();
+  }
+});
+
+load();
+</script>
+{% endblock %}

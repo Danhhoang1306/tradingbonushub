@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}Scheduling — TradingBonusHub Admin{% endblock %}
+{% block page_title %}Scheduling{% endblock %}
+
+{% block head %}
+<style>
+  .sched-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 20px; }
+  .sched-tab { padding: 10px 20px; font-size: 13px; font-weight: 700; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .15s; }
+  .sched-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .sched-panel { display: none; }
+  .sched-panel.active { display: block; }
+  .schedule-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+  .sb-active { background: #d1fae5; color: #059669; }
+  .sb-scheduled { background: #e0e7ff; color: #4f46e5; }
+  .sb-expired { background: #fee2e2; color: #dc2626; }
+  .sb-inactive { background: #f3f4f6; color: #6b7280; }
+  .date-input { padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="sched-tabs">
+  <div class="sched-tab active" onclick="showTab('programs')">Programs</div>
+  <div class="sched-tab" onclick="showTab('campaigns')">Campaigns</div>
+  <div class="sched-tab" onclick="showTab('articles')">Articles</div>
+</div>
+
+<!-- Programs Schedule -->
+<div class="sched-panel active" id="panel-programs">
+  <div class="card">
+    <div class="card-header">
+      <div><div class="card-title">Program Scheduling</div>
+      <div class="card-subtitle">Set start/end dates for automatic activation and deactivation</div></div>
+    </div>
+    <table>
+      <thead><tr><th>Program</th><th>Type</th><th>Status</th><th>Starts At</th><th>Ends At</th><th>Actions</th></tr></thead>
+      <tbody id="prog-tbody"><tr><td colspan="6" class="empty">Loading...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Campaign Schedule -->
+<div class="sched-panel" id="panel-campaigns">
+  <div class="card">
+    <div class="card-header">
+      <div><div class="card-title">Campaign Scheduling</div>
+      <div class="card-subtitle">Schedule campaigns to send at a specific time</div></div>
+    </div>
+    <table>
+      <thead><tr><th>Campaign</th><th>Status</th><th>Scheduled At</th><th>Total</th><th>Actions</th></tr></thead>
+      <tbody id="camp-tbody"><tr><td colspan="5" class="empty">Loading...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Article Schedule -->
+<div class="sched-panel" id="panel-articles">
+  <div class="card">
+    <div class="card-header">
+      <div><div class="card-title">Article Scheduling</div>
+      <div class="card-subtitle">Schedule articles to auto-publish at a specific time</div></div>
+    </div>
+    <table>
+      <thead><tr><th>Article</th><th>Status</th><th>Scheduled At</th><th>Actions</th></tr></thead>
+      <tbody id="art-tbody"><tr><td colspan="4" class="empty">Loading...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const esc = s => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDt = iso => iso ? new Date(iso).toLocaleString('en-US', {timeZone:'Asia/Ho_Chi_Minh'}) : '—';
+
+function showTab(name) {
+  document.querySelectorAll('.sched-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.sched-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`.sched-tab[onclick*="${name}"]`).classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+function statusBadge(s) {
+  const map = {active:'sb-active', scheduled:'sb-scheduled', expired:'sb-expired', inactive:'sb-inactive'};
+  return `<span class="schedule-badge ${map[s]||'sb-inactive'}">${s}</span>`;
+}
+
+async function loadPrograms() {
+  const r = await fetch('/api/scheduling/programs/scheduled');
+  const data = await r.json();
+  const tb = document.getElementById('prog-tbody');
+  if (!data.length) { tb.innerHTML = '<tr><td colspan="6" class="empty">No programs</td></tr>'; return; }
+  tb.innerHTML = data.map(p => `<tr>
+    <td><strong>${esc(p.name)}</strong></td>
+    <td>${esc(p.type)}</td>
+    <td>${statusBadge(p.schedule_status)}</td>
+    <td><input type="datetime-local" class="date-input" id="ps-${p.id}" value="${p.starts_at ? p.starts_at.slice(0,16) : ''}"></td>
+    <td><input type="datetime-local" class="date-input" id="pe-${p.id}" value="${p.ends_at ? p.ends_at.slice(0,16) : ''}"></td>
+    <td><button class="btn btn-primary btn-sm" onclick="saveProgramSchedule(${p.id})">Save</button></td>
+  </tr>`).join('');
+}
+
+async function saveProgramSchedule(pid) {
+  const starts = document.getElementById('ps-'+pid).value || null;
+  const ends = document.getElementById('pe-'+pid).value || null;
+  await fetch(`/api/scheduling/programs/${pid}/schedule`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({starts_at: starts, ends_at: ends})
+  });
+  loadPrograms();
+}
+
+async function loadCampaigns() {
+  const r = await fetch('/api/campaigns');
+  const data = await r.json();
+  const drafts = data.filter(c => c.status === 'draft' || c.status === 'scheduled');
+  const tb = document.getElementById('camp-tbody');
+  if (!drafts.length) { tb.innerHTML = '<tr><td colspan="5" class="empty">No draft/scheduled campaigns</td></tr>'; return; }
+  tb.innerHTML = drafts.map(c => `<tr>
+    <td><strong>${esc(c.name)}</strong></td>
+    <td>${c.status}</td>
+    <td><input type="datetime-local" class="date-input" id="cs-${c.id}" value="${c.scheduled_at ? c.scheduled_at.slice(0,16) : ''}"></td>
+    <td>${c.total}</td>
+    <td><button class="btn btn-primary btn-sm" onclick="saveCampaignSchedule(${c.id})">Schedule</button></td>
+  </tr>`).join('');
+}
+
+async function saveCampaignSchedule(cid) {
+  const scheduled_at = document.getElementById('cs-'+cid).value || null;
+  await fetch(`/api/scheduling/campaigns/${cid}/schedule`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({scheduled_at})
+  });
+  loadCampaigns();
+}
+
+async function loadArticles() {
+  const r = await fetch('/api/cms/articles?status=draft&limit=50');
+  const result = await r.json();
+  const items = result.items || result;
+  const tb = document.getElementById('art-tbody');
+  if (!items.length) { tb.innerHTML = '<tr><td colspan="4" class="empty">No draft articles</td></tr>'; return; }
+  tb.innerHTML = items.map(a => `<tr>
+    <td><strong>${esc(a.title)}</strong></td>
+    <td>${a.status}</td>
+    <td><input type="datetime-local" class="date-input" id="as-${a.id}" value="${a.scheduled_at ? a.scheduled_at.slice(0,16) : ''}"></td>
+    <td><button class="btn btn-primary btn-sm" onclick="saveArticleSchedule(${a.id})">Schedule</button></td>
+  </tr>`).join('');
+}
+
+async function saveArticleSchedule(aid) {
+  const scheduled_at = document.getElementById('as-'+aid).value || null;
+  await fetch(`/api/scheduling/articles/${aid}/schedule`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({scheduled_at})
+  });
+  loadArticles();
+}
+
+loadPrograms(); loadCampaigns(); loadArticles();
+</script>
+{% endblock %}

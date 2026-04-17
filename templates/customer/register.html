@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="{{ lang|default('en') }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ t('portal_register', lang|default('en')) }} — {{ ps.site_name or 'TradingBonusHub' }}</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --gold:  {{ ps.primary_color or '#c8972a' }};
+      --gold2: {{ ps.accent_color  or '#f0c040' }};
+    }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #050d1e url('/static/bg-hero.svg') fixed center/cover no-repeat;
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      padding: 24px 16px;
+    }
+    .wrap { width: 100%; max-width: 460px; }
+    .logo {
+      display: block; text-align: center; font-size: 22px; font-weight: 800; color: #fff;
+      margin-bottom: 28px; letter-spacing: .3px; text-decoration: none;
+    }
+    .logo span { color: var(--gold2); }
+    .card {
+      background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18);
+      border-radius: 16px; box-shadow: 0 8px 40px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.06);
+      padding: 36px 32px;
+    }
+    h2 { font-size: 18px; color: #fff; margin-bottom: 20px; text-align: center; font-weight: 700; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 13px; color: rgba(255,255,255,.7); margin-bottom: 6px; font-weight: 600; }
+    .form-group input {
+      width: 100%; padding: 11px 14px;
+      background: rgba(255,255,255,.08); border: 1.5px solid rgba(255,255,255,.18);
+      border-radius: 9px; font-size: 14px; outline: none; transition: border-color .15s;
+      color: #fff;
+    }
+    .form-group input::placeholder { color: rgba(255,255,255,.35); }
+    .form-group input:focus { border-color: var(--gold2); }
+
+    hr { border: none; border-top: 1px solid rgba(255,255,255,.1); margin: 4px 0 18px; }
+    .btn-register {
+      width: 100%; padding: 12px;
+      background: linear-gradient(135deg, var(--gold), var(--gold2));
+      color: #0d1b3e; border: none; border-radius: 9px;
+      font-size: 15px; font-weight: 800; cursor: pointer; margin-top: 4px;
+      transition: filter .15s;
+    }
+    .btn-register:hover { filter: brightness(1.08); }
+    .alert-error {
+      background: rgba(220,53,69,.15); color: #f87171;
+      border: 1px solid rgba(220,53,69,.3); border-radius: 8px;
+      padding: 10px 14px; font-size: 13px; margin-bottom: 14px; text-align: center;
+    }
+    .alert-success {
+      background: rgba(40,167,69,.15); color: #66bb6a;
+      border: 1px solid rgba(40,167,69,.3); border-radius: 8px;
+      padding: 10px 14px; font-size: 13px; margin-bottom: 14px; text-align: center;
+    }
+    .hint { text-align: center; font-size: 13px; color: rgba(255,255,255,.5); margin-top: 18px; }
+    .hint a { color: var(--gold2); text-decoration: none; font-weight: 600; }
+    .hint a:hover { text-decoration: underline; }
+    .password-hint { font-size: 11px; color: rgba(255,255,255,.4); margin-top: 4px; }
+    @media (max-width: 480px) { .card { padding: 28px 20px; } }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <a href="/" class="logo">Trading<span>Bonus</span></a>
+  <div class="card">
+    <h2>Create Account</h2>
+
+    {% if success %}
+    <div class="alert-success">✅ {{ success }}</div>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({event: 'sign_up', method: 'email'});
+      if (typeof fbq === 'function') fbq('track', 'CompleteRegistration');
+    </script>
+    {% endif %}
+    {% if error %}
+    <div class="alert-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="/portal/register">
+      {{ csrf_input(request) }}
+
+      <input type="hidden" name="registration_type" value="new_account" />
+
+      <div class="form-group">
+        <label>{{ t('portal_full_name', lang|default('en')) }}</label>
+        <input type="text" name="name" placeholder="John Doe" autocomplete="name" required autofocus
+               value="{{ form_name or '' }}" />
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" name="email" placeholder="email@example.com" autocomplete="email" required
+               value="{{ form_email or '' }}" />
+      </div>
+      <div class="form-group">
+        <label>{{ t('portal_password', lang|default('en')) }}</label>
+        <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="new-password" required minlength="8" />
+        <div class="password-hint">Minimum 8 characters</div>
+      </div>
+      <div class="form-group">
+        <label>{{ t('portal_confirm_pw', lang|default('en')) }}</label>
+        <input type="password" id="confirm_password" name="confirm_password" placeholder="••••••••" autocomplete="new-password" required minlength="8" />
+        <div id="pw-mismatch" style="display:none; font-size:12px; color:#f87171; margin-top:4px;">Passwords do not match.</div>
+      </div>
+
+      <button type="submit" class="btn-register">{{ t('portal_register', lang|default('en')) }}</button>
+    </form>
+    <script>
+      document.querySelector('form').addEventListener('submit', function(e) {
+        var pw = document.getElementById('password');
+        var cpw = document.getElementById('confirm_password');
+        var msg = document.getElementById('pw-mismatch');
+        if (pw.value !== cpw.value) {
+          e.preventDefault();
+          msg.style.display = 'block';
+          cpw.style.borderColor = '#f87171';
+          pw.value = '';
+          cpw.value = '';
+          pw.focus();
+        }
+      });
+      document.getElementById('confirm_password').addEventListener('input', function() {
+        document.getElementById('pw-mismatch').style.display = 'none';
+        this.style.borderColor = '';
+      });
+    </script>
+
+    <div class="hint">{{ t('portal_has_account', lang|default('en')) }} <a href="/portal/login">{{ t('portal_login', lang|default('en')) }}</a></div>
+  </div>
+</div>
+</body>
+</html>

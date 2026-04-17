@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="{{ lang|default('en') }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ t('portal_login', lang|default('en')) }} — TradingBonusHub</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --gold:  {{ ps.primary_color or '#c8972a' }};
+      --gold2: {{ ps.accent_color  or '#f0c040' }};
+    }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #050d1e url('/static/bg-hero.svg') fixed center/cover no-repeat;
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    }
+    .wrap { width: 100%; max-width: 400px; padding: 16px; }
+    .logo {
+      display: block; text-align: center; font-size: 22px; font-weight: 800; color: #fff;
+      margin-bottom: 28px; letter-spacing: .3px; text-decoration: none;
+    }
+    .logo span { color: var(--gold2); }
+    .card {
+      background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18);
+      border-radius: 16px; box-shadow: 0 8px 40px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.06);
+      padding: 36px 32px;
+    }
+    h2 { font-size: 18px; color: #fff; margin-bottom: 24px; text-align: center; font-weight: 700; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; color: rgba(255,255,255,.7); margin-bottom: 6px; font-weight: 600; }
+    .form-group input {
+      width: 100%; padding: 11px 14px;
+      background: rgba(255,255,255,.08); border: 1.5px solid rgba(255,255,255,.18);
+      border-radius: 9px; font-size: 14px; outline: none; transition: border-color .15s;
+      color: #fff;
+    }
+    .form-group input::placeholder { color: rgba(255,255,255,.35); }
+    .form-group input:focus { border-color: var(--gold2); }
+    .btn-login {
+      width: 100%; padding: 12px;
+      background: linear-gradient(135deg, var(--gold), var(--gold2));
+      color: #0d1b3e; border: none; border-radius: 9px;
+      font-size: 15px; font-weight: 800; cursor: pointer; margin-top: 8px;
+      transition: filter .15s;
+    }
+    .btn-login:hover { filter: brightness(1.08); }
+    .error {
+      background: rgba(220,53,69,.15); color: #f87171;
+      border: 1px solid rgba(220,53,69,.3); border-radius: 8px;
+      padding: 10px 14px; font-size: 13px; margin-bottom: 16px; text-align: center;
+    }
+    .alert-success {
+      background: rgba(40,167,69,.15); color: #66bb6a;
+      border: 1px solid rgba(40,167,69,.3); border-radius: 8px;
+      padding: 10px 14px; font-size: 13px; margin-bottom: 16px; text-align: center;
+    }
+    .alert-info {
+      background: rgba(21,88,176,.2); color: #7eb8f7;
+      border: 1px solid rgba(21,88,176,.4); border-radius: 8px;
+      padding: 10px 14px; font-size: 13px; margin-bottom: 16px; text-align: center;
+    }
+    .hint { text-align: center; font-size: 13px; color: rgba(255,255,255,.5); margin-top: 18px; }
+    .hint a { color: var(--gold2); text-decoration: none; font-weight: 600; }
+    .hint a:hover { text-decoration: underline; }
+    .divider { border: none; border-top: 1px solid rgba(255,255,255,.1); margin: 18px 0 14px; }
+    @media (max-width: 480px) { .card { padding: 28px 20px; } }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <a href="/" class="logo">{% if ps.site_name %}{{ ps.site_name }}{% else %}Trading<span>Bonus</span>{% endif %}</a>
+  <div class="card">
+    <h2>Customer Portal</h2>
+    {% if ps.login_notice %}
+    <div class="alert-info">{{ ps.login_notice }}</div>
+    {% endif %}
+    {% if request.query_params.get('reset') %}
+    <div class="alert-success">✅ Password reset successful. Please log in.</div>
+    {% endif %}
+    {% if request.query_params.get('registered') %}
+    <div class="alert-success">✅ Registration successful! Please log in.</div>
+    {% endif %}
+    {% if request.query_params.get('verified') %}
+    <div class="alert-success">✅ Email verified successfully! Please log in.</div>
+    {% endif %}
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+    <form method="post" action="/portal/login">
+      {{ csrf_input(request) }}
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" name="email" placeholder="email@example.com" autocomplete="email" required autofocus />
+      </div>
+      <div class="form-group">
+        <label>{{ t('portal_password', lang|default('en')) }}</label>
+        <input type="password" name="password" placeholder="••••••••" autocomplete="current-password" required />
+      </div>
+      <button type="submit" class="btn-login">{{ t('portal_login_btn', lang|default('en')) }}</button>
+    </form>
+    <div style="text-align:center;margin-top:14px;font-size:13px;">
+      <a href="/portal/forgot-password" style="color:var(--gold2);text-decoration:none;font-weight:600;">{{ t('portal_forgot_pw', lang|default('en')) }}</a>
+    </div>
+    <hr class="divider" />
+    <div class="hint">{{ t('portal_no_account', lang|default('en')) }} <a href="/portal/register">{{ t('portal_register', lang|default('en')) }}</a></div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<script>
+(function(){
+  // Skip if lang cookie already exists (set by middleware or previous visit)
+  if (document.cookie.match(/(?:^|;\s*)lang=/)) return;
+  // Skip if ?lang= is in the URL (explicit choice)
+  if (location.search.match(/[?&]lang=/)) return;
+
+  // Fallback: call free GeoIP API (only when CF-IPCountry header is absent)
+  fetch('https://ip-api.com/json/?fields=countryCode', {mode:'cors'})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (!d || !d.countryCode) return;
+      var lang = d.countryCode === 'VN' ? 'vi' : 'en';
+      document.cookie = 'lang=' + lang + ';path=/;max-age=31536000;samesite=lax';
+      // Reload with detected language so server re-renders in the correct locale
+      var sep = location.search ? '&' : '?';
+      location.replace(location.href + sep + 'lang=' + lang);
+    })
+    .catch(function(){});
+})();
+</script>

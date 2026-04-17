@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <!-- Fine grid -->
+    <pattern id="grid-fine" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0L0 0 0 40" fill="none" stroke="#f0c040" stroke-width="0.35" opacity="0.06"/>
+    </pattern>
+    <!-- Major grid -->
+    <pattern id="grid-major" width="200" height="200" patternUnits="userSpaceOnUse">
+      <path d="M200 0L0 0 0 200" fill="none" stroke="#f0c040" stroke-width="0.8" opacity="0.09"/>
+    </pattern>
+    <!-- Dot pattern -->
+    <pattern id="dots" width="60" height="60" patternUnits="userSpaceOnUse">
+      <circle cx="30" cy="30" r="1" fill="#f0c040" opacity="0.07"/>
+    </pattern>
+    <!-- Glow gradients -->
+    <radialGradient id="glow-center" cx="50%" cy="45%" r="30%">
+      <stop offset="0%" stop-color="#f0c040" stop-opacity="0.09"/>
+      <stop offset="100%" stop-color="#f0c040" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-top-right" cx="85%" cy="15%" r="22%">
+      <stop offset="0%" stop-color="#f0c040" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#f0c040" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-left" cx="8%" cy="55%" r="28%">
+      <stop offset="0%" stop-color="#1a4080" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#1a4080" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-bottom" cx="50%" cy="100%" r="40%">
+      <stop offset="0%" stop-color="#0f3460" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#0f3460" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur-xs"><feGaussianBlur stdDeviation="1.5"/></filter>
+    <filter id="blur-sm"><feGaussianBlur stdDeviation="3"/></filter>
+    <filter id="blur-md"><feGaussianBlur stdDeviation="8"/></filter>
+  </defs>
+
+  <!-- Base -->
+  <rect width="1440" height="900" fill="#050d1e"/>
+
+  <!-- Grid layers -->
+  <rect width="1440" height="900" fill="url(#dots)"/>
+  <rect width="1440" height="900" fill="url(#grid-fine)"/>
+  <rect width="1440" height="900" fill="url(#grid-major)"/>
+
+  <!-- Horizontal price level lines -->
+  <line x1="0" y1="160" x2="1440" y2="160" stroke="#f0c040" stroke-width="0.8" stroke-opacity="0.07" stroke-dasharray="12,20"/>
+  <line x1="0" y1="290" x2="1440" y2="290" stroke="#f0c040" stroke-width="0.6" stroke-opacity="0.05" stroke-dasharray="12,20"/>
+  <line x1="0" y1="420" x2="1440" y2="420" stroke="#f0c040" stroke-width="0.6" stroke-opacity="0.04" stroke-dasharray="8,16"/>
+  <line x1="0" y1="540" x2="1440" y2="540" stroke="#f0c040" stroke-width="0.4" stroke-opacity="0.03" stroke-dasharray="8,16"/>
+  <line x1="0" y1="660" x2="1440" y2="660" stroke="#f0c040" stroke-width="0.4" stroke-opacity="0.03" stroke-dasharray="8,16"/>
+
+  <!-- Area fill under main chart -->
+  <polygon
+    points="0,620 120,580 240,600 380,490 520,540 660,420 800,460 940,355 1080,385 1220,260 1340,220 1440,195 1440,900 0,900"
+    fill="#f0c040" fill-opacity="0.025"/>
+
+  <!-- Secondary chart (dimmer / lagging) -->
+  <polyline
+    points="0,680 120,650 240,668 380,570 520,618 660,508 800,548 940,448 1080,475 1220,365 1340,330 1440,300"
+    fill="none" stroke="#c8972a" stroke-width="1.5" stroke-opacity="0.08" stroke-linejoin="round" stroke-linecap="round"/>
+
+  <!-- Main uptrend chart line -->
+  <polyline
+    points="0,620 120,580 240,600 380,490 520,540 660,420 800,460 940,355 1080,385 1220,260 1340,220 1440,195"
+    fill="none" stroke="#f0c040" stroke-width="2.5" stroke-opacity="0.18" stroke-linejoin="round" stroke-linecap="round"/>
+
+  <!-- Glow blobs -->
+  <rect width="1440" height="900" fill="url(#glow-center)"/>
+  <rect width="1440" height="900" fill="url(#glow-top-right)"/>
+  <rect width="1440" height="900" fill="url(#glow-left)"/>
+  <rect width="1440" height="900" fill="url(#glow-bottom)"/>
+
+  <!-- ── Candlestick 1 (bearish small) at x=240 ── -->
+  <line x1="240" y1="580" x2="240" y2="625" stroke="#f0c040" stroke-width="1.2" stroke-opacity="0.15"/>
+  <rect x="235" y="594" width="10" height="18" rx="1" fill="#c8972a" fill-opacity="0.12"/>
+
+  <!-- ── Candlestick 2 (bullish) at x=380 ── -->
+  <line x1="380" y1="462" x2="380" y2="510" stroke="#f0c040" stroke-width="1.4" stroke-opacity="0.18"/>
+  <rect x="374" y="472" width="12" height="28" rx="1" fill="#f0c040" fill-opacity="0.10"/>
+  <circle cx="380" cy="490" r="28" fill="#f0c040" fill-opacity="0.03" filter="url(#blur-sm)"/>
+
+  <!-- ── Candlestick 3 (bullish big) at x=660 ── -->
+  <line x1="660" y1="395" x2="660" y2="445" stroke="#f0c040" stroke-width="1.5" stroke-opacity="0.18"/>
+  <rect x="654" y="403" width="12" height="32" rx="1" fill="#f0c040" fill-opacity="0.12"/>
+  <circle cx="660" cy="420" r="40" fill="#f0c040" fill-opacity="0.04" filter="url(#blur-sm)"/>
+
+  <!-- ── Candlestick 4 (bullish big) at x=940 ── -->
+  <line x1="940" y1="328" x2="940" y2="382" stroke="#f0c040" stroke-width="1.5" stroke-opacity="0.20"/>
+  <rect x="934" y="336" width="12" height="34" rx="1" fill="#f0c040" fill-opacity="0.13"/>
+  <circle cx="940" cy="355" r="45" fill="#f0c040" fill-opacity="0.05" filter="url(#blur-md)"/>
+
+  <!-- ── Candlestick 5 (big breakout) at x=1220 ── -->
+  <line x1="1220" y1="232" x2="1220" y2="290" stroke="#f0c040" stroke-width="1.8" stroke-opacity="0.22"/>
+  <rect x="1214" y="238" width="12" height="40" rx="1" fill="#f0c040" fill-opacity="0.15"/>
+  <circle cx="1220" cy="258" r="55" fill="#f0c040" fill-opacity="0.06" filter="url(#blur-md)"/>
+  <circle cx="1220" cy="258" r="25" fill="#f0c040" fill-opacity="0.04" filter="url(#blur-sm)"/>
+
+  <!-- Peak highlight dots -->
+  <circle cx="380" cy="490" r="4" fill="#f0c040" fill-opacity="0.30"/>
+  <circle cx="660" cy="420" r="5" fill="#f0c040" fill-opacity="0.32"/>
+  <circle cx="940" cy="355" r="5.5" fill="#f0c040" fill-opacity="0.34"/>
+  <circle cx="1220" cy="258" r="6.5" fill="#f0c040" fill-opacity="0.36"/>
+  <circle cx="1340" cy="220" r="5" fill="#f0c040" fill-opacity="0.28"/>
+
+  <!-- Small scatter dots (volume feel) -->
+  <circle cx="180" cy="640" r="2" fill="#f0c040" fill-opacity="0.08"/>
+  <circle cx="460" cy="520" r="1.5" fill="#f0c040" fill-opacity="0.08"/>
+  <circle cx="760" cy="440" r="2" fill="#f0c040" fill-opacity="0.08"/>
+  <circle cx="1100" cy="370" r="1.5" fill="#f0c040" fill-opacity="0.08"/>
+  <circle cx="1400" cy="188" r="2" fill="#f0c040" fill-opacity="0.10"/>
+
+  <!-- Diagonal light ray (top-right) -->
+  <line x1="1100" y1="0" x2="1440" y2="280" stroke="#f0c040" stroke-width="60" stroke-opacity="0.02" filter="url(#blur-md)"/>
+  <line x1="1250" y1="0" x2="1440" y2="160" stroke="#f0c040" stroke-width="30" stroke-opacity="0.015" filter="url(#blur-md)"/>
+</svg>

@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /portal/
+Disallow: /api/
+Disallow: /track/
+Disallow: /click/
+
+Sitemap: https://tradingbonushub.com/sitemap.xml

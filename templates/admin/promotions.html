@@ -1,0 +1,464 @@
+{% extends "base.html" %}
+{% block title %}Programs — Trading Bonus{% endblock %}
+{% block page_title %}Programs{% endblock %}
+
+{% block head %}
+<style>
+/* ── Toolbar ── */
+.toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+.broker-filter { display: flex; gap: 8px; flex-wrap: wrap; }
+.filter-btn { padding: 6px 16px; border-radius: 50px; font-size: 13px; font-weight: 600; cursor: pointer; border: 2px solid #ddd; background: #fff; color: #666; transition: all .15s; }
+.filter-btn:hover { border-color: #1a73e8; color: #1a73e8; }
+.filter-btn.active { background: #1a73e8; border-color: #1a73e8; color: #fff; }
+
+/* ── Program cards ── */
+.promo-grid { display: flex; flex-direction: column; gap: 14px; }
+.promo-card {
+  background: #fff; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  overflow: hidden;
+}
+.promo-card-head {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 20px; background: linear-gradient(135deg, #1a1a2e, #0f3460);
+  cursor: pointer; user-select: none;
+}
+.promo-card-head:hover { background: linear-gradient(135deg, #22243e, #174070); }
+.card-title { font-size: 15px; font-weight: 700; color: #fff; flex: 1; }
+.card-broker { font-size: 12px; color: rgba(255,255,255,.55); }
+.card-type-badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; letter-spacing: .4px; text-transform: uppercase; }
+.type-backcom       { background: rgba(240,192,64,.2); color: #c8972a; }
+.type-gold_bonus    { background: rgba(50,200,100,.15); color: #28a745; }
+.type-bonus_milestone { background: rgba(100,150,255,.15); color: #4a80f0; }
+.card-meta { display: flex; align-items: center; gap: 10px; }
+.card-meta-item { font-size: 12px; color: rgba(255,255,255,.6); font-weight: 600; }
+.card-meta-item strong { color: #f0c040; }
+.head-chevron { color: rgba(255,255,255,.5); font-size: 12px; transition: transform .2s; margin-left: 8px; }
+.head-chevron.open { transform: rotate(180deg); }
+
+/* ── Detail body ── */
+.promo-detail { display: none; padding: 20px; border-top: 1px solid #f0f0f0; }
+.promo-detail.open { display: block; }
+
+.section-title {
+  font-size: 11px; font-weight: 800; color: #888;
+  text-transform: uppercase; letter-spacing: .6px;
+  margin-bottom: 10px; padding-bottom: 6px;
+  border-bottom: 1px solid #eee;
+}
+.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.form-group { margin: 0; }
+.form-group label { font-size: 12px; font-weight: 600; color: #555; display: block; margin-bottom: 4px; }
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%; padding: 8px 10px; border: 1.5px solid #ddd;
+  border-radius: 6px; font-size: 13px; font-family: inherit; color: #333;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  border-color: #1a73e8; outline: none; box-shadow: 0 0 0 3px rgba(26,115,232,.1);
+}
+.form-group textarea { min-height: 60px; resize: vertical; }
+.hint { font-size: 11px; color: #999; margin-top: 3px; }
+
+/* Toggle */
+.toggle-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.toggle-label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+.toggle-label input { width: 16px; height: 16px; accent-color: #1a73e8; }
+
+/* ── Tier table ── */
+.tier-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 10px; }
+.tier-table th { background: #f5f7fa; padding: 8px 10px; text-align: left; font-weight: 700; color: #777; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #e0e0e0; }
+.tier-table td { padding: 6px 8px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+.tier-table input { padding: 5px 8px; border: 1.5px solid #ddd; border-radius: 5px; font-size: 13px; width: 100%; min-width: 70px; }
+.tier-table input:focus { border-color: #1a73e8; outline: none; }
+
+/* Save row */
+.save-row { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding-top: 14px; border-top: 1px solid #eee; margin-top: 16px; }
+.save-msg { font-size: 12px; color: #16a34a; font-weight: 600; opacity: 0; transition: opacity .3s; }
+.save-msg.show { opacity: 1; }
+
+/* ── Action buttons ── */
+.card-actions { display: flex; gap: 6px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+  <div class="broker-filter" id="broker-filter">
+    <button class="filter-btn active" onclick="filterBroker(this,'')">All</button>
+  </div>
+  <button class="btn btn-primary" onclick="openAddModal()">+ Add Program</button>
+</div>
+
+<div id="promo-grid" class="promo-grid"></div>
+<div id="promo-empty" class="empty" style="display:none;">No programs yet.</div>
+
+<!-- ── Add/Edit modal ── -->
+<div class="overlay" id="modal-overlay">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h3 id="modal-title">Add Program</h3>
+      <button class="close-btn" onclick="closeModal()">&times;</button>
+    </div>
+    <input type="hidden" id="edit-pid" value="" />
+    <div class="form-group" style="margin-bottom:12px;">
+      <label>Broker</label>
+      <select id="f-broker-id"></select>
+    </div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label>Program Name</label>
+      <input type="text" id="f-name" placeholder="Backcom Vantage 80%" />
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:12px;">
+      <div class="form-group" style="flex:1;">
+        <label>Type</label>
+        <select id="f-type">
+          <option value="backcom">Backcom (Rebate %)</option>
+          <option value="gold_bonus">Gold Bonus (USD/lot)</option>
+          <option value="bonus_milestone">Bonus Milestone (USD)</option>
+        </select>
+      </div>
+      <div class="form-group" style="flex:1;">
+        <label>Rebate % <span style="font-size:11px;color:#888;">(0-100)</span></label>
+        <input type="number" id="f-rebate-pct" min="0" max="100" step="0.1" value="80" />
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:12px;">
+      <div class="form-group" style="flex:1;">
+        <label>Card Template</label>
+        <select id="f-card-template">
+          <option value="default">Default</option>
+          <option value="recommended">Recommended</option>
+          <option value="best_rebate">Best Rebate</option>
+          <option value="balance">Balance</option>
+        </select>
+      </div>
+      <div class="form-group" style="flex:1;">
+        <label>Rebate Frequency</label>
+        <select id="f-rebate-frequency">
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+          <option value="on_close">On Trade Close</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:12px;">
+      <div class="form-group" style="flex:1;">
+        <label>Display Order</label>
+        <input type="number" id="f-order" value="0" min="0" />
+      </div>
+      <div class="form-group" style="display:flex;align-items:flex-end;gap:8px;padding-bottom:1px;">
+        <input type="checkbox" id="f-active" checked style="width:auto;" />
+        <label for="f-active" style="margin:0;cursor:pointer;">Active</label>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="savePromo()">Save</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let brokers = [], promotions = [];
+
+const TYPE_LABELS = { backcom: 'Backcom', gold_bonus: 'Gold Bonus', bonus_milestone: 'Milestone' };
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ── Init ── */
+async function loadAll() {
+  [brokers, promotions] = await Promise.all([
+    fetch('/api/brokers').then(r => r.json()),
+    fetch('/api/promotions').then(r => r.json()),
+  ]);
+  renderBrokerFilter();
+  renderGrid(promotions);
+}
+
+/* ── Broker filter ── */
+function renderBrokerFilter() {
+  const flt = document.getElementById('broker-filter');
+  flt.querySelectorAll('[data-slug]').forEach(b => b.remove());
+  brokers.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn';
+    btn.dataset.slug = b.slug;
+    btn.textContent = b.name;
+    btn.onclick = () => filterBroker(btn, b.slug);
+    flt.appendChild(btn);
+  });
+}
+
+function filterBroker(btn, slug) {
+  document.querySelectorAll('#broker-filter .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const filtered = slug
+    ? promotions.filter(p => p.broker_slug === slug || (p.broker_names||'').includes(slug))
+    : promotions;
+  renderGrid(filtered);
+}
+
+/* ── Render program cards ── */
+function renderGrid(list) {
+  const grid = document.getElementById('promo-grid');
+  const empty = document.getElementById('promo-empty');
+  if (!list.length) { grid.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  grid.innerHTML = list.map(cardHtml).join('');
+  // Load tiers for each
+  list.forEach(p => loadTiersInline(p));
+}
+
+function cardHtml(p) {
+  const pct = p.rebate_pct != null ? parseFloat(p.rebate_pct) : 0;
+  const type = p.type || 'backcom';
+  const typeLbl = TYPE_LABELS[type] || type;
+  const xauSample = p.rebate_usd_per_lot ? `XAU ~$${p.rebate_usd_per_lot}/lot` : '';
+  const xau = p.rebate_xau_label || '';
+  return `
+  <div class="promo-card" data-pid="${p.id}" data-broker="${p.broker_slug||''}">
+    <div class="promo-card-head" onclick="toggleDetail(${p.id})">
+      <span class="card-type-badge type-${esc(type)}">${esc(typeLbl)}</span>
+      <div class="card-title">${esc(p.name)}</div>
+      <div class="card-meta">
+        <span class="card-meta-item"><strong>${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%</strong> rebate</span>
+        ${xauSample ? `<span class="card-meta-item" style="color:rgba(240,192,64,.7);">${esc(xauSample)}</span>` : ''}
+        <span class="card-meta-item">${esc(p.broker_name || '')}</span>
+        <span class="card-meta-item" style="opacity:.5;">${esc(p.card_template || 'default')}</span>
+        ${!p.is_active ? '<span style="font-size:10px;color:#f88;background:rgba(255,80,80,.2);padding:1px 7px;border-radius:10px;">hidden</span>' : ''}
+      </div>
+      <span class="head-chevron" id="chev-${p.id}">&#9660;</span>
+    </div>
+
+    <div class="promo-detail" id="detail-${p.id}">
+      <!-- Rebate config -->
+      <div class="section-title">Rebate Configuration</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Rebate % <span style="color:#c5221f;">*</span></label>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="number" id="d-pct-${p.id}" min="0" max="100" step="0.1" value="${pct}" />
+            <span style="font-weight:700;color:#c8972a;">%</span>
+          </div>
+          <p class="hint">% of IB commission returned to customer</p>
+        </div>
+        <div class="form-group">
+          <label>XAUUSD Sample ($/lot)</label>
+          <input type="number" id="d-lot-${p.id}" min="0" step="0.01" value="${p.rebate_usd_per_lot || ''}" placeholder="e.g. 8" />
+          <p class="hint">Sample rebate for XAUUSD display only. Actual rebate = commission &times; %</p>
+        </div>
+        <div class="form-group">
+          <label>XAUUSD Label</label>
+          <input type="text" id="d-xau-${p.id}" value="${esc(xau)}" placeholder="e.g. ~8$/lot" />
+          <p class="hint">Short text shown on card (e.g. "8-9$/lot")</p>
+        </div>
+        <div class="form-group">
+          <label>Rebate Frequency</label>
+          <select id="d-freq-${p.id}">
+            <option value="daily" ${(p.rebate_frequency||'daily')==='daily'?'selected':''}>Daily</option>
+            <option value="weekly" ${p.rebate_frequency==='weekly'?'selected':''}>Weekly</option>
+            <option value="monthly" ${p.rebate_frequency==='monthly'?'selected':''}>Monthly</option>
+            <option value="on_close" ${p.rebate_frequency==='on_close'?'selected':''}>On Trade Close</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Display -->
+      <div class="section-title">Display</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Card Template</label>
+          <select id="d-tpl-${p.id}">
+            <option value="default" ${(p.card_template||'default')==='default'?'selected':''}>Default</option>
+            <option value="recommended" ${p.card_template==='recommended'?'selected':''}>Recommended</option>
+            <option value="best_rebate" ${p.card_template==='best_rebate'?'selected':''}>Best Rebate</option>
+            <option value="balance" ${p.card_template==='balance'?'selected':''}>Balance</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Display Order</label>
+          <input type="number" id="d-order-${p.id}" value="${p.display_order || 0}" min="0" />
+        </div>
+      </div>
+      <div class="toggle-row">
+        <label class="toggle-label">
+          <input type="checkbox" id="d-active-${p.id}" ${p.is_active ? 'checked' : ''} />
+          Active (visible to customers)
+        </label>
+        <label class="toggle-label">
+          <input type="checkbox" id="d-rec-${p.id}" ${p.is_recommended ? 'checked' : ''} />
+          Badge "Recommended"
+        </label>
+      </div>
+
+      <!-- Tiers -->
+      <div class="section-title">Tiers</div>
+      <div style="overflow-x:auto;">
+        <table class="tier-table">
+          <thead>
+            <tr><th style="width:36px;">#</th><th>Min Lots</th><th>Reward Value</th><th>Reward Type</th><th>Label</th><th style="width:36px;"></th></tr>
+          </thead>
+          <tbody id="tiers-${p.id}"></tbody>
+        </table>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="addTierRow(${p.id})" style="margin-bottom:8px;">+ Add Tier</button>
+
+      <!-- Save / Delete -->
+      <div class="save-row">
+        <span class="save-msg" id="msg-${p.id}">Saved</span>
+        <button class="btn btn-danger btn-sm" onclick="deletePromo(${p.id})">Delete Program</button>
+        <button class="btn btn-primary" onclick="saveAll(${p.id})" style="background:#1a73e8;color:#fff;padding:8px 22px;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 1px 3px rgba(26,115,232,.4);">Save All</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ── Toggle detail ── */
+function toggleDetail(pid) {
+  const el = document.getElementById('detail-' + pid);
+  el.classList.toggle('open');
+  document.getElementById('chev-' + pid).classList.toggle('open');
+}
+
+/* ── Tiers inline ── */
+async function loadTiersInline(p) {
+  const tbody = document.getElementById('tiers-' + p.id);
+  if (!tbody) return;
+  try {
+    const tiers = await fetch('/api/promotions/' + p.id + '/tiers').then(r => r.json());
+    tbody.innerHTML = '';
+    tiers.forEach((t, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = tierRowHtml(i + 1, t);
+      tbody.appendChild(tr);
+    });
+  } catch(e) {}
+}
+
+function tierRowHtml(i, t) {
+  return `
+    <td style="text-align:center;font-weight:700;color:#888;">${i}</td>
+    <td><input type="number" class="t-lot" min="0" step="0.01" value="${t.target_lot ?? t.min_lots ?? ''}" /></td>
+    <td><input type="number" class="t-val" min="0" step="0.001" value="${t.reward_value ?? ''}" /></td>
+    <td><select class="t-type">
+      <option value="backcom_pct" ${(t.reward_type||'backcom_pct')==='backcom_pct'?'selected':''}>backcom_pct (%)</option>
+      <option value="bonus_usd" ${t.reward_type==='bonus_usd'?'selected':''}>bonus_usd ($)</option>
+    </select></td>
+    <td><input type="text" class="t-lbl" value="${esc(t.label||'')}" placeholder="Tier" style="min-width:80px;" /></td>
+    <td><button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()" style="padding:2px 8px;">&times;</button></td>`;
+}
+
+function addTierRow(pid) {
+  const tbody = document.getElementById('tiers-' + pid);
+  const i = tbody.rows.length + 1;
+  const tr = document.createElement('tr');
+  tr.innerHTML = tierRowHtml(i, {});
+  tbody.appendChild(tr);
+}
+
+/* ── Save all (program + tiers) ── */
+async function saveAll(pid) {
+  const p = promotions.find(x => x.id === pid);
+  if (!p) return;
+
+  const pct = parseFloat(document.getElementById('d-pct-' + pid).value) || 0;
+  const lotVal = document.getElementById('d-lot-' + pid).value;
+
+  // Save program
+  const progBody = {
+    name: p.name,
+    type: p.type || 'backcom',
+    rebate_pct: pct,
+    rebate_usd_per_lot: lotVal !== '' ? parseFloat(lotVal) : null,
+    rebate_xau_label: document.getElementById('d-xau-' + pid).value.trim() || null,
+    rebate_frequency: document.getElementById('d-freq-' + pid).value,
+    card_template: document.getElementById('d-tpl-' + pid).value,
+    display_order: parseInt(document.getElementById('d-order-' + pid).value) || 0,
+    is_active: document.getElementById('d-active-' + pid).checked ? 1 : 0,
+    is_recommended: document.getElementById('d-rec-' + pid).checked ? 1 : 0,
+  };
+
+  const r1 = await fetch('/api/promotions/' + pid, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(progBody),
+  });
+
+  // Save tiers
+  const tbody = document.getElementById('tiers-' + pid);
+  const tiers = [...tbody.rows].map(tr => ({
+    target_lot: parseFloat(tr.querySelector('.t-lot')?.value || 0),
+    reward_value: parseFloat(tr.querySelector('.t-val')?.value || 0),
+    reward_type: tr.querySelector('.t-type')?.value || 'backcom_pct',
+    label: tr.querySelector('.t-lbl')?.value.trim() || '',
+  }));
+
+  const r2 = await fetch('/api/promotions/' + pid + '/tiers', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(tiers),
+  });
+
+  if (r1.ok && r2.ok) {
+    const msg = document.getElementById('msg-' + pid);
+    msg.classList.add('show');
+    setTimeout(() => msg.classList.remove('show'), 2000);
+    // Refresh data
+    promotions = await fetch('/api/promotions').then(r => r.json());
+  } else {
+    alert('Save failed');
+  }
+}
+
+/* ── Add / Edit modal ── */
+function openAddModal() {
+  document.getElementById('edit-pid').value = '';
+  document.getElementById('modal-title').textContent = 'Add Program';
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-type').value = 'backcom';
+  document.getElementById('f-card-template').value = 'default';
+  document.getElementById('f-rebate-pct').value = '80';
+  document.getElementById('f-order').value = '0';
+  document.getElementById('f-active').checked = true;
+  document.getElementById('f-rebate-frequency').value = 'daily';
+  const sel = document.getElementById('f-broker-id');
+  sel.innerHTML = brokers.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+  document.getElementById('modal-overlay').classList.add('active');
+}
+
+function closeModal() { document.getElementById('modal-overlay').classList.remove('active'); }
+
+async function savePromo() {
+  const body = {
+    broker_ids: [parseInt(document.getElementById('f-broker-id').value)],
+    name: document.getElementById('f-name').value.trim(),
+    type: document.getElementById('f-type').value,
+    card_template: document.getElementById('f-card-template').value,
+    rebate_pct: parseFloat(document.getElementById('f-rebate-pct').value) || 80,
+    display_order: parseInt(document.getElementById('f-order').value) || 0,
+    is_active: document.getElementById('f-active').checked ? 1 : 0,
+    rebate_frequency: document.getElementById('f-rebate-frequency').value,
+  };
+  if (!body.name) { alert('Please enter program name'); return; }
+  const r = await fetch('/api/promotions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (r.ok) { closeModal(); loadAll(); }
+  else { const e = await r.json(); alert(e.detail || 'Save error'); }
+}
+
+async function deletePromo(pid) {
+  if (!confirm('Delete this program and all its tiers?')) return;
+  const r = await fetch('/api/promotions/' + pid, { method: 'DELETE' });
+  if (r.ok) loadAll();
+  else { const e = await r.json(); alert(e.detail || 'Cannot delete'); }
+}
+
+/* ── Boot ── */
+loadAll();
+</script>
+{% endblock %}

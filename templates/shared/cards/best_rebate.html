@@ -1,0 +1,49 @@
+{#
+  Card: best_rebate
+  Emphasis: large rebate/lot number, prominent gold gradient text
+#}
+<div class="pc pc--best-rebate" data-broker="{{ p.broker_slug }}">
+  <div class="pc__br-top">
+    <div class="pc__logo pc__logo--sm">
+      {% if p.broker_slug %}<img src="/static/logo-{{ p.broker_slug }}.png" alt="{{ p.broker_name }}" onerror="this.style.display='none'">{% endif %}
+    </div>
+    <span class="pc__badge pc__badge--gold">&#9733; Best Rebate</span>
+  </div>
+
+  <div class="pc__br-hero">
+    <div class="pc__br-amount">{{ p.rebate_pct | int }}%</div>
+    <div class="pc__br-unit">commission</div>
+    {% if p.rebate_usd_per_lot %}
+    <div class="pc__br-inst">XAUUSD &middot; ~${{ p.rebate_usd_per_lot }}/lot</div>
+    {% elif p.rebate_xau_label %}
+    <div class="pc__br-inst">XAUUSD &middot; {{ p.rebate_xau_label }}</div>
+    {% endif %}
+    <div class="pc__br-inst">Payout: {{ freq_label(p.rebate_frequency) }}</div>
+  </div>
+
+  <div class="pc__body">
+    {% if p.licenses %}
+    <div class="pc__info-row">
+      <span class="pc__info-key">License</span>
+      <span class="pc__info-val">
+        {% for lic in p.licenses.split(',') %}<span class="pc__pill">{{ lic.strip() }}</span>{% endfor %}
+      </span>
+    </div>
+    {% endif %}
+    {% if p.leverage %}
+    <div class="pc__info-row">
+      <span class="pc__info-key">Leverage</span>
+      <span class="pc__info-val">{{ p.leverage }}</span>
+    </div>
+    {% endif %}
+    {% if p.features %}
+    <ul class="pc__features">
+      {% for feat in p.features.split('\n') %}{% if feat.strip() %}<li>{{ feat.strip() }}</li>{% endif %}{% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+
+  <div class="pc__foot">
+    {% include "cards/_foot.html" %}
+  </div>
+</div>

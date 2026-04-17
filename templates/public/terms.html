@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ t('terms_title', lang) }} | TradingBonusHub</title>
+  <link rel="canonical" href="https://tradingbonushub.com/terms" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/logo-tb.png" />
+  <meta name="description" content="TradingBonusHub Terms of Service — rights and obligations when using the rebate/cashback system." />
+  <meta name="robots" content="index, follow" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --gold: #f0c040; --gold2: #c8972a; --navy: #050d1e; --glass: rgba(255,255,255,0.08); --glass-border: rgba(255,255,255,0.18); }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--navy) url('/static/bg-hero.svg') fixed center/cover no-repeat; color: rgba(255,255,255,0.92); min-height: 100vh; }
+    .header { background: rgba(5,10,22,0.92); backdrop-filter: blur(12px); padding: 0 40px; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 200; border-bottom: 1px solid rgba(240,192,64,.18); box-shadow: 0 2px 20px rgba(0,0,0,.4); }
+    .logo { font-size: 18px; font-weight: 800; color: #fff; text-decoration: none; }
+    .logo span { color: var(--gold); }
+    .header-nav { display: flex; align-items: center; gap: 4px; }
+    .nav-link { color: rgba(255,255,255,.8); font-size: 14px; font-weight: 600; text-decoration: none; padding: 8px 14px; border-radius: 6px; transition: background .15s, color .15s; }
+    .nav-link:hover { background: rgba(255,255,255,.1); color: #fff; }
+    .btn-auth { padding: 8px 20px; border-radius: 8px; font-size: 14px; font-weight: 700; background: linear-gradient(135deg, var(--gold2), var(--gold)); color: #1a1a2e; text-decoration: none; margin-left: 6px; white-space: nowrap; transition: filter .15s; }
+    .btn-auth:hover { filter: brightness(1.08); }
+    .page-hero { background: rgba(5,13,30,0.5); padding: 64px 40px; text-align: center; }
+    .page-hero h1 { font-size: 36px; font-weight: 800; margin-bottom: 14px; }
+    .page-hero h1 span { color: var(--gold); }
+    .page-hero p { color: rgba(255,255,255,.7); font-size: 16px; max-width: 560px; margin: 0 auto; line-height: 1.7; }
+    .content-wrap { max-width: 860px; margin: 0 auto; padding: 56px 32px; }
+    .legal-card { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 16px; padding: 40px 44px; box-shadow: 0 2px 16px rgba(0,0,0,.35); }
+    .legal-card h2 { font-size: 20px; font-weight: 700; color: var(--gold); margin: 32px 0 14px; }
+    .legal-card h2:first-child { margin-top: 0; }
+    .legal-card p { font-size: 14px; color: rgba(255,255,255,.82); line-height: 1.85; margin-bottom: 12px; }
+    .legal-card ul { padding-left: 20px; margin: 8px 0 16px; }
+    .legal-card li { font-size: 14px; color: rgba(255,255,255,.8); line-height: 1.85; margin-bottom: 6px; }
+    .legal-card .updated { font-size: 12px; color: rgba(255,255,255,.45); margin-top: 28px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.1); }
+    .footer-mini { text-align: center; padding: 28px 20px; font-size: 12px; color: rgba(255,255,255,.3); }
+    .footer-mini a { color: rgba(255,255,255,.5); text-decoration: none; }
+    .footer-mini a:hover { color: var(--gold); }
+    @media (max-width: 640px) {
+      .content-wrap { padding: 32px 16px; }
+      .legal-card { padding: 28px 20px; }
+      .page-hero { padding: 40px 20px; }
+      .page-hero h1 { font-size: 26px; }
+      .header { padding: 0 16px; }
+    }
+  </style>
+  {% include "_tracking_head.html" %}
+</head>
+<body>
+{% include "_tracking_body.html" %}
+
+{% include "_nav.html" %}
+
+<div class="page-hero">
+  {% if lang == 'en' %}<h1>Terms of <span>Service</span></h1>{% else %}<h1>Điều khoản <span>Sử dụng</span></h1>{% endif %}
+  <p>{{ t('terms_hero_p', lang) }}</p>
+</div>
+
+<div class="content-wrap">
+  <div class="legal-card">
+
+    {% if lang == 'en' %}
+    <h2>1. Introduction</h2>
+    <p>Welcome to TradingBonusHub. By accessing our website and services, you agree to these terms.</p>
+    <p>TradingBonusHub is an intermediary platform providing rebate/cashback services for traders through official broker partnerships.</p>
+
+    <h2>2. Eligibility</h2>
+    <ul>
+      <li>You must be at least 18 years old to use our services.</li>
+      <li>You must provide accurate information when registering an account.</li>
+      <li>Each person may only register one TradingBonusHub account.</li>
+      <li>You are responsible for maintaining the security of your account.</li>
+      <li>You must comply with the regulations of the broker you are using.</li>
+    </ul>
+
+    <h2>3. Rebate/Cashback Services</h2>
+    <ul>
+      <li>Rebates are calculated based on your actual trading volume.</li>
+      <li>Rebate rates may vary by program, account type, and broker.</li>
+      <li>TradingBonusHub does <b>NOT</b> change spread or trading conditions.</li>
+      <li>Payments are made according to each program's schedule.</li>
+    </ul>
+
+    <h2>4. Program Registration</h2>
+    <ul>
+      <li>To receive rebates, you must register and link your trading account.</li>
+      <li>The transfer process varies by broker.</li>
+      <li>Processing typically takes 1-2 business days.</li>
+      <li>TradingBonusHub may reject registration if terms are violated.</li>
+    </ul>
+
+    <h2>5. Payments</h2>
+    <ul>
+      <li>Rebate/cashback is calculated based on trade data from the broker.</li>
+      <li>Payments are made via your internal wallet on TradingBonusHub.</li>
+      <li>You may request withdrawal once the minimum threshold is reached.</li>
+      <li>TradingBonusHub is not responsible for discrepancies in broker trade data.</li>
+    </ul>
+
+    <h2>6. Prohibited Conduct</h2>
+    <p>You may not:</p>
+    <ul>
+      <li>Use multiple accounts to exploit promotions.</li>
+      <li>Provide false information or impersonate others.</li>
+      <li>Use bots, scripts, or automation to interact with the system.</li>
+      <li>Engage in wash trading to inflate rebates.</li>
+      <li>Violate the terms of partner brokers.</li>
+    </ul>
+
+    <h2>7. Limitation of Liability</h2>
+    <ul>
+      <li>TradingBonusHub is an intermediary platform, <b>NOT</b> a broker or financial institution.</li>
+      <li>We are not responsible for your trading results or profits/losses.</li>
+      <li>We are not responsible for issues arising from the broker (downtime, policy changes, etc.).</li>
+      <li>The service is provided on an "as-is" basis.</li>
+    </ul>
+
+    <h2>8. Changes to Terms</h2>
+    <p>TradingBonusHub may modify these terms at any time. Important changes will be notified via email or on the website. Your continued use of the service after changes take effect means you accept the new terms.</p>
+
+    <h2>9. Termination</h2>
+    <ul>
+      <li>You can stop using the service and request account deletion at any time.</li>
+      <li>TradingBonusHub may suspend or terminate your account for violations.</li>
+      <li>Unpaid rebates at the time of termination will be handled per program rules.</li>
+    </ul>
+
+    <h2>10. Contact</h2>
+    <p>If you have any questions about these terms, please contact us:</p>
+    <ul>
+      <li>Email: <a href="mailto:support@tradingbonushub.com" style="color:var(--gold);">support@tradingbonushub.com</a></li>
+      <li>Website: <a href="https://tradingbonushub.com" style="color:var(--gold);">tradingbonushub.com</a></li>
+    </ul>
+
+    <div class="updated">Last updated: April 2026</div>
+    {% else %}
+    <h2>1. Giới thiệu</h2>
+    <p>Chào mừng bạn đến với TradingBonusHub. Bằng việc truy cập và sử dụng website tradingbonushub.com cùng các dịch vụ liên quan, bạn đồng ý tuân thủ các điều khoản được nêu dưới đây.</p>
+    <p>TradingBonusHub là nền tảng trung gian cung cấp dịch vụ hoàn tiền (rebate/cashback) cho nhà giao dịch (trader) thông qua quan hệ đối tác chính thức với các sàn giao dịch (broker).</p>
+
+    <h2>2. Điều kiện sử dụng</h2>
+    <ul>
+      <li>Bạn phải từ 18 tuổi trở lên để sử dụng dịch vụ.</li>
+      <li>Bạn phải cung cấp thông tin chính xác khi đăng ký tài khoản.</li>
+      <li>Mỗi người chỉ được đăng ký một tài khoản TradingBonusHub.</li>
+      <li>Bạn chịu trách nhiệm bảo mật thông tin đăng nhập của mình.</li>
+      <li>Bạn phải tuân thủ quy định của broker mà bạn đang sử dụng.</li>
+    </ul>
+
+    <h2>3. Dịch vụ Rebate/Cashback</h2>
+    <p>TradingBonusHub cung cấp các chương trình hoàn tiền dựa trên khối lượng giao dịch thực tế của bạn tại broker đối tác. Cụ thể:</p>
+    <ul>
+      <li>Rebate được tính dựa trên commission mà TradingBonusHub nhận từ broker, chia sẻ lại cho bạn theo tỷ lệ chương trình.</li>
+      <li>Mức rebate có thể thay đổi tùy theo chương trình, loại tài khoản, và broker.</li>
+      <li>TradingBonusHub <b>không</b> thay đổi spread, commission, hoặc điều kiện giao dịch của broker.</li>
+      <li>Thanh toán rebate được thực hiện theo lịch quy định của từng chương trình (hàng ngày, hàng tuần, hoặc hàng tháng).</li>
+    </ul>
+
+    <h2>4. Đăng ký chương trình</h2>
+    <ul>
+      <li>Để nhận rebate, bạn cần đăng ký tài khoản TradingBonusHub và liên kết tài khoản giao dịch tại broker.</li>
+      <li>Quy trình chuyển tài khoản về hệ thống rebate có thể khác nhau với mỗi broker.</li>
+      <li>Thời gian xử lý đăng ký thường từ 1-2 ngày làm việc.</li>
+      <li>TradingBonusHub có quyền từ chối hoặc hủy đăng ký nếu phát hiện thông tin không chính xác hoặc vi phạm điều khoản.</li>
+    </ul>
+
+    <h2>5. Thanh toán</h2>
+    <ul>
+      <li>Rebate/cashback được tính toán dựa trên dữ liệu giao dịch từ broker.</li>
+      <li>Thanh toán được thực hiện qua ví nội bộ (wallet) trên TradingBonusHub.</li>
+      <li>Bạn có thể yêu cầu rút tiền từ ví khi đạt mức tối thiểu theo quy định.</li>
+      <li>TradingBonusHub không chịu trách nhiệm về sai lệch dữ liệu giao dịch từ phía broker.</li>
+    </ul>
+
+    <h2>6. Hành vi bị cấm</h2>
+    <p>Bạn không được:</p>
+    <ul>
+      <li>Sử dụng nhiều tài khoản để lợi dụng chương trình khuyến mãi.</li>
+      <li>Cung cấp thông tin sai lệch hoặc mạo danh người khác.</li>
+      <li>Sử dụng bot, script, hoặc phương pháp tự động để tương tác với hệ thống.</li>
+      <li>Thực hiện giao dịch ảo (wash trading) nhằm tăng rebate không chính đáng.</li>
+      <li>Vi phạm quy định của broker đối tác.</li>
+    </ul>
+
+    <h2>7. Giới hạn trách nhiệm</h2>
+    <ul>
+      <li>TradingBonusHub là nền tảng trung gian, <b>không phải</b> broker hoặc tổ chức tài chính.</li>
+      <li>Chúng tôi không chịu trách nhiệm về kết quả giao dịch, lỗ/lãi của bạn.</li>
+      <li>Chúng tôi không chịu trách nhiệm về các vấn đề phát sinh từ phía broker (ngừng hoạt động, thay đổi chính sách, v.v.).</li>
+      <li>Dịch vụ được cung cấp trên cơ sở "nguyên trạng" (as-is).</li>
+    </ul>
+
+    <h2>8. Thay đổi điều khoản</h2>
+    <p>TradingBonusHub có quyền sửa đổi các điều khoản này bất kỳ lúc nào. Thay đổi quan trọng sẽ được thông báo qua email hoặc trên website. Việc bạn tiếp tục sử dụng dịch vụ sau khi thay đổi có hiệu lực đồng nghĩa với việc bạn chấp nhận các điều khoản mới.</p>
+
+    <h2>9. Chấm dứt</h2>
+    <ul>
+      <li>Bạn có thể ngừng sử dụng dịch vụ và yêu cầu xóa tài khoản bất kỳ lúc nào.</li>
+      <li>TradingBonusHub có quyền tạm ngưng hoặc chấm dứt tài khoản nếu phát hiện vi phạm điều khoản.</li>
+      <li>Rebate chưa thanh toán tại thời điểm chấm dứt sẽ được xử lý theo quy định của chương trình.</li>
+    </ul>
+
+    <h2>10. Liên hệ</h2>
+    <p>Mọi thắc mắc về điều khoản sử dụng, vui lòng liên hệ:</p>
+    <ul>
+      <li>Email: <a href="mailto:support@tradingbonushub.com" style="color:var(--gold);">support@tradingbonushub.com</a></li>
+      <li>Website: <a href="https://tradingbonushub.com" style="color:var(--gold);">tradingbonushub.com</a></li>
+    </ul>
+
+    <div class="updated">Cập nhật lần cuối: Tháng 4, 2026</div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="footer-mini">
+  <a href="/{% if lang == 'en' %}?lang=en{% endif %}">{{ t('nav_home', lang) }}</a> &nbsp;|&nbsp; <a href="/privacy{% if lang == 'en' %}?lang=en{% endif %}">{{ t('footer_privacy', lang) }}</a> &nbsp;|&nbsp; <a href="/about{% if lang == 'en' %}?lang=en{% endif %}">{{ t('nav_contact', lang) }}</a>
+  <br>{{ ps.get('footer_text') or '&copy; 2026 TradingBonusHub. All rights reserved.' }}
+</div>
+
+</body>
+</html>

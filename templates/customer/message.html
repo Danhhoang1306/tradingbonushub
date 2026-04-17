@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="{{ lang|default('en') }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ ps.site_name or 'TradingBonusHub' }}</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #050d1e url('/static/bg-hero.svg') fixed center/cover no-repeat;
+      min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px;
+    }
+    .card {
+      background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18);
+      border-radius: 16px; box-shadow: 0 8px 40px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.06);
+      padding: 40px 36px; max-width: 440px; width: 100%; text-align: center;
+    }
+    .icon { font-size: 48px; margin-bottom: 16px; }
+    h2 { font-size: 20px; color: #fff; margin-bottom: 12px; font-weight: 700; }
+    p { font-size: 14px; color: rgba(255,255,255,.7); line-height: 1.7; margin-bottom: 24px; }
+    a.btn {
+      display: inline-block; padding: 12px 28px;
+      background: linear-gradient(135deg, {{ ps.primary_color or '#c8972a' }}, {{ ps.accent_color or '#f0c040' }});
+      color: #0d1b3e; border-radius: 50px; font-size: 14px; font-weight: 700;
+      text-decoration: none; transition: filter .15s;
+    }
+    a.btn:hover { filter: brightness(1.08); }
+  </style>
+</head>
+<body>
+<div class="card">
+  {% if msg_type == 'error' %}
+  <div class="icon">⛔</div>
+  <h2>An Error Occurred</h2>
+  {% else %}
+  <div class="icon">✅</div>
+  <h2>Success</h2>
+  {% endif %}
+  <p>{{ message }}</p>
+  <a href="/portal/dashboard" class="btn">Go to Dashboard</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500">
+  <defs>
+    <pattern id="grid-sm" width="35" height="35" patternUnits="userSpaceOnUse">
+      <path d="M35 0L0 0 0 35" fill="none" stroke="#c8972a" stroke-width="0.4" stroke-opacity="0.18"/>
+    </pattern>
+    <pattern id="grid-lg" width="175" height="175" patternUnits="userSpaceOnUse">
+      <path d="M175 0L0 0 0 175" fill="none" stroke="#c8972a" stroke-width="0.9" stroke-opacity="0.22"/>
+    </pattern>
+  </defs>
+  <rect width="500" height="500" fill="none"/>
+  <rect width="500" height="500" fill="url(#grid-sm)"/>
+  <rect width="500" height="500" fill="url(#grid-lg)"/>
+  <!-- Subtle uptrend line -->
+  <polyline
+    points="0,380 62,345 125,368 188,270 250,310 312,215 375,248 438,165 500,195"
+    fill="none" stroke="#c8972a" stroke-width="1.2" stroke-opacity="0.13" stroke-linejoin="round" stroke-linecap="round"/>
+  <!-- Area fill -->
+  <polygon
+    points="0,380 62,345 125,368 188,270 250,310 312,215 375,248 438,165 500,195 500,500 0,500"
+    fill="#c8972a" fill-opacity="0.025"/>
+  <!-- Peak dots -->
+  <circle cx="188" cy="270" r="3" fill="#c8972a" fill-opacity="0.2"/>
+  <circle cx="312" cy="215" r="3" fill="#c8972a" fill-opacity="0.2"/>
+  <circle cx="438" cy="165" r="3.5" fill="#c8972a" fill-opacity="0.22"/>
+</svg>

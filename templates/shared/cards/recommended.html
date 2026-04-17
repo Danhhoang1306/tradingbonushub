@@ -1,0 +1,38 @@
+{#
+  Card: recommended
+  Featured: badge "#1 rebate VN", gold border, dark header gradient, top gold bar
+#}
+<div class="pc pc--recommended" data-broker="{{ p.broker_slug }}">
+  <div class="pc__rec-badge">#1 Rebate VN</div>
+
+  <div class="pc__head pc__head--rec">
+    <div class="pc__logo">
+      {% if p.broker_slug %}<img src="/static/logo-{{ p.broker_slug }}.png" alt="{{ p.broker_name }}" onerror="this.style.display='none'">{% endif %}
+    </div>
+    <div class="pc__rec-headline">
+      Highest Rebate<br>
+      from <span class="pc__rec-name">{{ p.broker_name }}</span>
+    </div>
+  </div>
+
+  <div class="pc__body pc__body--rec">
+    {% if p.features %}
+    <ul class="pc__features pc__features--rec">
+      {% for feat in p.features.split('\n') %}
+      {% if feat.strip() %}
+      <li>{{ feat.strip() }}</li>
+      {% endif %}
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if p.rebate_xau_label or p.rebate_usd_per_lot %}
+    <div class="pc__rec-xau">&#9733; XAUUSD: ~{{ p.rebate_xau_label or ('$%s/lot' % p.rebate_usd_per_lot) }}</div>
+    {% endif %}
+    <div class="pc__rec-xau" style="margin-top:8px;">&#128338; Payout: {{ freq_label(p.rebate_frequency) }}</div>
+  </div>
+
+  <div class="pc__foot pc__foot--rec">
+    {% include "cards/_foot.html" %}
+  </div>
+</div>

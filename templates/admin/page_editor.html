@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+{% block title %}Homepage Layout{% endblock %}
+{% block page_title %}🎨 Homepage Layout{% endblock %}
+
+{% block head %}
+<style>
+  .lang-tabs { display:flex; gap:0; margin-bottom:24px; border-bottom:2px solid #e0e0e0; }
+  .lang-tab {
+    padding:10px 24px; cursor:pointer; font-size:14px; font-weight:700;
+    color:#666; border:none; background:none; border-bottom:3px solid transparent;
+    margin-bottom:-2px; transition:color .15s, border-color .15s;
+  }
+  .lang-tab.active { color:#1a73e8; border-bottom-color:#1a73e8; }
+  .lang-panel { display:none; }
+  .lang-panel.active { display:block; }
+
+  .section-label {
+    font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.6px;
+    color:#888; margin:20px 0 10px; padding-bottom:6px;
+    border-bottom:1px solid #f0f0f0;
+  }
+  .field-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .field-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+  .field-group { display:flex; flex-direction:column; gap:4px; }
+  .field-group label { font-size:12px; color:#555; font-weight:700; }
+  .field-group input, .field-group textarea {
+    padding:7px 10px; border:1px solid #ddd; border-radius:6px;
+    font-size:13px; width:100%; resize:vertical;
+    transition:border-color .15s;
+  }
+  .field-group input:focus, .field-group textarea:focus {
+    outline:none; border-color:#1a73e8;
+  }
+  .field-full { grid-column:1/-1; }
+
+  .preview-bar { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .preview-frame {
+    border:2px solid #e0e0e0; border-radius:8px; width:100%;
+    height:500px; background:#f5f5f5;
+  }
+  .save-bar {
+    position:sticky; bottom:0; background:#fff; padding:12px 0;
+    border-top:1px solid #e8e8e8; display:flex; align-items:center; gap:14px;
+    margin-top:20px; z-index:10;
+  }
+  .msg-ok  { color:#2e7d32; font-size:13px; font-weight:700; display:none; }
+  .msg-err { color:#c62828; font-size:13px; font-weight:700; display:none; }
+
+  @media(max-width:768px) { .field-grid,.field-grid-3 { grid-template-columns:1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:1000px;">
+
+  <!-- Language tabs -->
+  <div class="lang-tabs">
+    <button class="lang-tab active" onclick="switchLang('vi',this)">🇻🇳 Vietnamese</button>
+    <button class="lang-tab" onclick="switchLang('en',this)">🇬🇧 English</button>
+  </div>
+
+  {% for lang_code, c, lang_label in [('vi', vi_content, 'Vietnamese'), ('en', en_content, 'English')] %}
+  <div class="lang-panel {% if lang_code == 'vi' %}active{% endif %}" id="panel-{{ lang_code }}">
+
+    <!-- ── SEO ── -->
+    <div class="card">
+      <h2>SEO / Meta</h2>
+      <div class="field-grid">
+        <div class="field-group field-full">
+          <label>Browser Tab Title</label>
+          <input type="text" data-key="site_title" data-lang="{{ lang_code }}" value="{{ c.get('site_title','') }}">
+        </div>
+        <div class="field-group field-full">
+          <label>Meta description</label>
+          <textarea rows="2" data-key="site_description" data-lang="{{ lang_code }}">{{ c.get('site_description','') }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── HERO ── -->
+    <div class="card">
+      <h2>Hero Section</h2>
+      <div class="section-label">Subject</div>
+      <div class="field-grid">
+        <div class="field-group field-full">
+          <label>Eyebrow (small text above title)</label>
+          <input type="text" data-key="hero_eyebrow" data-lang="{{ lang_code }}" value="{{ c.get('hero_eyebrow','') }}">
+        </div>
+        <div class="field-group">
+          <label>Subject rows 1</label>
+          <input type="text" data-key="hero_title_line1" data-lang="{{ lang_code }}" value="{{ c.get('hero_title_line1','') }}">
+        </div>
+        <div class="field-group">
+          <label>Title Row 2 (gold color)</label>
+          <input type="text" data-key="hero_title_accent" data-lang="{{ lang_code }}" value="{{ c.get('hero_title_accent','') }}">
+        </div>
+        <div class="field-group field-full">
+          <label>Sub-description (new line = \n)</label>
+          <textarea rows="3" data-key="hero_sub" data-lang="{{ lang_code }}">{{ c.get('hero_sub','') }}</textarea>
+        </div>
+      </div>
+
+      <div class="section-label">Highlight bar (4 checkmarks)</div>
+      <div class="field-grid">
+        <div class="field-group"><label>✓ Item 1</label><input type="text" data-key="hero_hl1" data-lang="{{ lang_code }}" value="{{ c.get('hero_hl1','') }}"></div>
+        <div class="field-group"><label>✓ Item 2</label><input type="text" data-key="hero_hl2" data-lang="{{ lang_code }}" value="{{ c.get('hero_hl2','') }}"></div>
+        <div class="field-group"><label>✓ Item 3</label><input type="text" data-key="hero_hl3" data-lang="{{ lang_code }}" value="{{ c.get('hero_hl3','') }}"></div>
+        <div class="field-group"><label>✓ Item 4</label><input type="text" data-key="hero_hl4" data-lang="{{ lang_code }}" value="{{ c.get('hero_hl4','') }}"></div>
+      </div>
+
+      <div class="section-label">CTA Buttons</div>
+      <div class="field-grid">
+        <div class="field-group"><label>Primary Button (gold)</label><input type="text" data-key="hero_btn_primary" data-lang="{{ lang_code }}" value="{{ c.get('hero_btn_primary','') }}"></div>
+        <div class="field-group"><label>Secondary Button (ghost)</label><input type="text" data-key="hero_btn_secondary" data-lang="{{ lang_code }}" value="{{ c.get('hero_btn_secondary','') }}"></div>
+      </div>
+
+    </div>
+
+    <!-- ── BROKER MARQUEE ── -->
+    <div class="card">
+      <h2>Broker Marquee</h2>
+      <div class="field-group">
+        <label>Label above logo</label>
+        <input type="text" data-key="marquee_label" data-lang="{{ lang_code }}" value="{{ c.get('marquee_label','') }}" style="max-width:400px;">
+      </div>
+    </div>
+
+    <!-- ── BENEFITS ── -->
+    <div class="card">
+      <h2>Benefits Section</h2>
+      <div class="section-label">Header</div>
+      <div class="field-grid">
+        <div class="field-group"><label>Small Tag</label><input type="text" data-key="benefits_tag" data-lang="{{ lang_code }}" value="{{ c.get('benefits_tag','') }}"></div>
+        <div class="field-group"><label>Subject</label><input type="text" data-key="benefits_title" data-lang="{{ lang_code }}" value="{{ c.get('benefits_title','') }}"></div>
+        <div class="field-group field-full"><label>Sub-description</label><input type="text" data-key="benefits_sub" data-lang="{{ lang_code }}" value="{{ c.get('benefits_sub','') }}"></div>
+      </div>
+
+      <div class="section-label">Card 1</div>
+      <div class="field-grid">
+        <div class="field-group"><label>Icon</label><input type="text" data-key="b1_icon" data-lang="{{ lang_code }}" value="{{ c.get('b1_icon','') }}"></div>
+        <div class="field-group"><label>Subject</label><input type="text" data-key="b1_title" data-lang="{{ lang_code }}" value="{{ c.get('b1_title','') }}"></div>
+        <div class="field-group"><label>Large Number</label><input type="text" data-key="b1_big" data-lang="{{ lang_code }}" value="{{ c.get('b1_big','') }}"></div>
+        <div class="field-group"><label>Description</label><input type="text" data-key="b1_desc" data-lang="{{ lang_code }}" value="{{ c.get('b1_desc','') }}"></div>
+      </div>
+
+      <div class="section-label">Card 2</div>
+      <div class="field-grid">
+        <div class="field-group"><label>Icon</label><input type="text" data-key="b2_icon" data-lang="{{ lang_code }}" value="{{ c.get('b2_icon','') }}"></div>
+        <div class="field-group"><label>Subject</label><input type="text" data-key="b2_title" data-lang="{{ lang_code }}" value="{{ c.get('b2_title','') }}"></div>
+        <div class="field-group"><label>Large Number</label><input type="text" data-key="b2_big" data-lang="{{ lang_code }}" value="{{ c.get('b2_big','') }}"></div>
+        <div class="field-group"><label>Description</label><input type="text" data-key="b2_desc" data-lang="{{ lang_code }}" value="{{ c.get('b2_desc','') }}"></div>
+      </div>
+
+      <div class="section-label">Card 3</div>
+      <div class="field-grid">
+        <div class="field-group"><label>Icon</label><input type="text" data-key="b3_icon" data-lang="{{ lang_code }}" value="{{ c.get('b3_icon','') }}"></div>
+        <div class="field-group"><label>Subject</label><input type="text" data-key="b3_title" data-lang="{{ lang_code }}" value="{{ c.get('b3_title','') }}"></div>
+        <div class="field-group"><label>Large Number</label><input type="text" data-key="b3_big" data-lang="{{ lang_code }}" value="{{ c.get('b3_big','') }}"></div>
+        <div class="field-group"><label>Description</label><input type="text" data-key="b3_desc" data-lang="{{ lang_code }}" value="{{ c.get('b3_desc','') }}"></div>
+      </div>
+
+      <div class="section-label">Card 4</div>
+      <div class="field-grid">
+        <div class="field-group"><label>Icon</label><input type="text" data-key="b4_icon" data-lang="{{ lang_code }}" value="{{ c.get('b4_icon','') }}"></div>
+        <div class="field-group"><label>Subject</label><input type="text" data-key="b4_title" data-lang="{{ lang_code }}" value="{{ c.get('b4_title','') }}"></div>
+        <div class="field-group"><label>Large Number</label><input type="text" data-key="b4_big" data-lang="{{ lang_code }}" value="{{ c.get('b4_big','') }}"></div>
+        <div class="field-group"><label>Description</label><textarea rows="2" data-key="b4_desc" data-lang="{{ lang_code }}">{{ c.get('b4_desc','') }}</textarea></div>
+      </div>
+    </div>
+
+    <!-- ── CALCULATOR ── -->
+    <div class="card">
+      <h2>Calculator Section</h2>
+      <div class="field-grid">
+        <div class="field-group field-full"><label>Label trên broker cards</label><input type="text" data-key="calc_brokers_label" data-lang="{{ lang_code }}" value="{{ c.get('calc_brokers_label','') }}"></div>
+        <div class="field-group"><label>Tag</label><input type="text" data-key="calc_tag" data-lang="{{ lang_code }}" value="{{ c.get('calc_tag','') }}"></div>
+        <div class="field-group"><label>Subject</label><input type="text" data-key="calc_title" data-lang="{{ lang_code }}" value="{{ c.get('calc_title','') }}"></div>
+        <div class="field-group field-full"><label>Sub-description</label><input type="text" data-key="calc_sub" data-lang="{{ lang_code }}" value="{{ c.get('calc_sub','') }}"></div>
+        <div class="field-group"><label>Label slider</label><input type="text" data-key="calc_slider_title" data-lang="{{ lang_code }}" value="{{ c.get('calc_slider_title','') }}"></div>
+        <div class="field-group field-full"><label>Small Notes Below</label><input type="text" data-key="calc_note" data-lang="{{ lang_code }}" value="{{ c.get('calc_note','') }}"></div>
+      </div>
+    </div>
+
+    <!-- ── REAL EXAMPLE ── -->
+    <div class="card">
+      <h2>Real Income Examples (table)</h2>
+      <p style="font-size:13px;color:#888;margin-bottom:12px;">Table data (20 rows) is hardcoded — only edit headers and notes here.</p>
+      <div class="field-grid">
+        <div class="field-group"><label>Large Tag</label><input type="text" data-key="ex_tag" data-lang="{{ lang_code }}" value="{{ c.get('ex_tag','') }}"></div>
+        <div class="field-group"><label>Subject</label><input type="text" data-key="ex_title" data-lang="{{ lang_code }}" value="{{ c.get('ex_title','') }}"></div>
+        <div class="field-group field-full"><label>Sub-description</label><input type="text" data-key="ex_sub" data-lang="{{ lang_code }}" value="{{ c.get('ex_sub','') }}"></div>
+        <div class="field-group field-full"><label>Notes Below Table</label><input type="text" data-key="ex_foot" data-lang="{{ lang_code }}" value="{{ c.get('ex_foot','') }}"></div>
+      </div>
+    </div>
+
+    <!-- ── LEADERBOARD ── -->
+    <div class="card">
+      <h2>Leaderboard Section</h2>
+      <div class="section-label">Header</div>
+      <div class="field-grid">
+        <div class="field-group"><label>Tag</label><input type="text" data-key="lb_tag" data-lang="{{ lang_code }}" value="{{ c.get('lb_tag','') }}"></div>
+        <div class="field-group"><label>Subject</label><input type="text" data-key="lb_title" data-lang="{{ lang_code }}" value="{{ c.get('lb_title','') }}"></div>
+        <div class="field-group field-full"><label>Sub-description</label><input type="text" data-key="lb_sub" data-lang="{{ lang_code }}" value="{{ c.get('lb_sub','') }}"></div>
+      </div>
+      <div class="section-label">Table Columns</div>
+      <div class="field-grid">
+        <div class="field-group"><label>Column 1</label><input type="text" data-key="lb_col1" data-lang="{{ lang_code }}" value="{{ c.get('lb_col1','') }}"></div>
+        <div class="field-group"><label>Column 2</label><input type="text" data-key="lb_col2" data-lang="{{ lang_code }}" value="{{ c.get('lb_col2','') }}"></div>
+        <div class="field-group"><label>Column 3</label><input type="text" data-key="lb_col3" data-lang="{{ lang_code }}" value="{{ c.get('lb_col3','') }}"></div>
+        <div class="field-group"><label>Column 4</label><input type="text" data-key="lb_col4" data-lang="{{ lang_code }}" value="{{ c.get('lb_col4','') }}"></div>
+      </div>
+      <div class="section-label">Top 5 traders</div>
+      <div class="field-grid-3">
+        <div class="field-group"><label>🥇 Name</label><input type="text" data-key="lb_r1_name" data-lang="{{ lang_code }}" value="{{ c.get('lb_r1_name','') }}"></div>
+        <div class="field-group"><label>🥇 Volume</label><input type="text" data-key="lb_r1_vol" data-lang="{{ lang_code }}" value="{{ c.get('lb_r1_vol','') }}"></div>
+        <div class="field-group"><label>🥇 Cashback</label><input type="text" data-key="lb_r1_reward" data-lang="{{ lang_code }}" value="{{ c.get('lb_r1_reward','') }}"></div>
+        <div class="field-group"><label>🥈 Name</label><input type="text" data-key="lb_r2_name" data-lang="{{ lang_code }}" value="{{ c.get('lb_r2_name','') }}"></div>
+        <div class="field-group"><label>🥈 Volume</label><input type="text" data-key="lb_r2_vol" data-lang="{{ lang_code }}" value="{{ c.get('lb_r2_vol','') }}"></div>
+        <div class="field-group"><label>🥈 Cashback</label><input type="text" data-key="lb_r2_reward" data-lang="{{ lang_code }}" value="{{ c.get('lb_r2_reward','') }}"></div>
+        <div class="field-group"><label>🥉 Name</label><input type="text" data-key="lb_r3_name" data-lang="{{ lang_code }}" value="{{ c.get('lb_r3_name','') }}"></div>
+        <div class="field-group"><label>🥉 Volume</label><input type="text" data-key="lb_r3_vol" data-lang="{{ lang_code }}" value="{{ c.get('lb_r3_vol','') }}"></div>
+        <div class="field-group"><label>🥉 Cashback</label><input type="text" data-key="lb_r3_reward" data-lang="{{ lang_code }}" value="{{ c.get('lb_r3_reward','') }}"></div>
+        <div class="field-group"><label>#4 Name</label><input type="text" data-key="lb_r4_name" data-lang="{{ lang_code }}" value="{{ c.get('lb_r4_name','') }}"></div>
+        <div class="field-group"><label>#4 Volume</label><input type="text" data-key="lb_r4_vol" data-lang="{{ lang_code }}" value="{{ c.get('lb_r4_vol','') }}"></div>
+        <div class="field-group"><label>#4 Cashback</label><input type="text" data-key="lb_r4_reward" data-lang="{{ lang_code }}" value="{{ c.get('lb_r4_reward','') }}"></div>
+        <div class="field-group"><label>#5 Name</label><input type="text" data-key="lb_r5_name" data-lang="{{ lang_code }}" value="{{ c.get('lb_r5_name','') }}"></div>
+        <div class="field-group"><label>#5 Volume</label><input type="text" data-key="lb_r5_vol" data-lang="{{ lang_code }}" value="{{ c.get('lb_r5_vol','') }}"></div>
+        <div class="field-group"><label>#5 Cashback</label><input type="text" data-key="lb_r5_reward" data-lang="{{ lang_code }}" value="{{ c.get('lb_r5_reward','') }}"></div>
+      </div>
+      <div class="section-label">Table Footer</div>
+      <div class="field-grid">
+        <div class="field-group"><label>Text</label><input type="text" data-key="lb_foot" data-lang="{{ lang_code }}" value="{{ c.get('lb_foot','') }}"></div>
+        <div class="field-group"><label>Link text</label><input type="text" data-key="lb_foot_link" data-lang="{{ lang_code }}" value="{{ c.get('lb_foot_link','') }}"></div>
+      </div>
+    </div>
+
+    <!-- ── HOW IT WORKS ── -->
+    <div class="card">
+      <h2>Guide (4 Steps)</h2>
+      <div class="field-grid">
+        <div class="field-group"><label>Tag</label><input type="text" data-key="how_tag" data-lang="{{ lang_code }}" value="{{ c.get('how_tag','') }}"></div>
+        <div class="field-group"><label>Subject</label><input type="text" data-key="how_title" data-lang="{{ lang_code }}" value="{{ c.get('how_title','') }}"></div>
+        <div class="field-group field-full"><label>Sub-description</label><input type="text" data-key="how_sub" data-lang="{{ lang_code }}" value="{{ c.get('how_sub','') }}"></div>
+        <div class="field-group"><label>Step 1 — Title</label><input type="text" data-key="step1_title" data-lang="{{ lang_code }}" value="{{ c.get('step1_title','') }}"></div>
+        <div class="field-group"><label>Step 1 — Description</label><input type="text" data-key="step1_desc" data-lang="{{ lang_code }}" value="{{ c.get('step1_desc','') }}"></div>
+        <div class="field-group"><label>Step 2 — Title</label><input type="text" data-key="step2_title" data-lang="{{ lang_code }}" value="{{ c.get('step2_title','') }}"></div>
+        <div class="field-group"><label>Step 2 — Description</label><textarea rows="2" data-key="step2_desc" data-lang="{{ lang_code }}">{{ c.get('step2_desc','') }}</textarea></div>
+        <div class="field-group"><label>Step 3 — Title</label><input type="text" data-key="step3_title" data-lang="{{ lang_code }}" value="{{ c.get('step3_title','') }}"></div>
+        <div class="field-group"><label>Step 3 — Description</label><input type="text" data-key="step3_desc" data-lang="{{ lang_code }}" value="{{ c.get('step3_desc','') }}"></div>
+        <div class="field-group"><label>Step 4 — Title</label><input type="text" data-key="step4_title" data-lang="{{ lang_code }}" value="{{ c.get('step4_title','') }}"></div>
+        <div class="field-group"><label>Step 4 — Description</label><textarea rows="2" data-key="step4_desc" data-lang="{{ lang_code }}">{{ c.get('step4_desc','') }}</textarea></div>
+      </div>
+    </div>
+
+    <!-- ── FAQ HEADER ── -->
+    <div class="card">
+      <h2>FAQ (header)</h2>
+      <p style="font-size:13px;color:#888;margin-bottom:12px;">FAQ Q&A content managed at <a href="/admin/faq">Admin → FAQ</a></p>
+      <div class="field-grid">
+        <div class="field-group"><label>Tag</label><input type="text" data-key="faq_tag" data-lang="{{ lang_code }}" value="{{ c.get('faq_tag','') }}"></div>
+        <div class="field-group"><label>Subject</label><input type="text" data-key="faq_title" data-lang="{{ lang_code }}" value="{{ c.get('faq_title','') }}"></div>
+      </div>
+    </div>
+
+    <!-- ── FINAL CTA ── -->
+    <div class="card">
+      <h2>Final CTA Section</h2>
+      <div class="field-grid">
+        <div class="field-group field-full"><label>Large Title</label><input type="text" data-key="final_title" data-lang="{{ lang_code }}" value="{{ c.get('final_title','') }}"></div>
+        <div class="field-group field-full"><label>Paragraph (new line = \n)</label><textarea rows="2" data-key="final_sub" data-lang="{{ lang_code }}">{{ c.get('final_sub','') }}</textarea></div>
+        <div class="field-group"><label>Text nút</label><input type="text" data-key="final_btn" data-lang="{{ lang_code }}" value="{{ c.get('final_btn','') }}"></div>
+        <div class="field-group"><label>Chip 1</label><input type="text" data-key="final_chip1" data-lang="{{ lang_code }}" value="{{ c.get('final_chip1','') }}"></div>
+        <div class="field-group"><label>Chip 2</label><input type="text" data-key="final_chip2" data-lang="{{ lang_code }}" value="{{ c.get('final_chip2','') }}"></div>
+        <div class="field-group"><label>Chip 3</label><input type="text" data-key="final_chip3" data-lang="{{ lang_code }}" value="{{ c.get('final_chip3','') }}"></div>
+        <div class="field-group"><label>Chip 4</label><input type="text" data-key="final_chip4" data-lang="{{ lang_code }}" value="{{ c.get('final_chip4','') }}"></div>
+      </div>
+    </div>
+
+    <!-- ── FOOTER ── -->
+    <div class="card">
+      <h2>Footer</h2>
+      <div class="field-grid">
+        <div class="field-group"><label>Tagline</label><input type="text" data-key="footer_tagline" data-lang="{{ lang_code }}" value="{{ c.get('footer_tagline','') }}"></div>
+        <div class="field-group"><label>Copyright</label><input type="text" data-key="footer_copy" data-lang="{{ lang_code }}" value="{{ c.get('footer_copy','') }}"></div>
+      </div>
+    </div>
+
+  </div><!-- end lang-panel -->
+  {% endfor %}
+
+  <!-- ── PREVIEW ── -->
+  <div class="card">
+    <div class="preview-bar">
+      <strong style="font-size:14px;">Homepage Preview</strong>
+      <a href="/" target="_blank" class="btn btn-secondary btn-sm">Open Live Page ↗</a>
+      <button class="btn btn-secondary btn-sm" onclick="refreshPreview()">🔄 Refresh</button>
+    </div>
+    <iframe id="preview-frame" class="preview-frame" src="/"></iframe>
+  </div>
+
+  <!-- ── SAVE BAR ── -->
+  <div class="save-bar">
+    <button class="btn btn-primary" onclick="saveAll()">💾 Save All</button>
+    <span class="msg-ok"  id="msg-ok">✓ Saved thành công!</span>
+    <span class="msg-err" id="msg-err">✗ Error saving</span>
+    <span style="margin-left:auto;font-size:12px;color:#aaa;">Ctrl+S to save</span>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentLang = 'vi';
+
+function switchLang(lang, btn) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.lang-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + lang).classList.add('active');
+}
+
+function refreshPreview() {
+  const f = document.getElementById('preview-frame');
+  f.src = '/?lang=' + currentLang + '&_t=' + Date.now();
+}
+
+async function saveAll() {
+  const items = [];
+  document.querySelectorAll('#panel-' + currentLang + ' [data-key]').forEach(el => {
+    items.push({ key: el.dataset.key, lang: el.dataset.lang, value: el.value });
+  });
+  try {
+    const res = await fetch('/api/page-content/bulk', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(items),
+    });
+    if (!res.ok) throw new Error(res.statusText);
+    showMsg('ok');
+    setTimeout(refreshPreview, 500);
+  } catch(e) {
+    showMsg('err');
+  }
+}
+
+function showMsg(type) {
+  const ok  = document.getElementById('msg-ok');
+  const err = document.getElementById('msg-err');
+  ok.style.display = err.style.display = 'none';
+  if (type === 'ok')  { ok.style.display  = 'inline'; setTimeout(() => ok.style.display  = 'none', 3000); }
+  if (type === 'err') { err.style.display = 'inline'; setTimeout(() => err.style.display = 'none', 4000); }
+}
+
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveAll(); }
+});
+</script>
+{% endblock %}

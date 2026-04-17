@@ -1,0 +1,53 @@
+{#
+  Card: balance
+  Compact, 2-col stats grid, suitable when displaying many parameters
+#}
+<div class="pc pc--balance" data-broker="{{ p.broker_slug }}">
+  <div class="pc__head">
+    <div class="pc__logo">
+      {% if p.broker_slug %}<img src="/static/logo-{{ p.broker_slug }}.png" alt="{{ p.broker_name }}" onerror="this.style.display='none'">{% endif %}
+    </div>
+    <div>
+      <div class="pc__title">{{ p.broker_name }}</div>
+      <div class="pc__desc">{{ p.short_desc or p.name }}</div>
+    </div>
+  </div>
+
+  <div class="pc__stats-grid">
+    <div class="pc__stat">
+      <div class="pc__stat-val">{{ p.rebate_pct | int }}%</div>
+      <div class="pc__stat-lbl">Rebate rate</div>
+    </div>
+    {% if p.rebate_xau_label or p.rebate_usd_per_lot %}
+    <div class="pc__stat">
+      <div class="pc__stat-val">{{ p.rebate_xau_label or ('~$%s/lot' % p.rebate_usd_per_lot) }}</div>
+      <div class="pc__stat-lbl">XAUUSD</div>
+    </div>
+    {% endif %}
+    {% if p.leverage %}
+    <div class="pc__stat">
+      <div class="pc__stat-val">{{ p.leverage }}</div>
+      <div class="pc__stat-lbl">Leverage</div>
+    </div>
+    {% endif %}
+    <div class="pc__stat">
+      <div class="pc__stat-val">{{ freq_label(p.rebate_frequency) }}</div>
+      <div class="pc__stat-lbl">Payout</div>
+    </div>
+  </div>
+
+  {% if p.licenses %}
+  <div class="pc__body" style="padding-top:8px;">
+    <div class="pc__info-row">
+      <span class="pc__info-key">License</span>
+      <span class="pc__info-val">
+        {% for lic in p.licenses.split(',') %}<span class="pc__pill">{{ lic.strip() }}</span>{% endfor %}
+      </span>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="pc__foot">
+    {% include "cards/_foot.html" %}
+  </div>
+</div>

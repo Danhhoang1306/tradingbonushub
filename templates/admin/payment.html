@@ -1,0 +1,477 @@
+{% extends "base.html" %}
+{% block title %}Payment — Trading Bonus{% endblock %}
+{% block page_title %}Payment{% endblock %}
+
+{% block head %}
+<style>
+  /* ── Tabs ── */
+  .tab-nav { display:flex; gap:0; border-bottom:2px solid #e0e0e0; margin-bottom:24px; }
+  .tab-nav button { background:none; border:none; padding:10px 22px; font-size:14px;
+                    cursor:pointer; color:#666; border-bottom:3px solid transparent;
+                    margin-bottom:-2px; font-weight:500; }
+  .tab-nav button.active { color:#1a73e8; border-bottom-color:#1a73e8; font-weight:700; }
+  .tab-pane { display:none; }
+  .tab-pane.active { display:block; }
+
+  /* ── Summary cards ── */
+  .stats-row { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:24px; }
+  .stat-box { background:#fff; border-radius:10px; padding:18px 24px; min-width:150px;
+              box-shadow:0 1px 4px rgba(0,0,0,.08); flex:1; }
+  .stat-box .val { font-size:26px; font-weight:700; color:#1a73e8; }
+  .stat-box .lbl { font-size:12px; color:#888; margin-top:4px; }
+  .stat-box.green .val { color:#137333; }
+  .stat-box.orange .val { color:#e37400; }
+
+  /* ── Date picker row ── */
+  .filter-row { display:flex; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+  .filter-row label { font-size:13px; font-weight:600; color:#555; }
+  .filter-row input[type=date], .filter-row select {
+    border:1px solid #ddd; border-radius:6px; padding:7px 10px;
+    font-size:13px; background:#fff; }
+
+  /* ── Tables ── */
+  .data-table { width:100%; border-collapse:collapse; font-size:13px; }
+  .data-table th { background:#f8f9fa; padding:10px 12px; text-align:left;
+                   font-weight:600; border-bottom:2px solid #dee2e6; white-space:nowrap; }
+  .data-table td { padding:9px 12px; border-bottom:1px solid #f0f0f0; vertical-align:middle; }
+  .data-table tr:hover td { background:#fafbff; }
+  .data-table .totals-row td { background:#f0f4ff; font-weight:700; }
+
+  /* ── Badges ── */
+  .badge { display:inline-block; padding:3px 9px; border-radius:12px; font-size:11px; font-weight:600; }
+  .badge-pending  { background:#fff3cd; color:#856404; }
+  .badge-paid     { background:#d1e7dd; color:#0a3622; }
+
+  /* ── Buttons ── */
+  .btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px;
+         border-radius:7px; font-size:13px; font-weight:600; cursor:pointer;
+         border:none; transition:opacity .15s; }
+  .btn:hover { opacity:.85; }
+  .btn-primary { background:#1a73e8; color:#fff; }
+  .btn-success { background:#137333; color:#fff; }
+  .btn-danger  { background:#c5221f; color:#fff; }
+  .btn-outline { background:#fff; color:#1a73e8; border:1.5px solid #1a73e8; }
+  .btn:disabled { opacity:.45; cursor:not-allowed; }
+  .btn-sm { padding:5px 10px; font-size:12px; }
+
+  /* ── Export result ── */
+  .export-result { background:#e8f5e9; border:1px solid #a5d6a7; border-radius:8px;
+                   padding:14px 18px; margin-top:16px; display:none; }
+  .export-result.error { background:#fce8e6; border-color:#f5c6cb; }
+  .export-result .file-path { font-family:monospace; font-size:12px; color:#1a5c1a;
+                               word-break:break-all; margin-top:6px; }
+
+  /* ── Checkbox column ── */
+  .cb-col { width:36px; text-align:center; }
+  input[type=checkbox] { width:15px; height:15px; cursor:pointer; }
+
+  /* ── Empty state ── */
+  .empty-state { text-align:center; padding:48px 20px; color:#aaa; }
+  .empty-state .icon { font-size:40px; margin-bottom:12px; }
+
+  /* ── File chips ── */
+  .file-chips { margin-top:12px; display:flex; flex-wrap:wrap; gap:8px; }
+  .file-chip { background:#e8f4fd; border-radius:20px; padding:6px 14px;
+               font-size:12px; color:#1558b0; display:inline-flex; align-items:center; gap:6px; }
+  .file-chip strong { font-weight:700; }
+
+  .spinner { display:inline-block; width:14px; height:14px; border:2px solid #ccc;
+             border-top-color:#1a73e8; border-radius:50%;
+             animation:spin .6s linear infinite; vertical-align:middle; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="tab-nav">
+  <button class="active" onclick="switchTab('daily')">📤 Daily Rebate Export</button>
+  <button onclick="switchTab('bonus')">🏆 Bonus Milestone</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     TAB 1 — DAILY REBATE EXPORT (Vantage)
+     ══════════════════════════════════════════════════════════ -->
+<div class="tab-pane active" id="tab-daily">
+  <div class="card">
+    <h2>Export File rebate hàng days — Vantage</h2>
+    <p style="color:#666;font-size:13px;margin:8px 0 20px">
+      Filter Vantage customers with confirmed program enrollment,
+      calculate total rebate from <code>rebate_records</code>, export CSV by IB folder.
+    </p>
+
+    <div class="filter-row">
+      <label>Export Date:</label>
+      <input type="date" id="export-date" value="{{ today }}">
+      <button class="btn btn-primary" onclick="runDailyExport()">
+        📤 Export File
+      </button>
+    </div>
+
+    <div id="daily-export-result" class="export-result"></div>
+    <div id="daily-file-chips" class="file-chips"></div>
+  </div>
+
+  <!-- Preview table loads after export -->
+  <div class="card" id="daily-preview-card" style="display:none">
+    <h3>Export Results</h3>
+    <table class="data-table" id="daily-preview-table">
+      <thead>
+        <tr>
+          <th>IB Number</th>
+          <th>IB Name</th>
+          <th>File</th>
+          <th>Accounts</th>
+          <th>Total Rebate (USD)</th>
+        </tr>
+      </thead>
+      <tbody id="daily-preview-body"></tbody>
+      <tfoot>
+        <tr class="totals-row" id="daily-totals-row">
+          <td colspan="3"><strong>Grand Total</strong></td>
+          <td id="daily-total-accounts"></td>
+          <td id="daily-total-amount"></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div id="daily-skipped" style="margin-top:12px;display:none">
+      <strong style="color:#856404">⚠ Skipped:</strong>
+      <span id="daily-skipped-list" style="font-size:13px;color:#666"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     TAB 2 — BONUS MILESTONE
+     ══════════════════════════════════════════════════════════ -->
+<div class="tab-pane" id="tab-bonus">
+  <div class="card">
+    <h2>Bonus Milestone Management — Program 15</h2>
+    <p style="color:#666;font-size:13px;margin:8px 0 20px">
+      Bonus triggered when customer reaches cumulative lot milestone.
+      Admin views list → export CSV → manual payment (USDT) → mark as paid.
+    </p>
+
+    <!-- Filter tháng -->
+    <div class="filter-row">
+      <label>Tháng:</label>
+      <select id="bonus-month">
+        {% for m in range(1, 13) %}
+        <option value="{{ m }}" {% if m == current_month %}selected{% endif %}>Tháng {{ m }}</option>
+        {% endfor %}
+      </select>
+      <label>Năm:</label>
+      <select id="bonus-year">
+        {% for y in [2025, 2026, 2027] %}
+        <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-outline" onclick="loadBonuses()">🔍 Load List</button>
+      <button class="btn btn-primary" onclick="exportBonus()">📥 Export CSV</button>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="stats-row" id="bonus-stats" style="display:none">
+      <div class="stat-box orange">
+        <div class="val" id="bonus-total-pending">—</div>
+        <div class="lbl">Bonuses Pending Payment</div>
+      </div>
+      <div class="stat-box orange">
+        <div class="val" id="bonus-total-usd">—</div>
+        <div class="lbl">Total USD to Pay</div>
+      </div>
+    </div>
+
+    <div id="bonus-export-result" class="export-result" style="display:none"></div>
+  </div>
+
+  <!-- Bonus table -->
+  <div class="card" id="bonus-table-card" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 id="bonus-table-title">Danh sách bonus pending</h3>
+      <div style="display:flex;gap:8px;align-items:center">
+        <label style="font-size:13px">
+          <input type="checkbox" id="select-all" onchange="toggleAll(this)"> Select All
+        </label>
+        <button class="btn btn-success" id="mark-paid-btn" onclick="markSelectedPaid()" disabled>
+          ✅ Mark as Paid
+        </button>
+      </div>
+    </div>
+
+    <div id="bonus-empty" class="empty-state" style="display:none">
+      <div class="icon">🎉</div>
+      <div>No bonuses pending payment</div>
+    </div>
+
+    <table class="data-table" id="bonus-table" style="display:none">
+      <thead>
+        <tr>
+          <th class="cb-col"><input type="checkbox" id="select-all-head" onchange="toggleAll(this)"></th>
+          <th>Use ID</th>
+          <th>Khách hàng</th>
+          <th>IB</th>
+          <th>Tier Reached</th>
+          <th>Lots tháng này</th>
+          <th>Bonus (USD)</th>
+          <th>Receiving Account</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody id="bonus-tbody"></tbody>
+      <tfoot>
+        <tr class="totals-row" id="bonus-totals-row">
+          <td colspan="5"><strong>Total (filtered)</strong></td>
+          <td id="bonus-total-selected">—</td>
+          <td colspan="3"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const today = "{{ today }}";
+const currentYear  = {{ current_year }};
+const currentMonth = {{ current_month }};
+
+// ── Tab switching ──────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════
+// TAB 1 — DAILY REBATE EXPORT
+// ══════════════════════════════════════════════════════════════
+async function runDailyExport() {
+  const dateVal = document.getElementById('export-date').value;
+  if (!dateVal) { alert('Select date to export'); return; }
+
+  const resultBox  = document.getElementById('daily-export-result');
+  const chipBox    = document.getElementById('daily-file-chips');
+  const previewCard = document.getElementById('daily-preview-card');
+  const tbody      = document.getElementById('daily-preview-body');
+
+  resultBox.style.display  = 'none';
+  chipBox.innerHTML        = '';
+  previewCard.style.display = 'none';
+
+  // Call export API (POST /api/payment/export-daily?date=YYYY-MM-DD)
+  const res  = await fetch(`/api/payment/export-daily?date=${dateVal}`, { method: 'POST' });
+  const data = await res.json();
+
+  if (!res.ok) {
+    resultBox.className = 'export-result error';
+    resultBox.innerHTML = `<strong>Errors:</strong> ${data.detail || JSON.stringify(data)}`;
+    resultBox.style.display = 'block';
+    return;
+  }
+
+  if (data.total_accounts === 0) {
+    resultBox.className = 'export-result error';
+    resultBox.innerHTML = `<strong>No data</strong> — Not found rebate records cho days ${dateVal}`;
+    resultBox.style.display = 'block';
+    return;
+  }
+
+  // Show preview
+  previewCard.style.display = 'block';
+  tbody.innerHTML = '';
+  let totalAccounts = 0, totalAmount = 0;
+
+  (data.files || []).forEach(f => {
+    const fname = f.file.split('\\').pop().split('/').pop();
+    tbody.innerHTML += `<tr>
+      <td>${f.ib_number}</td>
+      <td>${f.ib_name}</td>
+      <td><span class="file-chip"><strong>${fname}</strong></span></td>
+      <td>${f.rows}</td>
+      <td>$${f.amount.toFixed(2)}</td>
+    </tr>`;
+    totalAccounts += f.rows;
+    totalAmount   += f.amount;
+  });
+
+  document.getElementById('daily-total-accounts').textContent = totalAccounts;
+  document.getElementById('daily-total-amount').textContent   = '$' + totalAmount.toFixed(2);
+
+  // Skipped
+  const skippedBox = document.getElementById('daily-skipped');
+  if (data.skipped && data.skipped.length > 0) {
+    skippedBox.style.display = 'block';
+    document.getElementById('daily-skipped-list').textContent =
+      data.skipped.map(s => `${s.use_id} (${s.reason})`).join(', ');
+  } else {
+    skippedBox.style.display = 'none';
+  }
+
+  // Success message
+  resultBox.className = 'export-result';
+  resultBox.innerHTML = `
+    <strong>✅ Export successful!</strong> ${data.total_accounts} accounts, total <strong>$${data.total_amount.toFixed(2)}</strong><br>
+    <div class="file-path">📁 ${data.root_folder}</div>
+  `;
+  resultBox.style.display = 'block';
+}
+
+// ══════════════════════════════════════════════════════════════
+// TAB 2 — BONUS MILESTONE
+// ══════════════════════════════════════════════════════════════
+let _bonusItems = [];
+
+async function loadBonuses() {
+  const year  = document.getElementById('bonus-year').value;
+  const month = document.getElementById('bonus-month').value;
+
+  const res  = await fetch(`/api/bonus/pending?year=${year}&month=${month}`);
+  const data = await res.json();
+
+  _bonusItems = data.items || [];
+
+  // Stats
+  document.getElementById('bonus-total-pending').textContent = data.total_pending;
+  document.getElementById('bonus-total-usd').textContent     = '$' + (data.total_amount_usd || 0).toFixed(2);
+  document.getElementById('bonus-stats').style.display       = 'flex';
+  document.getElementById('bonus-table-title').textContent   =
+    `Bonus pending — Tháng ${month}/${year}`;
+
+  document.getElementById('bonus-table-card').style.display = 'block';
+  renderBonusTable(_bonusItems);
+}
+
+function renderBonusTable(items) {
+  const tbody = document.getElementById('bonus-tbody');
+  const table = document.getElementById('bonus-table');
+  const empty = document.getElementById('bonus-empty');
+
+  if (!items.length) {
+    empty.style.display = 'block';
+    table.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  table.style.display = 'table';
+
+  tbody.innerHTML = items.map(b => `
+    <tr data-ca="${b.customer_account_id}"
+        data-tier="${b.tier_id}"
+        data-lots="${b.total_lots}"
+        data-bonus="${b.bonus_usd}">
+      <td class="cb-col"><input type="checkbox" class="row-cb" onchange="updateMarkBtn()"></td>
+      <td>${b.use_id}</td>
+      <td>${b.client_name || '—'}</td>
+      <td>${b.ib_name ? b.ib_name + ' (' + b.ib_number + ')' : (b.ib_number || '—')}</td>
+      <td><strong>${b.tier_label}</strong> (≥${b.target_lot} lots)</td>
+      <td>${(b.total_lots || 0).toFixed(2)}</td>
+      <td><strong>$${(b.bonus_usd || 0).toFixed(2)}</strong></td>
+      <td>${b.rebate_account || '—'}</td>
+      <td style="color:#666;font-size:12px">Bonus milestone — Reached ${(b.total_lots||0).toFixed(2)} lots (target ${b.target_lot} lots)</td>
+    </tr>
+  `).join('');
+
+  updateMarkBtn();
+}
+
+function toggleAll(src) {
+  document.querySelectorAll('.row-cb').forEach(cb => cb.checked = src.checked);
+  // Sync both checkbox headers
+  document.querySelectorAll('#select-all, #select-all-head').forEach(cb => cb.checked = src.checked);
+  updateMarkBtn();
+}
+
+function updateMarkBtn() {
+  const selected = document.querySelectorAll('.row-cb:checked').length;
+  const btn = document.getElementById('mark-paid-btn');
+  btn.disabled = selected === 0;
+  btn.textContent = selected > 0
+    ? `✅ Mark as Paid (${selected})`
+    : '✅ Mark as Paid';
+
+  // Calculate total selected
+  let total = 0;
+  document.querySelectorAll('.row-cb:checked').forEach(cb => {
+    total += parseFloat(cb.closest('tr').dataset.bonus || 0);
+  });
+  document.getElementById('bonus-total-selected').textContent =
+    selected > 0 ? `$${total.toFixed(2)}` : '—';
+}
+
+async function markSelectedPaid() {
+  const year  = parseInt(document.getElementById('bonus-year').value);
+  const month = parseInt(document.getElementById('bonus-month').value);
+
+  const items = [];
+  document.querySelectorAll('.row-cb:checked').forEach(cb => {
+    const tr = cb.closest('tr');
+    items.push({
+      customer_account_id: parseInt(tr.dataset.ca),
+      tier_id:             parseInt(tr.dataset.tier),
+      year,
+      month,
+      total_lots:          parseFloat(tr.dataset.lots || 0),
+      bonus_usd:           parseFloat(tr.dataset.bonus || 0),
+    });
+  });
+  if (!items.length) return;
+
+  if (!confirm(`Confirm as paid ${items.length} bonus? This action cannot be undone.`)) return;
+
+  const res  = await fetch('/api/bonus/mark-paid', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items, paid_by: 'admin' }),
+  });
+  const data = await res.json();
+
+  if (res.ok && data.inserted > 0) {
+    showBonusResult(`✅ Marked ${data.inserted} bonuses as <strong>paid</strong>.`, false);
+    await loadBonuses();
+  } else {
+    showBonusResult(`Errors: ${JSON.stringify(data)}`, true);
+  }
+}
+
+async function exportBonus() {
+  const year  = document.getElementById('bonus-year').value;
+  const month = document.getElementById('bonus-month').value;
+
+  const res  = await fetch(`/api/bonus/export?year=${year}&month=${month}`, { method: 'POST' });
+  const data = await res.json();
+
+  if (res.ok && data.file) {
+    const fname = data.file.split('\\').pop().split('/').pop();
+    showBonusResult(
+      `✅ Exported <strong>${data.rows}</strong> bonus, total <strong>$${data.total_amount_usd.toFixed(2)}</strong><br>
+       <div class="file-path">📁 ${data.file}</div>`,
+      false
+    );
+  } else {
+    showBonusResult(data.detail || 'No bonuses to export', true);
+  }
+}
+
+function showBonusResult(html, isError) {
+  const box = document.getElementById('bonus-export-result');
+  box.className = 'export-result' + (isError ? ' error' : '');
+  box.innerHTML = html;
+  box.style.display = 'block';
+}
+
+// Auto-load bonuses on tab switch
+const _origSwitch = window.switchTab;
+window.switchTab = function(name) {
+  _origSwitch(name);
+  if (name === 'bonus' && _bonusItems.length === 0) loadBonuses();
+};
+
+// Set today default
+document.getElementById('export-date').value = today;
+</script>
+{% endblock %}

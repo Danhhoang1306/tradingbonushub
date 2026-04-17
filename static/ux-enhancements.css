@@ -1,0 +1,200 @@
+/* ═══════════════════════════════════════════════
+   UX Enhancements — Page transitions, toasts,
+   skeleton screens, micro-interactions
+   ═══════════════════════════════════════════════ */
+
+/* ── 1. PAGE TRANSITION (fade-in on load) ── */
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; }
+}
+body {
+  animation: pageIn .25s ease both;
+}
+
+/* ── 2. TOAST NOTIFICATION SYSTEM ── */
+.toast-container {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  z-index: 10000;
+  display: flex; flex-direction: column; gap: 10px;
+  pointer-events: none; max-width: 400px; width: 90%;
+}
+.toast {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 14px 18px; border-radius: 10px;
+  font-size: 13px; line-height: 1.5; font-weight: 500;
+  pointer-events: all; cursor: pointer;
+  box-shadow: 0 6px 28px rgba(0,0,0,.18), 0 1px 4px rgba(0,0,0,.1);
+  animation: toastIn .3s cubic-bezier(.4,0,.2,1) both;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  word-break: break-word;
+}
+.toast.removing {
+  animation: toastOut .2s ease both;
+}
+.toast-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.toast-body { flex: 1; }
+.toast-close {
+  background: none; border: none; cursor: pointer;
+  font-size: 16px; line-height: 1; padding: 0 0 0 8px;
+  opacity: .5; transition: opacity .15s; flex-shrink: 0;
+}
+.toast-close:hover { opacity: 1; }
+
+/* Toast variants */
+.toast-error {
+  background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;
+}
+.toast-error .toast-icon { color: #dc2626; }
+.toast-error .toast-close { color: #991b1b; }
+
+.toast-success {
+  background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;
+}
+.toast-success .toast-icon { color: #16a34a; }
+.toast-success .toast-close { color: #166534; }
+
+.toast-warning {
+  background: #fffbeb; color: #92400e; border: 1px solid #fde68a;
+}
+.toast-warning .toast-icon { color: #d97706; }
+.toast-warning .toast-close { color: #92400e; }
+
+.toast-info {
+  background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;
+}
+.toast-info .toast-icon { color: #2563eb; }
+.toast-info .toast-close { color: #1e40af; }
+
+/* Dark variant (for dark-themed pages: customer portal, public) */
+.toast-dark.toast-error   { background: rgba(220,38,38,.15); color: #fca5a5; border-color: rgba(220,38,38,.3); }
+.toast-dark.toast-success { background: rgba(22,163,74,.15); color: #86efac; border-color: rgba(22,163,74,.3); }
+.toast-dark.toast-warning { background: rgba(217,119,6,.15); color: #fcd34d; border-color: rgba(217,119,6,.3); }
+.toast-dark.toast-info    { background: rgba(37,99,235,.15); color: #93c5fd; border-color: rgba(37,99,235,.3); }
+.toast-dark .toast-close  { color: rgba(255,255,255,.5); }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: scale(.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes toastOut {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(.92); }
+}
+@media (max-width: 600px) {
+  .toast-container { max-width: none; width: 92%; }
+}
+
+/* ── 3. SKELETON LOADING ── */
+.skeleton {
+  background: linear-gradient(90deg,
+    rgba(128,128,128,.08) 25%,
+    rgba(128,128,128,.16) 50%,
+    rgba(128,128,128,.08) 75%);
+  background-size: 200% 100%;
+  animation: skeletonPulse 1.5s ease infinite;
+  border-radius: 6px;
+  min-height: 16px;
+}
+.skeleton-row {
+  display: flex; gap: 12px; margin-bottom: 12px;
+}
+.skeleton-cell {
+  background: linear-gradient(90deg,
+    rgba(128,128,128,.08) 25%,
+    rgba(128,128,128,.16) 50%,
+    rgba(128,128,128,.08) 75%);
+  background-size: 200% 100%;
+  animation: skeletonPulse 1.5s ease infinite;
+  border-radius: 4px; height: 14px; flex: 1;
+}
+.skeleton-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(90deg,
+    rgba(128,128,128,.08) 25%,
+    rgba(128,128,128,.16) 50%,
+    rgba(128,128,128,.08) 75%);
+  background-size: 200% 100%;
+  animation: skeletonPulse 1.5s ease infinite;
+  flex-shrink: 0;
+}
+/* Dark skeleton (customer portal / public pages) */
+.skeleton-dark .skeleton,
+.skeleton-dark .skeleton-cell,
+.skeleton-dark .skeleton-avatar {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,.04) 25%,
+    rgba(255,255,255,.1) 50%,
+    rgba(255,255,255,.04) 75%);
+  background-size: 200% 100%;
+  animation: skeletonPulse 1.5s ease infinite;
+}
+@keyframes skeletonPulse {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── 4. MICRO-INTERACTIONS ── */
+/* Card lift on hover (only standalone cards, not modal children) */
+.card {
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.content > .card:hover,
+.card[onclick]:hover,
+a.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0,0,0,.12);
+}
+/* Subtle button press effect */
+.btn:active:not(:disabled) {
+  transform: scale(.97);
+}
+/* Table row highlight animation */
+tbody tr {
+  transition: background .15s ease;
+}
+/* Badge pulse for attention-grabbing badges */
+.nav-badge.visible {
+  animation: badgePulse 2s ease infinite;
+}
+@keyframes badgePulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.12); }
+}
+/* Focus ring for accessibility */
+.btn:focus-visible, .form-control:focus-visible,
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid #1a73e8;
+  outline-offset: 2px;
+}
+
+/* ── 5. MOBILE TOUCH TARGETS ── */
+@media (max-width: 768px) {
+  /* Ensure minimum 44px touch targets */
+  .nav-drawer a, .portal-drawer a {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+  }
+  .btn, .btn-sm {
+    min-height: 44px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  /* Larger hamburger hit area */
+  .nav-hamburger, .portal-hamburger {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* Larger close button in modals */
+  .close-btn {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

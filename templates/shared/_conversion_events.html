@@ -1,0 +1,18 @@
+<script>
+window.dataLayer = window.dataLayer || [];
+function tbhEvent(name, params) {
+  window.dataLayer.push(Object.assign({event: name}, params || {}));
+  if (typeof fbq === 'function') {
+    if (name === 'sign_up') fbq('track', 'CompleteRegistration');
+    else if (name === 'begin_enrollment') fbq('track', 'InitiateCheckout');
+    else if (name === 'contact_submit') fbq('track', 'Contact');
+    else if (name === 'cta_click') fbq('track', 'Lead');
+  }
+}
+document.addEventListener('click', function(e) {
+  var el = e.target.closest('a[href*="/portal/login"], a[href*="/portal/register"]');
+  if (el) tbhEvent('cta_click', {cta_text: el.textContent.trim(), cta_url: el.href});
+  var enroll = e.target.closest('[data-enroll]');
+  if (enroll) tbhEvent('begin_enrollment', {program: enroll.dataset.enroll || ''});
+});
+</script>

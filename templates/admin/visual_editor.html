@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% block title %}Visual Editor — Home{% endblock %}
+{% block page_title %}✏️ Visual Editor{% endblock %}
+
+{% block head %}
+<style>
+  /* Full-height layout that doesn't inherit normal main padding */
+  .ve-wrap {
+    display: flex; flex-direction: column;
+    height: calc(100vh - 52px); /* subtract topbar */
+    margin: -24px -24px -20px; /* cancel main padding */
+    overflow: hidden;
+  }
+  .ve-toolbar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 16px; background: #fff;
+    border-bottom: 1px solid #e0e0e0; flex-shrink: 0;
+    font-size: 13px;
+  }
+  .ve-toolbar .ve-label { font-weight: 700; color: #333; }
+  .ve-toolbar .ve-hint  { color: #888; font-size: 12px; flex: 1; }
+  .ve-toolbar .ve-status { font-size: 12px; font-weight: 700; }
+  .ve-toolbar .ve-status.ok  { color: #2e7d32; }
+  .ve-toolbar .ve-status.err { color: #c62828; }
+  .ve-toolbar button {
+    padding: 6px 14px; border: none; border-radius: 5px;
+    cursor: pointer; font-size: 12px; font-weight: 700;
+  }
+  .ve-btn-save  { background: #1a73e8; color: #fff; }
+  .ve-btn-save:hover:not(:disabled)  { background: #1558b0; }
+  .ve-btn-save:disabled { background: #bbb; cursor: default; }
+  .ve-btn-open  { background: #f5f5f5; color: #333; border: 1px solid #ddd; }
+  .ve-btn-open:hover { background: #eee; }
+  .ve-btn-reload { background: #f5f5f5; color: #555; border: 1px solid #ddd; font-size: 16px; padding: 4px 10px; }
+  .ve-btn-reload:hover { background: #eee; }
+  .ve-dirty { color: #f57c00; font-size: 12px; font-weight: 700; }
+
+  .ve-iframe-wrap { flex: 1; position: relative; }
+  .ve-iframe {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    border: none; display: block;
+    background: #f0f0f0;
+  }
+  .ve-loading {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #f9f9f9; font-size: 14px; color: #888;
+    pointer-events: none; transition: opacity .3s;
+  }
+
+  /* page tabs */
+  .ve-page-tabs { display: flex; gap: 0; }
+  .ve-tab {
+    padding: 6px 14px; cursor: pointer; font-size: 12px; font-weight: 700;
+    border: 1px solid #ddd; border-right: none; background: #f5f5f5; color: #555;
+    transition: background .1s;
+  }
+  .ve-tab:first-child { border-radius: 4px 0 0 4px; }
+  .ve-tab:last-child  { border-radius: 0 4px 4px 0; border-right: 1px solid #ddd; }
+  .ve-tab.active { background: #1a73e8; color: #fff; border-color: #1a73e8; }
+  .ve-tab:hover:not(.active) { background: #eee; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ve-wrap">
+
+  <!-- toolbar -->
+  <div class="ve-toolbar">
+    <span class="ve-label">Visual Editor</span>
+    <div class="ve-page-tabs">
+      <span class="ve-tab active" data-src="/admin/public-edit-mode?page=home" onclick="loadPage(this)">Home</span>
+      <span class="ve-tab" data-src="/admin/public-edit-mode?page=about" onclick="loadPage(this)">About</span>
+      <span class="ve-tab" data-src="/admin/public-edit-mode?page=blog" onclick="loadPage(this)">Blog</span>
+    </div>
+    <span class="ve-hint">Click on text in the frame to edit directly</span>
+    <span class="ve-dirty" id="ve-dirty"></span>
+    <span class="ve-status" id="ve-status"></span>
+    <button class="ve-btn-reload" id="btn-reload" title="Reload">↺</button>
+    <button class="ve-btn-save" id="btn-save" disabled>💾 Save All</button>
+    <button class="ve-btn-open" onclick="window.open(currentSrc(), '_blank')">View Page ↗</button>
+  </div>
+
+  <!-- iframe -->
+  <div class="ve-iframe-wrap">
+    <div class="ve-loading" id="ve-loading">Loading page...</div>
+    <iframe class="ve-iframe" id="ve-iframe" src="/admin/public-edit-mode?page=home"></iframe>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var iframe   = document.getElementById('ve-iframe');
+var loading  = document.getElementById('ve-loading');
+var btnSave  = document.getElementById('btn-save');
+var btnReload = document.getElementById('btn-reload');
+var veStatus = document.getElementById('ve-status');
+var veDirty  = document.getElementById('ve-dirty');
+var pendingSave = false;
+var dirtyCount  = 0;
+
+function currentSrc() {
+  return iframe.src;
+}
+
+// ── Page tab switching ────────────────────────────────────────────────────────
+function loadPage(tab) {
+  if (dirtyCount > 0 && !confirm(dirtyCount + ' unsaved changes. Switch page?')) return;
+  document.querySelectorAll('.ve-tab').forEach(function(t) { t.classList.remove('active'); });
+  tab.classList.add('active');
+  var src = tab.dataset.src;
+  showLoading();
+  iframe.src = src;
+  dirtyCount = 0;
+  updateDirty();
+}
+
+// ── Iframe load events ────────────────────────────────────────────────────────
+iframe.addEventListener('load', function() {
+  loading.style.opacity = '0';
+  setTimeout(function() { loading.style.display = 'none'; }, 300);
+});
+
+function showLoading() {
+  loading.style.display = 'flex';
+  loading.style.opacity = '1';
+}
+
+// ── Reload ────────────────────────────────────────────────────────────────────
+btnReload.addEventListener('click', function() {
+  if (dirtyCount > 0 && !confirm(dirtyCount + ' unsaved changes. Reload?')) return;
+  showLoading();
+  iframe.contentWindow.location.reload();
+  dirtyCount = 0;
+  updateDirty();
+});
+
+// ── Save ──────────────────────────────────────────────────────────────────────
+btnSave.addEventListener('click', function() {
+  if (!iframe.contentWindow) return;
+  pendingSave = true;
+  iframe.contentWindow.postMessage({ type: 'efRequestSave' }, '*');
+});
+
+// ── Messages from iframe ──────────────────────────────────────────────────────
+window.addEventListener('message', function(e) {
+  if (!e.data) return;
+
+  if (e.data.type === 'efSaved') {
+    pendingSave = false;
+    veStatus.textContent = '✓ Saved ' + e.data.count + ' fields';
+    veStatus.className   = 've-status ok';
+    btnSave.disabled     = true;
+    dirtyCount = 0;
+    updateDirty();
+    setTimeout(function() { veStatus.textContent = ''; veStatus.className = 've-status'; }, 3000);
+  }
+
+  if (e.data.type === 'efExit') {
+    window.location.href = '/admin/visual-editor';
+  }
+
+  // Dirty count updates from iframe (optional: iframe can send this)
+  if (e.data.type === 'efDirty') {
+    dirtyCount = e.data.count || 0;
+    updateDirty();
+    btnSave.disabled = dirtyCount === 0;
+  }
+});
+
+function updateDirty() {
+  veDirty.textContent = dirtyCount > 0 ? (dirtyCount + ' unsaved') : '';
+  btnSave.disabled    = dirtyCount === 0;
+}
+</script>
+{% endblock %}

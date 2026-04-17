@@ -1,0 +1,550 @@
+{% extends "base.html" %}
+{% block title %}Compose — Trading Bonus{% endblock %}
+{% block page_title %}✏️ Compose New Email{% endblock %}
+
+{% block head %}
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+<style>
+  /* ── Layout ── */
+  .compose-wrap {
+    display: flex; flex-direction: column; height: calc(100vh - var(--topbar-h, 56px));
+    margin: -22px; background: #fff;
+  }
+
+  /* ── Header bar ── */
+  .compose-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 20px; border-bottom: 1px solid #e8e8e8;
+    background: #fff; flex-shrink: 0;
+  }
+  .compose-header h2 { font-size: 15px; color: #1a1f2e; font-weight: 700; flex: 1; }
+  .btn-send {
+    background: #1a73e8; color: #fff; border: none; border-radius: 6px;
+    padding: 8px 22px; font-size: 14px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; gap: 6px; transition: background .15s;
+  }
+  .btn-send:hover { background: #1558b0; }
+  .btn-send:disabled { background: #aaa; cursor: not-allowed; }
+  .btn-preview {
+    background: #f1f3f4; color: #333; border: 1px solid #ddd; border-radius: 6px;
+    padding: 8px 16px; font-size: 14px; cursor: pointer; transition: background .15s;
+  }
+  .btn-preview:hover { background: #e2e3e5; }
+  .btn-save {
+    background: #fff; color: #555; border: 1px solid #ddd; border-radius: 6px;
+    padding: 8px 16px; font-size: 14px; cursor: pointer; transition: background .15s;
+  }
+  .btn-save:hover { background: #f1f3f4; }
+  .draft-status { font-size: 11px; color: #aaa; white-space: nowrap; }
+  .btn-attach {
+    background: #fff; color: #555; border: 1px dashed #bbb; border-radius: 6px;
+    padding: 4px 12px; font-size: 13px; cursor: pointer; white-space: nowrap;
+    transition: background .15s;
+  }
+  .btn-attach:hover { background: #f5f5f5; border-color: #999; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #e8f0fe; color: #1a3a6b; border-radius: 4px;
+    padding: 3px 8px; font-size: 12px;
+  }
+  .chip-rm {
+    cursor: pointer; font-size: 15px; line-height: 1; color: #888;
+    margin-left: 2px;
+  }
+  .chip-rm:hover { color: #c5221f; }
+
+  /* ── Fields ── */
+  .compose-fields { flex-shrink: 0; border-bottom: 1px solid #e8e8e8; }
+  .field-row {
+    display: flex; align-items: center; padding: 0 20px;
+    border-bottom: 1px solid #f0f0f0; min-height: 44px;
+  }
+  .field-row:last-child { border-bottom: none; }
+  .field-label {
+    font-size: 13px; color: #888; width: 68px; flex-shrink: 0; font-weight: 500;
+  }
+  .field-row input {
+    flex: 1; border: none; outline: none; font-size: 14px; color: #333;
+    padding: 10px 0; background: transparent;
+  }
+
+  /* ── Autocomplete ── */
+  .ac-wrap { position: relative; flex: 1; display: flex; }
+  .ac-dropdown {
+    display: none; position: absolute; top: calc(100% + 2px); left: 0; right: 0;
+    background: #fff; border: 1px solid #ddd; border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.12); z-index: 100; max-height: 220px; overflow-y: auto;
+  }
+  .ac-dropdown.open { display: block; }
+  .ac-item {
+    padding: 10px 14px; cursor: pointer; font-size: 13px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .ac-item:hover, .ac-item.focused { background: #f0f7ff; }
+  .ac-item .ac-name { font-weight: 600; color: #1a1f2e; }
+  .ac-item .ac-email { color: #888; font-size: 12px; }
+
+  /* ── Quill editor area ── */
+  .editor-wrap { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  #toolbar {
+    border: none !important; border-bottom: 1px solid #e8e8e8 !important;
+    padding: 8px 12px !important; flex-shrink: 0;
+  }
+  #editor {
+    flex: 1; overflow-y: auto; font-size: 14px; font-family: Arial, sans-serif;
+    line-height: 1.6;
+  }
+  .ql-container { border: none !important; height: 100%; font-size: 14px; overflow: visible !important; }
+  .ql-editor { padding: 20px 28px; min-height: 100%; }
+  .ql-editor p { margin-bottom: 6px; }
+  .ql-snow .ql-picker.ql-font .ql-picker-label::before,
+  .ql-snow .ql-picker.ql-font .ql-picker-item::before { content: attr(data-value) !important; }
+  /* Tooltip link not clipped */
+  .ql-snow .ql-tooltip {
+    z-index: 500;
+    position: fixed !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,.15);
+    border-radius: 6px;
+    border: 1px solid #ddd;
+  }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed; bottom: 28px; right: 28px; z-index: 999;
+    background: #1a73e8; color: #fff; border-radius: 8px; padding: 12px 20px;
+    font-size: 14px; box-shadow: 0 4px 16px rgba(0,0,0,.2);
+    display: none; align-items: center; gap: 10px; max-width: 360px;
+  }
+  .toast.success { background: #1e7e34; }
+  .toast.error   { background: #c5221f; }
+  .toast.show    { display: flex; animation: slideIn .25s ease; }
+  @keyframes slideIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
+
+  /* ── Preview modal ── */
+  .preview-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.5); z-index: 300; align-items: center; justify-content: center;
+  }
+  .preview-overlay.open { display: flex; }
+  .preview-modal {
+    background: #fff; border-radius: 10px; width: 90%; max-width: 680px;
+    max-height: 88vh; display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,.25);
+  }
+  .preview-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; border-bottom: 1px solid #e8e8e8; flex-shrink: 0;
+  }
+  .preview-modal-header h3 { font-size: 15px; color: #1a1f2e; }
+  .preview-modal iframe { flex: 1; border: none; width: 100%; }
+
+  /* ── Mobile ── */
+  @media (max-width: 768px) {
+    .compose-wrap { margin: -14px; height: calc(100vh - var(--topbar-h, 56px)); }
+    .compose-header { flex-wrap: wrap; padding: 10px 14px; gap: 8px; }
+    .compose-header h2 { width: 100%; font-size: 14px; }
+    .field-row { padding: 0 14px; }
+    .ql-editor { padding: 14px !important; }
+    #toolbar { padding: 6px 8px !important; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="compose-wrap">
+
+  <!-- Header -->
+  <div class="compose-header">
+    <h2>✏️ Compose New Email</h2>
+    <span class="draft-status" id="draftStatus"></span>
+    <button class="btn-save" onclick="saveDraft()">💾 Save Draft</button>
+    <button class="btn-preview" onclick="openPreview()">👁 Preview</button>
+    <button class="btn-send" id="btnSend" onclick="sendEmail()">
+      <span>▶ Send</span>
+    </button>
+  </div>
+
+  <!-- Fields -->
+  <div class="compose-fields">
+    <div class="field-row">
+      <span class="field-label">To</span>
+      <div class="ac-wrap">
+        <input id="fEmail" type="email" placeholder="email@example.com" autocomplete="off"
+               oninput="onEmailInput()" onkeydown="onEmailKey(event)">
+        <div class="ac-dropdown" id="acDrop"></div>
+      </div>
+    </div>
+    <div class="field-row">
+      <span class="field-label">Name</span>
+      <input id="fName" type="text" placeholder="Recipient name (optional)">
+    </div>
+    <div class="field-row">
+      <span class="field-label">Subject</span>
+      <input id="fSubject" type="text" placeholder="Enter email subject...">
+    </div>
+    <div class="field-row" style="flex-wrap:wrap; gap:6px; padding-top:8px; padding-bottom:8px; min-height:44px;">
+      <span class="field-label">Attachments</span>
+      <button type="button" class="btn-attach" onclick="document.getElementById('fileInput').click()">📎 Choose File</button>
+      <div id="fileChips" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;"></div>
+      <input type="file" id="fileInput" multiple style="display:none" onchange="onFilesSelected(event)">
+    </div>
+  </div>
+
+  <!-- Quill editor -->
+  <div class="editor-wrap">
+    <div id="toolbar">
+      <span class="ql-formats">
+        <select class="ql-font">
+          <option value="Arial" selected>Arial</option>
+          <option value="Georgia">Georgia</option>
+          <option value="Times New Roman">Times New Roman</option>
+          <option value="Courier New">Courier New</option>
+          <option value="Verdana">Verdana</option>
+        </select>
+        <select class="ql-size">
+          <option value="12px">12</option>
+          <option value="13px" selected>13</option>
+          <option value="14px">14</option>
+          <option value="16px">16</option>
+          <option value="18px">18</option>
+          <option value="20px">20</option>
+          <option value="24px">24</option>
+          <option value="28px">28</option>
+          <option value="32px">32</option>
+        </select>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-bold"></button>
+        <button class="ql-italic"></button>
+        <button class="ql-underline"></button>
+        <button class="ql-strike"></button>
+      </span>
+      <span class="ql-formats">
+        <select class="ql-color"></select>
+        <select class="ql-background"></select>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-align" value=""></button>
+        <button class="ql-align" value="center"></button>
+        <button class="ql-align" value="right"></button>
+        <button class="ql-align" value="justify"></button>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-list" value="ordered"></button>
+        <button class="ql-list" value="bullet"></button>
+        <button class="ql-indent" value="-1"></button>
+        <button class="ql-indent" value="+1"></button>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-link"></button>
+        <button class="ql-image"></button>
+        <button class="ql-blockquote"></button>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-clean"></button>
+      </span>
+    </div>
+    <div id="editor"></div>
+  </div>
+</div>
+
+<!-- Preview modal -->
+<div class="preview-overlay" id="previewOverlay" onclick="closePreview(event)">
+  <div class="preview-modal">
+    <div class="preview-modal-header">
+      <h3>👁 Preview (with signature)</h3>
+      <button style="background:none;border:none;font-size:22px;cursor:pointer;color:#888"
+              onclick="document.getElementById('previewOverlay').classList.remove('open')">×</button>
+    </div>
+    <iframe id="previewFrame"></iframe>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script>
+// ── Variable declarations (must be before any init code) ──────────────────────
+let attachedFiles = [];
+let acItems = [], acFocusIdx = -1, acTimer = null;
+let autoSaveTimer = null;
+let toastTimer;
+const DRAFT_KEY = 'compose_draft';
+
+// ── Register custom fonts & sizes ─────────────────────────────────────────────
+const Font = Quill.import('formats/font');
+Font.whitelist = ['Arial','Georgia','Times New Roman','Courier New','Verdana'];
+Quill.register(Font, true);
+
+const Size = Quill.import('attributors/style/size');
+Size.whitelist = ['12px','13px','14px','16px','18px','20px','24px','28px','32px'];
+Quill.register(Size, true);
+
+// ── Init Quill ─────────────────────────────────────────────────────────────────
+const quill = new Quill('#editor', {
+  theme: 'snow',
+  modules: {
+    toolbar: '#toolbar',
+    history: { delay: 500, maxStack: 200 },
+  },
+  placeholder: 'Write email content here...',
+});
+
+// Default font for new text
+quill.format('font', 'Arial');
+quill.format('size', '14px');
+
+// Auto-save on editor change
+quill.on('text-change', scheduleAutoSave);
+
+// Auto-save on field change
+['fEmail','fName','fSubject'].forEach(id =>
+  document.getElementById(id).addEventListener('input', scheduleAutoSave)
+);
+
+// Ctrl+S / Cmd+S to save
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveDraft(); }
+});
+
+// Restore draft on load
+loadDraft();
+
+// ── Fix Quill link tooltip position (prevent clipping) ────────────────────────
+const _origLink = quill.theme.modules.toolbar.handlers.link;
+quill.getModule('toolbar').addHandler('link', function(value) {
+  if (_origLink) _origLink.call(this, value);
+  // After Quill shows the tooltip, re-anchor it to viewport center-ish
+  requestAnimationFrame(() => {
+    const tip = document.querySelector('.ql-tooltip');
+    if (!tip || tip.classList.contains('ql-hidden')) return;
+    const edRect = document.getElementById('editor').getBoundingClientRect();
+    tip.style.left = (edRect.left + 20) + 'px';
+    tip.style.top  = (edRect.top  + 20) + 'px';
+  });
+});
+
+// ── Fix Quill image button → file picker ──────────────────────────────────────
+quill.getModule('toolbar').addHandler('image', () => {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = () => {
+    const file = inp.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const range = quill.getSelection(true);
+      quill.insertEmbed(range.index, 'image', e.target.result);
+      quill.setSelection(range.index + 1);
+    };
+    reader.readAsDataURL(file);
+  };
+  inp.click();
+});
+
+// ── File attachments ───────────────────────────────────────────────────────────
+
+function onFilesSelected(e) {
+  for (const f of e.target.files) {
+    if (!attachedFiles.find(x => x.name === f.name && x.size === f.size))
+      attachedFiles.push(f);
+  }
+  e.target.value = '';
+  renderChips();
+}
+
+function renderChips() {
+  document.getElementById('fileChips').innerHTML = attachedFiles.map((f, i) =>
+    `<span class="chip">📄 ${esc(f.name)} <span class="chip-rm" onclick="removeFile(${i})">×</span></span>`
+  ).join('');
+}
+
+function removeFile(i) { attachedFiles.splice(i, 1); renderChips(); }
+
+// ── Autocomplete ───────────────────────────────────────────────────────────────
+
+async function onEmailInput() {
+  const q = document.getElementById('fEmail').value.trim();
+  clearTimeout(acTimer);
+  if (q.length < 1) { closeAc(); return; }
+  acTimer = setTimeout(async () => {
+    try {
+      const res = await fetch(`/api/customers-search?q=${encodeURIComponent(q)}`);
+      acItems = await res.json();
+      renderAc();
+    } catch(e) { closeAc(); }
+  }, 200);
+}
+
+function renderAc() {
+  const drop = document.getElementById('acDrop');
+  if (!acItems.length) { closeAc(); return; }
+  acFocusIdx = -1;
+  drop.innerHTML = acItems.map((c, i) =>
+    `<div class="ac-item" data-i="${i}" onmousedown="selectAc(${i})">
+       <span class="ac-name">${esc(c.name || c.email)}</span>
+       <span class="ac-email">${esc(c.email)}</span>
+     </div>`
+  ).join('');
+  drop.classList.add('open');
+}
+
+function selectAc(i) {
+  const c = acItems[i];
+  document.getElementById('fEmail').value = c.email;
+  document.getElementById('fName').value  = c.name || '';
+  closeAc();
+}
+
+function closeAc() {
+  document.getElementById('acDrop').classList.remove('open');
+  acItems = []; acFocusIdx = -1;
+}
+
+function onEmailKey(e) {
+  const drop = document.getElementById('acDrop');
+  const items = drop.querySelectorAll('.ac-item');
+  if (!drop.classList.contains('open')) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    acFocusIdx = Math.min(acFocusIdx + 1, items.length - 1);
+    items.forEach((el, i) => el.classList.toggle('focused', i === acFocusIdx));
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    acFocusIdx = Math.max(acFocusIdx - 1, 0);
+    items.forEach((el, i) => el.classList.toggle('focused', i === acFocusIdx));
+  } else if (e.key === 'Enter' && acFocusIdx >= 0) {
+    e.preventDefault();
+    selectAc(acFocusIdx);
+  } else if (e.key === 'Escape') {
+    closeAc();
+  }
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.ac-wrap')) closeAc();
+});
+
+// ── Preview ────────────────────────────────────────────────────────────────────
+async function openPreview() {
+  const body = quill.root.innerHTML;
+  const frame = document.getElementById('previewFrame');
+  // Fetch signature preview from server (with a dummy ticket placeholder shown)
+  const dummyTicket = '00000000-0000-0000-0000-000000000000';
+  const res = await fetch('/api/compose-preview', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({html_body: body, dummy_ticket: dummyTicket})
+  });
+  const data = await res.json();
+  frame.srcdoc = data.html;
+  document.getElementById('previewOverlay').classList.add('open');
+}
+
+function closePreview(e) {
+  if (e.target === document.getElementById('previewOverlay'))
+    document.getElementById('previewOverlay').classList.remove('open');
+}
+
+// ── Send ───────────────────────────────────────────────────────────────────────
+async function sendEmail() {
+  const email   = document.getElementById('fEmail').value.trim();
+  const name    = document.getElementById('fName').value.trim();
+  const subject = document.getElementById('fSubject').value.trim();
+  const body    = quill.root.innerHTML;
+
+  if (!email) { showToast('Please enter recipient email.', 'error'); return; }
+  if (!subject) { showToast('Please enter subject.', 'error'); return; }
+  if (!body || quill.getText().trim() === '') {
+    showToast('Email content is empty.', 'error'); return;
+  }
+
+  const btn = document.getElementById('btnSend');
+  btn.disabled = true;
+  btn.innerHTML = '<span>⏳ Sending...</span>';
+
+  try {
+    const fd = new FormData();
+    fd.append('recipient_email', email);
+    fd.append('recipient_name', name);
+    fd.append('subject', subject);
+    fd.append('html_body', body);
+    fd.append('base_url', window.location.origin);
+    attachedFiles.forEach(f => fd.append('files', f));
+    const res = await fetch('/api/send-single', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Unknown error');
+    showToast(`✅ Sent to ${email}`, 'success');
+    clearDraft();
+    // Reset
+    quill.setContents([]);
+    document.getElementById('fEmail').value = '';
+    document.getElementById('fName').value  = '';
+    document.getElementById('fSubject').value = '';
+    attachedFiles = []; renderChips();
+  } catch(err) {
+    showToast('❌ ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span>▶ Send</span>';
+  }
+}
+
+// ── Draft (localStorage) ──────────────────────────────────────────────────────
+
+function saveDraft() {
+  const draft = {
+    email:   document.getElementById('fEmail').value,
+    name:    document.getElementById('fName').value,
+    subject: document.getElementById('fSubject').value,
+    body:    quill.root.innerHTML,
+    savedAt: new Date().toISOString(),
+  };
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+  const t = new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+  document.getElementById('draftStatus').textContent = `Saved at ${t}`;
+}
+
+function loadDraft() {
+  const raw = localStorage.getItem(DRAFT_KEY);
+  if (!raw) return;
+  try {
+    const d = JSON.parse(raw);
+    if (d.email)   document.getElementById('fEmail').value   = d.email;
+    if (d.name)    document.getElementById('fName').value    = d.name;
+    if (d.subject) document.getElementById('fSubject').value = d.subject;
+    if (d.body && d.body !== '<p><br></p>') quill.root.innerHTML = d.body;
+    if (d.savedAt) {
+      const t = new Date(d.savedAt).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+      document.getElementById('draftStatus').textContent = `Draft at ${t}`;
+    }
+  } catch(e) {}
+}
+
+function clearDraft() {
+  localStorage.removeItem(DRAFT_KEY);
+  document.getElementById('draftStatus').textContent = '';
+}
+
+function scheduleAutoSave() {
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(saveDraft, 3000);
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────────
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+{% endblock %}

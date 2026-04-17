@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}Campaigns — Trading Bonus{% endblock %}
+{% block page_title %}Campaigns{% endblock %}
+
+{% block content %}
+<div class="flex-between">
+  <div></div>
+  <div style="display:flex;gap:8px;">
+    <a href="/admin/imported-leads" class="btn btn-secondary">Send to Leads DB</a>
+    <a href="/admin/campaigns/new" class="btn btn-primary">+ New Campaign</a>
+  </div>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>Campaign Name</th>
+        <th>Template</th>
+        <th>Total</th>
+        <th>Sent</th>
+        <th>Errors</th>
+        <th>Open Rate</th>
+        <th>Click Rate</th>
+        <th>Status</th>
+        <th>Created</th>
+        <th style="width:60px;"></th>
+      </tr>
+    </thead>
+    <tbody id="tbody">
+      <tr><td colspan="9" class="empty">Loading...</td></tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+<!-- Rename modal -->
+<div class="overlay" id="rename-overlay" onclick="if(event.target.id==='rename-overlay')closeRename()">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-header">
+      <h3>Rename Campaign</h3>
+      <button class="close-btn" onclick="closeRename()">✕</button>
+    </div>
+    <div class="form-group">
+      <label>New Name</label>
+      <input id="rename-input" placeholder="Campaign name" onkeydown="if(event.key==='Enter')submitRename()" />
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px;">
+      <button class="btn btn-primary" onclick="submitRename()">Save</button>
+      <button class="btn btn-secondary" onclick="closeRename()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+{% block scripts %}
+<script>
+async function load() {
+  const r = await fetch('/api/campaigns');
+  const data = await r.json();
+  const tbody = document.getElementById('tbody');
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="10" class="empty">No campaigns yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(c => {
+    const openRate = c.sent > 0
+      ? Math.round((c.unique_opens / c.sent) * 100) + '%'
+      : '—';
+    const clickRate = c.sent > 0
+      ? Math.round((c.unique_clicks / c.sent) * 100) + '%'
+      : '—';
+    return `
+      <tr>
+        <td style="cursor:pointer" onclick="location.href='/admin/campaigns/${c.id}'"><strong>${esc(c.name)}</strong></td>
+        <td style="cursor:pointer" class="text-muted" onclick="location.href='/admin/campaigns/${c.id}'">${esc(c.template_name || '—')}</td>
+        <td style="cursor:pointer" onclick="location.href='/admin/campaigns/${c.id}'">${c.total}</td>
+        <td style="cursor:pointer" onclick="location.href='/admin/campaigns/${c.id}'">${c.sent}</td>
+        <td style="cursor:pointer;color:${c.failed > 0 ? '#c5221f' : '#333'}" onclick="location.href='/admin/campaigns/${c.id}'">${c.failed}</td>
+        <td style="cursor:pointer" onclick="location.href='/admin/campaigns/${c.id}'"><strong>${openRate}</strong></td>
+        <td style="cursor:pointer" onclick="location.href='/admin/campaigns/${c.id}'"><strong style="color:#8430ce">${clickRate}</strong></td>
+        <td style="cursor:pointer" onclick="location.href='/admin/campaigns/${c.id}'">${statusBadge(c.status)}</td>
+        <td style="cursor:pointer" class="text-muted" onclick="location.href='/admin/campaigns/${c.id}'">${fmt(c.created_at)}</td>
+        <td style="white-space:nowrap;">
+          <button class="btn btn-secondary btn-sm" title="Rename"
+            data-id="${c.id}" data-name="${esc(c.name)}"
+            onclick="openRenameBtn(this)">✏️</button>
+          <button class="btn btn-secondary btn-sm" title="Duplicate"
+            onclick="location.href='/admin/campaigns/new?clone=${c.id}'">📋</button>
+          <button class="btn btn-danger btn-sm" title="Delete"
+            data-id="${c.id}" data-name="${esc(c.name)}"
+            onclick="delCampaignBtn(this)"
+            ${c.status === 'sending' ? 'disabled title="Stop campaign before deleting"' : ''}>🗑</button>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+function statusBadge(s) {
+  const map = {
+    draft: ['badge-draft', 'Draft'],
+    sending: ['badge-sending', '⏳ Sending'],
+    done: ['badge-done', '✅ Completed'],
+    done_with_errors: ['badge-errors', '⚠️ Has Errors'],
+    failed: ['badge-errors', '❌ Failed'],
+  };
+  const [cls, label] = map[s] || ['badge-draft', s];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+function fmt(iso) {
+  if (!iso) return '—';
+  return new Date(iso.endsWith('Z') ? iso : iso + 'Z')
+    .toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
+}
+function esc(s) { return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+let _renameId = null;
+function openRenameBtn(btn) { openRename(btn.dataset.id, btn.dataset.name); }
+function openRename(id, name) {
+  _renameId = id;
+  document.getElementById('rename-input').value = name;
+  document.getElementById('rename-overlay').classList.add('active');
+  setTimeout(() => document.getElementById('rename-input').select(), 50);
+}
+function closeRename() { document.getElementById('rename-overlay').classList.remove('active'); }
+async function submitRename() {
+  const name = document.getElementById('rename-input').value.trim();
+  if (!name) return;
+  const r = await fetch(`/api/campaigns/${_renameId}/name`, {
+    method: 'PUT',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ name }),
+  });
+  if (r.ok) { closeRename(); load(); }
+  else { const d = await r.json(); alert('❌ ' + (d.detail || 'Error')); }
+}
+
+async function delCampaignBtn(btn) {
+  await delCampaign(btn.dataset.id, btn.dataset.name);
+}
+async function delCampaign(id, name) {
+  if (!confirm(`Delete campaign "${name}"?\nThis will delete all emails and related tracking data.`)) return;
+  const r = await fetch(`/api/campaigns/${id}`, { method: 'DELETE' });
+  if (r.ok) { load(); }
+  else { const d = await r.json(); alert('❌ ' + (d.detail || 'Error')); }
+}
+
+load();
+</script>
+{% endblock %}

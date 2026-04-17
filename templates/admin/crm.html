@@ -1,0 +1,830 @@
+{% extends "base.html" %}
+{% block title %}CRM — Trading Bonus{% endblock %}
+{% block page_title %}CRM{% endblock %}
+
+{% block head %}
+<style>
+/* ── Override base layout ── */
+.content { padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; height: calc(100vh - 56px); }
+
+/* ── Toolbar ── */
+.crm-toolbar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; background: #fff;
+  border-bottom: 1px solid #e0e0e0; flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.crm-toolbar-left  { display: flex; align-items: center; gap: 8px; flex: 1; flex-wrap: wrap; }
+.crm-toolbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.crm-search {
+  height: 30px; padding: 0 10px 0 28px; border: 1px solid #ccc;
+  border-radius: 4px; font-size: 12px; width: 220px;
+  background: #fafafa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") 8px center no-repeat;
+}
+.crm-search:focus { outline: none; border-color: #1a1a2e; background-color: #fff; }
+
+.crm-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 28px; padding: 0 12px; border-radius: 14px;
+  font-size: 11px; font-weight: 600; cursor: pointer;
+  border: 1px solid #ddd; background: #f5f5f5; color: #555;
+  transition: all .15s; white-space: nowrap;
+}
+.crm-pill.active { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+.crm-pill .badge {
+  background: #e53e3e; color: #fff; border-radius: 10px;
+  padding: 0 5px; font-size: 10px; line-height: 16px; min-width: 16px; text-align: center;
+}
+.crm-pill.active .badge { background: rgba(255,255,255,.3); }
+
+.crm-btn {
+  height: 28px; padding: 0 12px; border-radius: 4px; font-size: 11px; font-weight: 600;
+  cursor: pointer; border: 1px solid #ddd; background: #fff; color: #444;
+  display: inline-flex; align-items: center; gap: 5px; transition: background .15s;
+}
+.crm-btn:hover { background: #f5f5f5; }
+.crm-btn.primary { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+.crm-btn.primary:hover { background: #2a2a4e; }
+
+.crm-total-badge {
+  font-size: 11px; color: #666; background: #f0f0f0;
+  padding: 3px 10px; border-radius: 10px; font-weight: 600;
+}
+
+/* ── Table wrap ── */
+.crm-table-wrap {
+  flex: 1; overflow: auto; position: relative;
+}
+
+/* ── Table ── */
+.crm-table {
+  width: max-content; min-width: 100%;
+  border-collapse: collapse; font-size: 12px;
+  background: #fff;
+}
+
+/* Header */
+.crm-table thead tr.header-labels th {
+  position: sticky; top: 0; z-index: 10;
+  background: #e8eaf0; color: #333; font-weight: 700;
+  padding: 0; white-space: nowrap;
+  border-bottom: 1px solid #cfd3db;
+  border-right: 1px solid #dde0e8;
+  user-select: none;
+}
+.crm-table thead tr.header-labels th .th-inner {
+  display: flex; align-items: center; gap: 4px;
+  padding: 7px 10px; cursor: pointer;
+}
+.crm-table thead tr.header-labels th .th-inner:hover { background: #d8dae8; }
+.crm-table thead tr.header-labels th .sort-icon { color: #aaa; font-size: 10px; }
+.crm-table thead tr.header-labels th.sorted-asc  .sort-icon,
+.crm-table thead tr.header-labels th.sorted-desc .sort-icon { color: #1a1a2e; }
+
+/* Filter row */
+.crm-table thead tr.header-filters th {
+  position: sticky; top: 33px; z-index: 10;
+  background: #f3f4f8; padding: 4px 6px;
+  border-bottom: 2px solid #cfd3db;
+  border-right: 1px solid #dde0e8;
+}
+.crm-table thead tr.header-filters th input,
+.crm-table thead tr.header-filters th select {
+  width: 100%; height: 22px; padding: 0 5px;
+  border: 1px solid #ccc; border-radius: 3px;
+  font-size: 11px; background: #fff; color: #333;
+  box-sizing: border-box;
+}
+.crm-table thead tr.header-filters th input:focus,
+.crm-table thead tr.header-filters th select:focus { outline: none; border-color: #1a1a2e; }
+
+/* Sticky cols */
+.crm-table th.sticky-col, .crm-table td.sticky-col {
+  position: sticky; left: 0; z-index: 5; background: inherit;
+}
+.crm-table th.sticky-col { z-index: 15; }
+.crm-table th.sticky-col2, .crm-table td.sticky-col2 {
+  position: sticky; left: 36px; z-index: 5; background: inherit;
+  border-right: 2px solid #cfd3db !important;
+}
+.crm-table th.sticky-col2 { z-index: 15; }
+
+/* Body rows */
+.crm-table tbody tr {
+  border-bottom: 1px solid #eef0f5;
+  transition: background .1s;
+}
+.crm-table tbody tr:hover { background: #f0f4ff; cursor: pointer; }
+.crm-table tbody tr.selected { background: #e6edff; }
+.crm-table tbody td {
+  padding: 6px 10px; white-space: nowrap;
+  border-right: 1px solid #eef0f5; color: #333;
+  max-width: 200px; overflow: hidden; text-overflow: ellipsis;
+}
+.crm-table tbody td.sticky-col,
+.crm-table tbody td.sticky-col2 { background: inherit; }
+.crm-table tbody tr:hover td.sticky-col,
+.crm-table tbody tr:hover td.sticky-col2 { background: #f0f4ff; }
+.crm-table tbody tr.selected td.sticky-col,
+.crm-table tbody tr.selected td.sticky-col2 { background: #e6edff; }
+
+.crm-table input[type=checkbox] { cursor: pointer; accent-color: #1a1a2e; }
+
+/* Status chips */
+.chip {
+  display: inline-block; padding: 1px 8px; border-radius: 10px;
+  font-size: 10px; font-weight: 700; white-space: nowrap;
+}
+.chip-green   { background: #d1fadf; color: #065f46; }
+.chip-yellow  { background: #fef9c3; color: #854d0e; }
+.chip-red     { background: #fee2e2; color: #991b1b; }
+.chip-blue    { background: #dbeafe; color: #1e40af; }
+.chip-gray    { background: #f1f5f9; color: #475569; }
+.chip-purple  { background: #ede9fe; color: #5b21b6; }
+.chip-orange  { background: #ffedd5; color: #9a3412; }
+
+/* ── Pagination bar ── */
+.crm-pagebar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 16px; background: #fff;
+  border-top: 1px solid #e0e0e0; flex-shrink: 0;
+  font-size: 12px; color: #555;
+}
+.crm-pagebar-left  { display: flex; align-items: center; gap: 10px; }
+.crm-pagebar-right { display: flex; align-items: center; gap: 4px; }
+.crm-page-btn {
+  min-width: 28px; height: 26px; padding: 0 6px; border-radius: 4px;
+  border: 1px solid #ddd; background: #fff; cursor: pointer;
+  font-size: 11px; font-weight: 600; color: #444;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background .12s;
+}
+.crm-page-btn:hover:not(:disabled) { background: #f0f4ff; border-color: #1a1a2e; color: #1a1a2e; }
+.crm-page-btn.active { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+.crm-page-btn:disabled { opacity: .4; cursor: default; }
+.crm-page-select {
+  height: 26px; padding: 0 6px; border: 1px solid #ddd; border-radius: 4px;
+  font-size: 11px; background: #fff; cursor: pointer;
+}
+
+/* ── Detail drawer ── */
+.crm-drawer-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.35);
+  z-index: 100; display: none;
+}
+.crm-drawer-overlay.open { display: block; }
+.crm-drawer {
+  position: fixed; top: 0; right: -600px; width: 580px; max-width: 96vw;
+  height: 100vh; background: #fff; z-index: 101;
+  box-shadow: -4px 0 24px rgba(0,0,0,.18);
+  transition: right .28s cubic-bezier(.4,0,.2,1);
+  display: flex; flex-direction: column;
+}
+.crm-drawer.open { right: 0; }
+.crm-drawer-head {
+  background: #1a1a2e; color: #fff;
+  padding: 16px 20px; display: flex; align-items: center; gap: 14px; flex-shrink: 0;
+}
+.crm-drawer-avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: #c8972a; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 700; flex-shrink: 0;
+}
+.crm-drawer-title { font-size: 16px; font-weight: 700; }
+.crm-drawer-sub   { font-size: 12px; color: rgba(255,255,255,.65); margin-top: 2px; }
+.crm-drawer-badges { display: flex; gap: 5px; margin-top: 6px; flex-wrap: wrap; }
+.drw-badge {
+  padding: 1px 8px; border-radius: 8px; font-size: 10px; font-weight: 700;
+}
+.db-verified   { background: #d1e7dd; color: #0a3622; }
+.db-unverified { background: #fee2e2; color: #991b1b; }
+.db-unsub      { background: #fee2e2; color: #991b1b; }
+.db-country    { background: rgba(255,255,255,.15); color: #fff; }
+.db-ib         { background: rgba(200,151,42,.3); color: #f0c040; }
+
+.crm-drawer-close {
+  margin-left: auto; background: none; border: none; color: rgba(255,255,255,.7);
+  font-size: 20px; cursor: pointer; padding: 4px; line-height: 1;
+  flex-shrink: 0;
+}
+.crm-drawer-close:hover { color: #fff; }
+.crm-drawer-body { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; background: #f8f9fa; }
+
+/* Detail sections */
+.drw-section { background: #fff; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.06); overflow: hidden; }
+.drw-section-head {
+  padding: 10px 14px; border-bottom: 1px solid #f0f0f0;
+  font-weight: 700; font-size: 12px; color: #1a1a2e;
+  display: flex; align-items: center; gap: 6px;
+}
+.drw-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+.drw-cell { padding: 8px 14px; border-bottom: 1px solid #f8f8f8; }
+.drw-cell:nth-child(odd) { border-right: 1px solid #f8f8f8; }
+.drw-label { font-size: 10px; color: #888; text-transform: uppercase; margin-bottom: 2px; }
+.drw-value { font-size: 12px; font-weight: 600; color: #1a1a2e; word-break: break-all; }
+
+.mt5-card { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; }
+.mt5-card:last-child { border-bottom: none; }
+.mt5-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.mt5-num  { font-family: monospace; font-weight: 700; font-size: 13px; color: #1a1a2e; }
+.mt5-type { font-size: 10px; color: #888; background: #f0f0f0; padding: 1px 7px; border-radius: 8px; }
+.mt5-enr  { margin-left: auto; font-size: 10px; font-weight: 700; padding: 1px 8px; border-radius: 8px; }
+.enr-active  { background: #d1fadf; color: #065f46; }
+.enr-pending { background: #fef9c3; color: #854d0e; }
+.enr-none    { background: #f1f5f9; color: #475569; }
+.mt5-promo   { font-size: 11px; color: #c8972a; font-weight: 600; margin-top: 2px; }
+.mt5-stats   { font-size: 11px; color: #555; display: flex; gap: 14px; margin-top: 2px; }
+
+.drw-table { width: 100%; font-size: 11px; border-collapse: collapse; }
+.drw-table th { padding: 6px 10px; background: #f8f9fa; color: #555; font-weight: 600; text-align: left; }
+.drw-table td { padding: 6px 10px; border-top: 1px solid #f0f0f0; }
+.drw-table tr:hover td { background: #fafafa; }
+
+.drw-spinner { display: flex; justify-content: center; padding: 30px; color: #aaa; font-size: 13px; }
+
+/* Loading overlay */
+.crm-loading {
+  position: absolute; inset: 0; background: rgba(255,255,255,.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 20; font-size: 13px; color: #888;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ── Toolbar ── -->
+<div class="crm-toolbar">
+  <div class="crm-toolbar-left">
+    <button class="crm-pill active" data-filter="all"              onclick="setFilter('all',this)">All <span class="badge" id="pill-all">…</span></button>
+    <button class="crm-pill"        data-filter="lead"             onclick="setFilter('lead',this)">Lead <span class="badge" id="pill-lead">…</span></button>
+    <button class="crm-pill"        data-filter="pending_data"     onclick="setFilter('pending_data',this)">Pending Data <span class="badge" id="pill-pending_data">…</span></button>
+    <button class="crm-pill"        data-filter="pending_transfer" onclick="setFilter('pending_transfer',this)">Pending Transfer <span class="badge" id="pill-pending_transfer">…</span></button>
+    <button class="crm-pill"        data-filter="active"           onclick="setFilter('active',this)">Active <span class="badge" id="pill-active">…</span></button>
+    <input  class="crm-search" id="crm-search" type="text" placeholder="Search name, email, UID, IB, country..." oninput="onSearch()">
+  </div>
+  <div class="crm-toolbar-right">
+    <span class="crm-total-badge" id="crm-total-badge">0 records</span>
+    <button class="crm-btn" onclick="resetFilters()">↺ Reset</button>
+    <button class="crm-btn" onclick="exportCSV()">⬇ Export</button>
+  </div>
+</div>
+
+<!-- ── Table ── -->
+<div class="crm-table-wrap" id="crm-table-wrap">
+  <div class="crm-loading" id="crm-loading">⏳ Loading data...</div>
+  <table class="crm-table" id="crm-table">
+    <thead>
+      <!-- Label row -->
+      <tr class="header-labels">
+        <th class="sticky-col"  style="width:36px;" onclick="toggleAllCheckboxes()"><div class="th-inner" style="justify-content:center;"><input type="checkbox" id="chk-all"></div></th>
+        <th class="sticky-col2" style="min-width:90px;"  onclick="sortBy('use_id')"><div class="th-inner">User ID <span class="sort-icon" id="sort-use_id">⇅</span></div></th>
+        <th style="min-width:160px;" onclick="sortBy('client_name')"><div class="th-inner">Client Name <span class="sort-icon" id="sort-client_name">⇅</span></div></th>
+        <th style="min-width:200px;" onclick="sortBy('broker_email')"><div class="th-inner">Broker Email <span class="sort-icon" id="sort-broker_email">⇅</span></div></th>
+        <th style="min-width:190px;" onclick="sortBy('portal_email')"><div class="th-inner">Portal Email <span class="sort-icon" id="sort-portal_email">⇅</span></div></th>
+        <th style="min-width:140px;" onclick="sortBy('ib_name')"><div class="th-inner">IB Name <span class="sort-icon" id="sort-ib_name">⇅</span></div></th>
+        <th style="min-width:100px;" onclick="sortBy('ib_number')"><div class="th-inner">IB Number <span class="sort-icon" id="sort-ib_number">⇅</span></div></th>
+        <th style="min-width:100px;" onclick="sortBy('country')"><div class="th-inner">Country <span class="sort-icon" id="sort-country">⇅</span></div></th>
+        <th style="min-width:130px;" onclick="sortBy('client_status')"><div class="th-inner">Client Status <span class="sort-icon" id="sort-client_status">⇅</span></div></th>
+        <th style="min-width:120px;" onclick="sortBy('program_status')"><div class="th-inner">Program <span class="sort-icon" id="sort-program_status">⇅</span></div></th>
+        <th style="min-width:80px;"  onclick="sortBy('has_portal')"><div class="th-inner">Portal <span class="sort-icon" id="sort-has_portal">⇅</span></div></th>
+        <th style="min-width:140px;" onclick="sortBy('created_at')"><div class="th-inner">Created <span class="sort-icon" id="sort-created_at">↓</span></div></th>
+      </tr>
+      <!-- Filter row -->
+      <tr class="header-filters" id="filter-row">
+        <th class="sticky-col"></th>
+        <th class="sticky-col2"><input id="f-use_id" placeholder="UID…" oninput="applyFilters()"></th>
+        <th><input  id="f-client_name"  placeholder="Name..."        oninput="applyFilters()"></th>
+        <th><input  id="f-broker_email" placeholder="Broker email…"  oninput="applyFilters()"></th>
+        <th><input  id="f-portal_email" placeholder="Portal email…"  oninput="applyFilters()"></th>
+        <th><input  id="f-ib_name"      placeholder="IB name…"       oninput="applyFilters()"></th>
+        <th><input  id="f-ib_number"    placeholder="IB #…"          oninput="applyFilters()"></th>
+        <th><input  id="f-country"      placeholder="Country…"       oninput="applyFilters()"></th>
+        <th>
+          <select id="f-client_status" onchange="applyFilters()">
+            <option value="">All</option>
+            <option value="lead">Lead</option>
+            <option value="pending_data">Pending data</option>
+            <option value="pending_transfer">Pending transfer</option>
+            <option value="active">Active</option>
+          </select>
+        </th>
+        <th>
+          <select id="f-program_status" onchange="applyFilters()">
+            <option value="">All</option>
+            <option value="unconfirmed">Unconfirmed</option>
+            <option value="confirmed">Confirmed</option>
+          </select>
+        </th>
+        <th></th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="crm-tbody"></tbody>
+  </table>
+</div>
+
+<!-- ── Pagination bar ── -->
+<div class="crm-pagebar">
+  <div class="crm-pagebar-left">
+    <span id="pg-info">–</span>
+    <select class="crm-page-select" id="pg-size" onchange="onPageSizeChange()">
+      <option value="50">50 / trang</option>
+      <option value="100" selected>100 / trang</option>
+      <option value="200">200 / trang</option>
+      <option value="500">500 / trang</option>
+    </select>
+  </div>
+  <div class="crm-pagebar-right" id="pg-buttons"></div>
+</div>
+
+<!-- ── Detail drawer ── -->
+<div class="crm-drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="crm-drawer" id="drawer">
+  <div class="crm-drawer-head" id="drawer-head">
+    <div class="crm-drawer-avatar" id="drawer-avatar">?</div>
+    <div style="flex:1;min-width:0;">
+      <div class="crm-drawer-title" id="drawer-title">—</div>
+      <div class="crm-drawer-sub"   id="drawer-sub">—</div>
+      <div class="crm-drawer-badges" id="drawer-badges"></div>
+    </div>
+    <button class="crm-drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="crm-drawer-body" id="drawer-body">
+    <div class="drw-spinner">Select a row to view details</div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+let _all     = [];      // raw from API (current page)
+let _filtered= [];      // after all filters
+let _sortCol = 'created_at';
+let _sortDir = 'desc';
+let _filter  = 'all';   // pill filter
+let _page    = 1;
+let _pageSize= 100;
+let _totalDB = 0;       // total rows in DB
+let _selectedEmail = null;
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmt(d){
+  if (!d) return '—';
+  const dt = new Date(d); if (isNaN(dt)) return d;
+  return dt.toLocaleString('en-US',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+function fmtDate(d){
+  if (!d) return '—';
+  const dt = new Date(d); if (isNaN(dt)) return d;
+  return dt.toLocaleDateString('en-US');
+}
+function fmt2(n){ return (parseFloat(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmt4(n){ return (parseFloat(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:4}); }
+function initials(name, email){
+  if (name && name.trim()){
+    const p = name.trim().split(/\s+/);
+    return (p[0][0]+(p[p.length-1][0]||'')).toUpperCase();
+  }
+  return (email||'?')[0].toUpperCase();
+}
+
+// (removed vantage_email render — now using portal_email column directly)
+
+// ── Load data ────────────────────────────────────────────────────────────────
+async function loadPage(){
+  document.getElementById('crm-loading').style.display = 'flex';
+  const offset = (_page - 1) * _pageSize;
+  const params = new URLSearchParams({limit: _pageSize, offset});
+  // Send client_status filter to backend for server-side filtering
+  if (_filter !== 'all') params.set('client_status', _filter);
+  const q = (document.getElementById('crm-search').value || '').trim();
+  if (q) params.set('search', q);
+
+  const r = await fetch(`/api/customers/unified?${params}`);
+  const data = await r.json();
+  _all     = data.items || [];
+  _totalDB = data.total || 0;
+  document.getElementById('crm-loading').style.display = 'none';
+
+  // Update pill badges
+  const sc = data.status_counts || {};
+  const total = Object.values(sc).reduce((a,b) => a+b, 0);
+  document.getElementById('pill-all').textContent = total;
+  ['lead','pending_data','pending_transfer','active'].forEach(s => {
+    const el = document.getElementById('pill-'+s);
+    if (el) el.textContent = sc[s] || 0;
+  });
+  applyFilters();
+}
+
+// ── Filter + sort (client-side on current page) ───────────────────────────────
+function getFieldFilters(){
+  return {
+    use_id:         (document.getElementById('f-use_id').value       || '').toLowerCase(),
+    client_name:    (document.getElementById('f-client_name').value  || '').toLowerCase(),
+    broker_email:   (document.getElementById('f-broker_email').value || '').toLowerCase(),
+    portal_email:   (document.getElementById('f-portal_email').value || '').toLowerCase(),
+    ib_name:        (document.getElementById('f-ib_name').value      || '').toLowerCase(),
+    ib_number:      (document.getElementById('f-ib_number').value    || '').toLowerCase(),
+    country:        (document.getElementById('f-country').value      || '').toLowerCase(),
+    client_status:  (document.getElementById('f-client_status').value  || ''),
+    program_status: (document.getElementById('f-program_status').value || ''),
+  };
+}
+
+function applyFilters(){
+  const q  = (document.getElementById('crm-search').value || '').toLowerCase();
+  const ff = getFieldFilters();
+
+  _filtered = _all.filter(c => {
+    // global search
+    if (q && !['client_name','broker_email','use_id','country','ib_name','ib_number','portal_email'].some(
+      k => (c[k]||'').toLowerCase().includes(q))) return false;
+
+    // column filters
+    if (ff.use_id       && !(c.use_id||'').toLowerCase().includes(ff.use_id))             return false;
+    if (ff.client_name  && !(c.client_name||'').toLowerCase().includes(ff.client_name))   return false;
+    if (ff.broker_email && !(c.broker_email||'').toLowerCase().includes(ff.broker_email)) return false;
+    if (ff.portal_email && !(c.portal_email||'').toLowerCase().includes(ff.portal_email)) return false;
+    if (ff.ib_name      && !(c.ib_name||'').toLowerCase().includes(ff.ib_name))           return false;
+    if (ff.ib_number    && !(c.ib_number||'').toLowerCase().includes(ff.ib_number))       return false;
+    if (ff.country      && !(c.country||'').toLowerCase().includes(ff.country))           return false;
+    if (ff.client_status  && c.client_status !== ff.client_status)                        return false;
+    if (ff.program_status && c.program_status !== ff.program_status)                      return false;
+    return true;
+  });
+
+  // sort
+  _filtered.sort((a,b) => {
+    let av = a[_sortCol] ?? ''; let bv = b[_sortCol] ?? '';
+    if (typeof av === 'number') return _sortDir==='asc' ? av-bv : bv-av;
+    return _sortDir==='asc'
+      ? String(av).localeCompare(String(bv))
+      : String(bv).localeCompare(String(av));
+  });
+
+  updateTotalBadge();
+  renderTable();
+  renderPagination();
+}
+
+// ── Sort ─────────────────────────────────────────────────────────────────────
+function sortBy(col){
+  if (_sortCol === col) _sortDir = _sortDir==='asc' ? 'desc' : 'asc';
+  else { _sortCol = col; _sortDir = 'asc'; }
+  // Update sort icons
+  document.querySelectorAll('.sort-icon').forEach(el => el.textContent = '⇅');
+  const icon = document.getElementById(`sort-${col}`);
+  if (icon) icon.textContent = _sortDir==='asc' ? '↑' : '↓';
+  document.querySelectorAll('.header-labels th').forEach(th => {
+    th.classList.remove('sorted-asc','sorted-desc');
+  });
+  applyFilters();
+}
+
+// ── Render table ─────────────────────────────────────────────────────────────
+function renderTable(){
+  const tbody = document.getElementById('crm-tbody');
+  if (!_filtered.length){
+    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:40px;color:#aaa;">No data</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = _filtered.map(c => {
+    const sel = c.broker_email === _selectedEmail ? 'selected' : '';
+
+    const cs = c.client_status || '';
+    const clientChip = !cs ? '—'
+      : cs === 'active'            ? `<span class="chip chip-green">Active</span>`
+      : cs === 'lead'              ? `<span class="chip chip-gray">Lead</span>`
+      : cs === 'pending_data'      ? `<span class="chip chip-yellow">Pending data</span>`
+      : cs === 'pending_transfer'  ? `<span class="chip chip-blue">Pending transfer</span>`
+      : cs === 'suspended'         ? `<span class="chip chip-red">Suspended</span>`
+      : `<span class="chip chip-gray">${esc(cs)}</span>`;
+
+    const ps = c.program_status || '';
+    const programChip = !ps ? '<span style="color:#bbb;">—</span>'
+      : ps === 'confirmed'   ? `<span class="chip chip-green">Confirmed</span>`
+      : ps === 'unconfirmed' ? `<span class="chip chip-yellow">Unconfirmed</span>`
+      : `<span class="chip chip-gray">${esc(ps)}</span>`;
+
+    const portalChip = c.has_portal
+      ? `<span class="chip chip-green">Yes</span>`
+      : `<span class="chip chip-gray">No</span>`;
+
+    const dateStr = c.created_at ? c.created_at.slice(0,10) : '—';
+
+    // Use portal_email for drawer lookup if available, else broker_email
+    const lookupEmail = c.portal_email || c.broker_email;
+
+    return `<tr class="${sel}" onclick="selectRow(this,'${esc(lookupEmail)}')">
+      <td class="sticky-col"  style="text-align:center;" onclick="event.stopPropagation()">
+        <input type="checkbox" class="row-chk" data-email="${esc(c.broker_email)}">
+      </td>
+      <td class="sticky-col2" style="font-family:monospace;font-size:11px;">${esc(c.use_id||'—')}</td>
+      <td style="font-weight:600;">${esc(c.client_name||'—')}</td>
+      <td style="color:#1e40af;">${esc(c.broker_email||'—')}</td>
+      <td style="color:#0d6efd;font-size:11px;">${esc(c.portal_email||'—')}</td>
+      <td>${esc(c.ib_name||'—')}</td>
+      <td style="font-family:monospace;font-size:11px;">${esc(c.ib_number||'—')}</td>
+      <td>${esc(c.country||'—')}</td>
+      <td>${clientChip}</td>
+      <td>${programChip}</td>
+      <td>${portalChip}</td>
+      <td style="color:#888;font-size:11px;">${esc(dateStr)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Pagination ────────────────────────────────────────────────────────────────
+function renderPagination(){
+  const total = _totalDB;
+  const pages = Math.ceil(total / _pageSize) || 1;
+  const start = (_page-1)*_pageSize+1;
+  const end   = Math.min(_page*_pageSize, total);
+  document.getElementById('pg-info').textContent = `Showing ${start}–${end} of ${total} (filtered: ${_filtered.length})`;
+
+  const btns = document.getElementById('pg-buttons');
+  let html = `<button class="crm-page-btn" onclick="goPage(1)" ${_page===1?'disabled':''}>«</button>
+              <button class="crm-page-btn" onclick="goPage(${_page-1})" ${_page===1?'disabled':''}>‹</button>`;
+
+  const range = 2;
+  for (let p = Math.max(1,_page-range); p <= Math.min(pages,_page+range); p++){
+    html += `<button class="crm-page-btn ${p===_page?'active':''}" onclick="goPage(${p})">${p}</button>`;
+  }
+  html += `<button class="crm-page-btn" onclick="goPage(${_page+1})" ${_page>=pages?'disabled':''}>›</button>
+           <button class="crm-page-btn" onclick="goPage(${pages})"   ${_page>=pages?'disabled':''}>»</button>`;
+  btns.innerHTML = html;
+}
+
+function goPage(p){
+  const pages = Math.ceil(_totalDB/_pageSize) || 1;
+  if (p < 1 || p > pages) return;
+  _page = p;
+  loadPage();
+}
+function onPageSizeChange(){
+  _pageSize = parseInt(document.getElementById('pg-size').value);
+  _page = 1;
+  loadPage();
+}
+
+// ── Update total badge ────────────────────────────────────────────────────────
+function updateTotalBadge(){
+  document.getElementById('crm-total-badge').textContent = `${_filtered.length} / ${_totalDB} records`;
+}
+
+// ── Pill + search ─────────────────────────────────────────────────────────────
+function setFilter(f, btn){
+  _filter = f;
+  _page = 1;
+  document.querySelectorAll('.crm-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadPage();
+}
+let _searchTimer = null;
+function onSearch(){
+  clearTimeout(_searchTimer);
+  _searchTimer = setTimeout(() => { _page = 1; loadPage(); }, 300);
+}
+
+function resetFilters(){
+  document.getElementById('crm-search').value = '';
+  ['f-use_id','f-client_name','f-broker_email','f-portal_email','f-ib_name','f-ib_number','f-country'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  ['f-client_status','f-program_status'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  _filter = 'all';
+  document.querySelectorAll('.crm-pill').forEach((b,i) => b.classList.toggle('active', i===0));
+  loadPage();
+}
+
+// ── Checkboxes ────────────────────────────────────────────────────────────────
+function toggleAllCheckboxes(){
+  const chkAll = document.getElementById('chk-all');
+  document.querySelectorAll('.row-chk').forEach(c => c.checked = !chkAll.checked);
+  chkAll.checked = !chkAll.checked;
+}
+
+// ── Row select + drawer ───────────────────────────────────────────────────────
+function selectRow(tr, email){
+  document.querySelectorAll('#crm-tbody tr').forEach(r => r.classList.remove('selected'));
+  tr.classList.add('selected');
+  _selectedEmail = email;
+  openDrawer(email);
+}
+
+function openDrawer(email){
+  document.getElementById('drawer-overlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawer-body').innerHTML = '<div class="drw-spinner">⏳ Loading...</div>';
+  document.getElementById('drawer-avatar').textContent = '…';
+  document.getElementById('drawer-title').textContent  = '…';
+  document.getElementById('drawer-sub').textContent    = email;
+  document.getElementById('drawer-badges').innerHTML   = '';
+
+  fetch(`/api/customers/${encodeURIComponent(email)}/detail`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.detail) {
+        document.getElementById('drawer-body').innerHTML = `<div style="padding:20px;color:#e53e3e;">${esc(data.detail)}</div>`;
+        return;
+      }
+      renderDrawer(data);
+    })
+    .catch(() => {
+      document.getElementById('drawer-body').innerHTML = '<div style="padding:20px;color:#e53e3e;">Error loading data</div>';
+    });
+}
+
+function closeDrawer(){
+  document.getElementById('drawer-overlay').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+}
+
+function renderDrawer(data){
+  const c   = data.customer;
+  const ini = initials(c.name, c.email);
+  document.getElementById('drawer-avatar').textContent = ini;
+  document.getElementById('drawer-title').textContent  = c.name || '(No name)';
+  document.getElementById('drawer-sub').textContent    = c.email;
+  document.getElementById('drawer-badges').innerHTML   = [
+    c.is_verified ? '<span class="drw-badge db-verified">Verified</span>'
+                  : '<span class="drw-badge db-unverified">Not Verified</span>',
+    c.unsubscribed  ? '<span class="drw-badge db-unsub">Unsubscribed</span>'       : '',
+    c.country       ? `<span class="drw-badge db-country">${esc(c.country)}</span>` : '',
+    c.ib_name       ? `<span class="drw-badge db-ib">IB: ${esc(c.ib_name)}</span>` : '',
+  ].filter(Boolean).join('');
+
+  // MT5
+  const mt5Html = data.mt5_accounts.length
+    ? data.mt5_accounts.map(m => {
+        const enr = m.enrollment;
+        const enrBadge = enr
+          ? (enr.status==='active'
+              ? `<span class="mt5-enr enr-active">Active</span>`
+              : `<span class="mt5-enr enr-pending">Review</span>`)
+          : `<span class="mt5-enr enr-none">Not Enrolled</span>`;
+        return `<div class="mt5-card">
+          <div class="mt5-card-head">
+            <span class="mt5-num">${esc(m.mt5_number)}</span>
+            <span class="mt5-type">${esc(m.account_type||'—')}</span>
+            ${enrBadge}
+          </div>
+          ${enr ? `<div class="mt5-promo">📌 ${esc(enr.promo_name)} · ${esc(enr.broker_name||'')}</div>` : ''}
+          <div class="mt5-stats">
+            <span>Lots: <strong>${fmt4(m.rebate.total_lots)}</strong></span>
+            <span>Comm: <strong>$${fmt2(m.rebate.total_comm)}</strong></span>
+          </div>
+        </div>`;
+      }).join('')
+    : '<div style="padding:14px;color:#aaa;font-size:12px;text-align:center;">No MT5 accounts</div>';
+
+  // Rebate history
+  const histHtml = data.rebate_history.length
+    ? `<table class="drw-table">
+        <thead><tr><th>MT5</th><th>Period</th><th>Lots</th><th>Comm ($)</th><th>Program</th></tr></thead>
+        <tbody>${data.rebate_history.map(h => `
+          <tr>
+            <td style="font-family:monospace;">${esc(h.mt5_account)}</td>
+            <td>${esc(fmtDate(h.period_date||h.created_at.slice(0,10)))}</td>
+            <td>${fmt4(h.total_lots)}</td>
+            <td>$${fmt2(h.total_comm)}</td>
+            <td style="color:#c8972a;font-size:10px;">${esc(h.note||'—')}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`
+    : '<div style="padding:14px;color:#aaa;font-size:12px;text-align:center;">No rebate history</div>';
+
+  // Email history
+  const emailHtml = data.emails_sent.length
+    ? `<table class="drw-table">
+        <thead><tr><th>Email</th><th>Sent Date</th><th>Opens</th></tr></thead>
+        <tbody>${data.emails_sent.map(e => `
+          <tr>
+            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;">${esc(e.subject||'—')}</td>
+            <td>${esc(fmt(e.created_at))}</td>
+            <td><span style="background:${e.open_count>0?'#d1fadf':'#f1f5f9'};color:${e.open_count>0?'#065f46':'#999'};padding:1px 7px;border-radius:8px;font-weight:700;font-size:10px;">${e.open_count}</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`
+    : '<div style="padding:14px;color:#aaa;font-size:12px;text-align:center;">No emails sent</div>';
+
+  document.getElementById('drawer-body').innerHTML = `
+    <!-- Basic Info -->
+    <div class="drw-section">
+      <div class="drw-section-head">Basic Info</div>
+      <div class="drw-info-grid">
+        <div class="drw-cell"><div class="drw-label">User ID</div><div class="drw-value" style="font-family:monospace;">${esc(c.use_id||'—')}</div></div>
+        <div class="drw-cell"><div class="drw-label">Broker Email</div><div class="drw-value" style="color:#0d6efd;">${esc(c.broker_email||'—')}</div></div>
+        <div class="drw-cell"><div class="drw-label">Portal Email</div><div class="drw-value" style="color:#1e40af;">${esc(c.portal_email||'—')}</div></div>
+        <div class="drw-cell"><div class="drw-label">IB Name</div><div class="drw-value">${esc(c.ib_name||'—')}</div></div>
+        <div class="drw-cell"><div class="drw-label">IB Number</div><div class="drw-value" style="font-family:monospace;">${esc(c.ib_number||'—')}</div></div>
+        <div class="drw-cell"><div class="drw-label">Country</div><div class="drw-value">${esc(c.country||'—')}</div></div>
+        <div class="drw-cell"><div class="drw-label">Client Status</div><div class="drw-value">${esc(c.client_status||'—')}</div></div>
+        <div class="drw-cell"><div class="drw-label">Created</div><div class="drw-value" style="font-weight:400;">${esc(fmt(c.created_at))}</div></div>
+      </div>
+    </div>
+
+    <!-- Promo Status -->
+    ${(() => {
+      const promoAccs = (data.accounts || []).filter(a => a.promo_expires_at);
+      if (!promoAccs.length) return '';
+      return `<div class="drw-section">
+        <div class="drw-section-head">🎁 Promo 100% Rebate</div>
+        ${promoAccs.map(a => {
+          const exp = new Date(a.promo_expires_at);
+          const now = new Date();
+          const daysLeft = Math.ceil((exp - now) / 86400000);
+          const isExpired = daysLeft <= 0;
+          const isSoon = !isExpired && daysLeft <= 3;
+          const statusColor = isExpired ? '#dc2626' : isSoon ? '#d97706' : '#059669';
+          const statusText = isExpired ? 'Expired' : isSoon ? 'Expiring Soon' : 'Active';
+          return `<div style="background:#f8f9fa;border:1px solid #e5e7eb;border-radius:8px;padding:12px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <span style="font-weight:700;font-size:13px;">${esc(a.broker_name)} — ${esc(a.program_name||'100% Rebate')}</span>
+              <span style="background:${statusColor}15;color:${statusColor};padding:2px 10px;border-radius:50px;font-size:10px;font-weight:700;">${statusText}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;">
+              <div><span style="color:#888;">Expires:</span> <strong>${exp.toLocaleDateString('en-US')}</strong></div>
+              <div><span style="color:#888;">Remaining:</span> <strong style="color:${statusColor};">${isExpired ? '0' : daysLeft} days</strong></div>
+            </div>
+            ${!isExpired ? `<button onclick="revokePromo(${a.id})" style="margin-top:8px;padding:4px 12px;border:1px solid #dc2626;color:#dc2626;background:none;border-radius:4px;font-size:11px;cursor:pointer;">Revoke promo</button>` : ''}
+          </div>`;
+        }).join('')}
+      </div>`;
+    })()}
+
+    <!-- MT5 Accounts -->
+    <div class="drw-section">
+      <div class="drw-section-head">💳 MT5 Accounts (${data.mt5_accounts.length})</div>
+      ${mt5Html}
+    </div>
+
+    <!-- Rebate history -->
+    <div class="drw-section">
+      <div class="drw-section-head">💰 Rebate History (${data.rebate_history.length})</div>
+      ${histHtml}
+    </div>
+
+    <!-- Email history -->
+    <div class="drw-section">
+      <div class="drw-section-head">📧 Email History (${data.emails_sent.length})</div>
+      ${emailHtml}
+    </div>
+  `;
+}
+
+// ── Export CSV ────────────────────────────────────────────────────────────────
+function exportCSV(){
+  const headers = ['User ID','Client Name','Broker Email','Portal Email','IB Name','IB Number','Country','Client Status','Program Status','Has Portal','Created'];
+  const rows = _filtered.map(c => [
+    c.use_id||'', c.client_name||'', c.broker_email||'', c.portal_email||'',
+    c.ib_name||'', c.ib_number||'', c.country||'', c.client_status||'',
+    c.program_status||'', c.has_portal ? 'Yes' : 'No',
+    c.created_at ? c.created_at.slice(0,10) : '',
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement('a'), {href:url, download:`crm_export_${new Date().toISOString().slice(0,10)}.csv`});
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ── Promo revoke ─────────────────────────────────────────────────────────────
+async function revokePromo(accountId) {
+  if (!confirm('Revoke promo for this account? Customer will revert to base program.')) return;
+  const r = await fetch(`/api/promo/revoke/${accountId}`, {method: 'DELETE'});
+  const d = await r.json();
+  if (d.ok) {
+    alert('Promo revoked successfully.');
+    closeDrawer();
+  } else {
+    alert(d.detail || 'Error revoking promo.');
+  }
+}
+
+// ── Keyboard ──────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeDrawer();
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.getElementById('sort-created_at').textContent = '↓';
+// Auto-select pill from URL hash (e.g. /admin/crm#lead)
+const hashFilter = location.hash.replace('#','');
+if (hashFilter && ['lead','pending_data','pending_transfer','active'].includes(hashFilter)){
+  _filter = hashFilter;
+  document.querySelectorAll('.crm-pill').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === hashFilter);
+  });
+}
+loadPage();
+</script>
+{% endblock %}

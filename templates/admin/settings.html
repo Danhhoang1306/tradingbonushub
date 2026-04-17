@@ -1,0 +1,487 @@
+{% extends "base.html" %}
+{% block title %}Settings — TradingBonusHub Admin{% endblock %}
+{% block page_title %}System Settings{% endblock %}
+
+{% block head %}
+<style>
+  .settings-wrap { max-width: 700px; }
+
+  /* Postfix guide */
+  .postfix-guide { background:#f8f9fb; border-radius:8px; padding:14px 16px; margin-top:16px; }
+  .postfix-guide pre { background:#1e293b; color:#e2e8f0; padding:10px 14px; border-radius:6px; margin:8px 0 14px; font-size:12px; overflow-x:auto; }
+  .postfix-guide code { background:#f0f0f0; padding:1px 5px; border-radius:3px; font-size:12px; }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-wrap" id="settings-tabs">
+
+  <!-- Tab bar -->
+  <div class="tab-bar">
+    <button class="active" onclick="switchTab(0)">⚙️ SMTP</button>
+    <button onclick="switchTab(1)">👤 Admin Account</button>
+    <button onclick="switchTab(2)">🔑 Google OAuth</button>
+  </div>
+
+  <!-- ══ TAB 0: SMTP ══ -->
+  <div class="tab-pane active" id="tab-smtp">
+    <div class="card mb-0">
+
+      <!-- Quick presets -->
+      <div style="margin-bottom:18px;">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px;">Quick-select provider:</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-secondary btn-sm" onclick="preset('gmail')">Gmail</button>
+          <button class="btn btn-secondary btn-sm" onclick="preset('outlook')">Outlook / Office 365</button>
+          <button class="btn btn-secondary btn-sm" onclick="preset('yahoo')">Yahoo Mail</button>
+          <button class="btn btn-secondary btn-sm" onclick="preset('namecheap')">Namecheap Mail</button>
+          <button class="btn btn-secondary btn-sm" onclick="preset('postfix')">Postfix (localhost)</button>
+        </div>
+        <div id="preset-hint" style="margin-top:10px;padding:10px 14px;border-radius:7px;font-size:12px;line-height:1.8;display:none;background:#eff6ff;border-left:3px solid var(--accent);color:#1e40af;"></div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>SMTP Host</label>
+          <input id="host" class="form-control" placeholder="localhost" />
+        </div>
+        <div class="form-group">
+          <label>Port</label>
+          <input id="port" class="form-control" type="number" placeholder="25" style="max-width:120px;" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Username (leave empty if not needed)</label>
+          <input id="username" class="form-control" placeholder="user@tradingbonushub.com" />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input id="password" class="form-control" type="password" placeholder="(leave empty = keep current)" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>From Email</label>
+          <input id="from_email" class="form-control" placeholder="no-reply@tradingbonushub.com" />
+        </div>
+        <div class="form-group">
+          <label>From Name</label>
+          <input id="from_name" class="form-control" placeholder="TradingBonusHub" />
+        </div>
+      </div>
+
+      <div style="display:flex;gap:24px;margin-bottom:18px;font-size:13px;">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" id="use_tls"
+                 onchange="if(this.checked) document.getElementById('use_ssl').checked=false">
+          Use STARTTLS (port 587)
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" id="use_ssl"
+                 onchange="if(this.checked) document.getElementById('use_tls').checked=false">
+          Use SSL/TLS (port 465)
+        </label>
+      </div>
+
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="saveSMTP()">💾 Save Config</button>
+        <button class="btn btn-secondary" onclick="testConn()">🔌 Test Connection</button>
+        <button class="btn btn-secondary" onclick="reloadSMTP()" title="Restore saved config">↺ Restore</button>
+        <span id="test-result" style="font-size:13px;"></span>
+      </div>
+
+      <div id="smtp-msg" style="margin-top:12px;font-size:13px;"></div>
+
+      <!-- Postfix guide (collapsed by default) -->
+      <details style="margin-top:18px;">
+        <summary style="cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);">
+          📖 Postfix Setup Guide (own SMTP on VPS)
+        </summary>
+        <div class="postfix-guide" style="margin-top:10px;">
+          <p style="font-size:13px;line-height:1.7;color:#555;">
+            <strong>1. Install Postfix:</strong>
+          </p>
+          <pre>apt install postfix
+# Select: Internet Site → enter your domain</pre>
+          <p style="font-size:13px;line-height:1.7;color:#555;"><strong>2. Configuration DNS (SPF + DKIM):</strong> Required so emails don't go to Spam.</p>
+          <p style="font-size:13px;line-height:1.7;color:#555;margin-top:8px;"><strong>3. Settings here:</strong> Host = <code>localhost</code>, Port = <code>25</code>, no username/password needed.</p>
+          <p style="font-size:13px;margin-top:8px;color:#b91c1c;"><strong>Note:</strong> Postfix runs locally, Python connects via localhost — no need to expose port 25 externally.</p>
+        </div>
+      </details>
+
+    </div>
+  </div>
+
+  <!-- ══ TAB 1: Admin Users ══ -->
+  <div class="tab-pane" id="tab-users">
+    <div class="card mb-0">
+
+      <div class="card-header">
+        <div>
+          <div class="card-title">👤 Admin Account</div>
+          <div class="card-subtitle">Manage admin panel login accounts</div>
+        </div>
+      </div>
+
+      <table style="margin-bottom:20px;">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Created</th>
+            <th style="width:160px;"></th>
+          </tr>
+        </thead>
+        <tbody id="user-tbody">
+          <tr><td colspan="3" class="empty">Loading...</td></tr>
+        </tbody>
+      </table>
+
+      <div style="background:var(--bg);border-radius:8px;padding:14px 16px;">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.4px;">
+          Add New Account
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+          <div class="form-group" style="margin:0;flex:1;min-width:140px;">
+            <label>Username</label>
+            <input id="new-username" class="form-control" placeholder="username" />
+          </div>
+          <div class="form-group" style="margin:0;flex:1;min-width:140px;">
+            <label>Password</label>
+            <input id="new-password" class="form-control" type="password" placeholder="••••••••" />
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="addUser()" style="margin-bottom:1px;">+ Add</button>
+        </div>
+        <div id="user-msg" style="margin-top:10px;font-size:13px;"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ TAB 2: Google OAuth ══ -->
+  <div class="tab-pane" id="tab-oauth">
+    <div class="card mb-0">
+
+      <div class="card-header">
+        <div>
+          <div class="card-title">🔑 Google OAuth 2.0</div>
+          <div class="card-subtitle">Allow customers to send email from their Gmail with one click</div>
+        </div>
+      </div>
+
+      <div class="alert alert-warning" style="margin-bottom:16px;">
+        <div>
+          <strong>Setup Google Cloud (one-time):</strong>
+          <ol style="margin-top:8px;margin-left:16px;line-height:2;">
+            <li>Vào <a href="https://console.cloud.google.com" target="_blank" style="color:var(--accent);">console.cloud.google.com</a> → Create project</li>
+            <li>APIs &amp; Services → Enable <strong>Gmail API</strong> and <strong>Google People API</strong></li>
+            <li>OAuth consent screen → External → Add scope <code>gmail.send</code> and <code>userinfo.email</code></li>
+            <li>Credentials → Create OAuth 2.0 Client ID → <strong>Web application</strong></li>
+            <li>Authorized redirect URI: <code id="redirect-uri-hint">https://yourdomain.com/portal/oauth/callback</code></li>
+            <li>Copy Client ID and Client Secret, paste below</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Site URL (public domain)</label>
+        <input id="g-site-url" class="form-control" placeholder="https://tradingbonushub.com" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Client ID</label>
+          <input id="g-client-id" class="form-control" placeholder="xxxx.apps.googleusercontent.com" />
+        </div>
+        <div class="form-group">
+          <label>Client Secret</label>
+          <input id="g-client-secret" class="form-control" type="password" placeholder="(leave empty = keep current)" />
+        </div>
+      </div>
+
+      <input type="file" id="g-json-file" accept=".json" style="display:none"
+             onchange="importGoogleJson(this)" />
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="saveGoogleOAuth()">💾 Save OAuth</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('g-json-file').click()">
+          📂 Load file JSON
+        </button>
+        <button class="btn btn-secondary" onclick="loadGoogleOAuth()">↺ Reload</button>
+        <span id="g-msg" style="font-size:13px;"></span>
+      </div>
+
+    </div>
+  </div>
+
+
+</div><!-- end settings-wrap -->
+
+<!-- Change password modal -->
+<div class="overlay" id="pw-overlay" onclick="closePwModal(event)">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h3>Change Password — <span id="pw-modal-name"></span></h3>
+      <button class="close-btn" onclick="closePwModalDirect()">✕</button>
+    </div>
+    <div class="form-group">
+      <label>New Password</label>
+      <input id="pw-new" class="form-control" type="password" placeholder="••••••••" />
+    </div>
+    <div class="form-group">
+      <label>Confirm Password</label>
+      <input id="pw-confirm" class="form-control" type="password" placeholder="••••••••" />
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button class="btn btn-primary" onclick="submitPwChange()">Save</button>
+      <button class="btn btn-secondary" onclick="closePwModalDirect()">Cancel</button>
+    </div>
+    <div id="pw-msg" style="margin-top:10px;font-size:13px;"></div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* ── Tab switching ── */
+const tabBtns  = document.querySelectorAll('.tab-bar button');
+const tabPanes = document.querySelectorAll('.tab-pane');
+
+function switchTab(i) {
+  tabBtns.forEach((b, j) => b.classList.toggle('active', i === j));
+  tabPanes.forEach((p, j) => p.classList.toggle('active', i === j));
+}
+
+/* ═══ SMTP ═══════════════════════════════════════════ */
+const PRESETS = {
+  gmail:      { host:'smtp.gmail.com',      port:587, tls:true,  ssl:false, hint:'📌 Gmail: enable <strong>2-Step Verification</strong> → create <strong>App Password</strong> at <a href="https://myaccount.google.com/apppasswords" target="_blank">myaccount.google.com/apppasswords</a> → use that password as Password below.' },
+  outlook:    { host:'smtp.office365.com',  port:587, tls:true,  ssl:false, hint:'📌 Outlook / Office 365: use email and Microsoft password (or App Password if MFA enabled).' },
+  yahoo:      { host:'smtp.mail.yahoo.com', port:587, tls:true,  ssl:false, hint:'📌 Yahoo Mail: create <strong>App Password</strong> in Security Settings → use as Password.' },
+  namecheap:  { host:'mail.privateemail.com', port:587, tls:true, ssl:false, hint:'📌 Namecheap Private Email: use email and password. Host: mail.privateemail.com, port 587.' },
+  postfix:    { host:'localhost',            port:25,  tls:false, ssl:false, hint:'📌 Local Postfix: no username/password needed. See guide below.' },
+};
+
+function preset(name) {
+  const p = PRESETS[name];
+  if (!p) return;
+  document.getElementById('host').value  = p.host;
+  document.getElementById('port').value  = p.port;
+  document.getElementById('use_tls').checked = p.tls;
+  document.getElementById('use_ssl').checked = p.ssl;
+  const hint = document.getElementById('preset-hint');
+  hint.innerHTML = p.hint; hint.style.display = 'block';
+}
+
+async function loadSMTP() {
+  const r = await fetch('/api/smtp');
+  const d = await r.json();
+  document.getElementById('host').value       = d.host || '';
+  document.getElementById('port').value       = d.port || 25;
+  document.getElementById('username').value   = d.username || '';
+  document.getElementById('from_email').value = d.from_email || '';
+  document.getElementById('from_name').value  = d.from_name || '';
+  document.getElementById('use_tls').checked  = !!d.use_tls;
+  document.getElementById('use_ssl').checked  = !!d.use_ssl;
+  if (d.host && d.host !== 'localhost' && d.username)
+    document.getElementById('password').placeholder = '(saved — leave empty to keep)';
+}
+
+function smtpPayload() {
+  return {
+    host: document.getElementById('host').value,
+    port: parseInt(document.getElementById('port').value) || 25,
+    username: document.getElementById('username').value,
+    password: document.getElementById('password').value,
+    from_email: document.getElementById('from_email').value,
+    from_name:  document.getElementById('from_name').value,
+    use_tls: document.getElementById('use_tls').checked,
+    use_ssl: document.getElementById('use_ssl').checked,
+  };
+}
+
+async function saveSMTP() {
+  const r = await fetch('/api/smtp', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(smtpPayload()),
+  });
+  const msg = document.getElementById('smtp-msg');
+  if (r.ok) { msg.style.color='var(--success)'; msg.textContent='✅ SMTP config saved.'; }
+  else       { msg.style.color='var(--danger)';  msg.textContent='❌ Save failed.'; }
+}
+
+async function testConn() {
+  const el = document.getElementById('test-result');
+  el.textContent = '⏳ Connecting...'; el.style.color = 'var(--muted)';
+  const r = await fetch('/api/smtp/test', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(smtpPayload()),
+  });
+  const d = await r.json();
+  el.style.color = d.ok ? 'var(--success)' : 'var(--danger)';
+  el.textContent = (d.ok ? '✅ ' : '❌ ') + d.message;
+}
+
+async function reloadSMTP() {
+  await loadSMTP();
+  document.getElementById('password').value = '';
+  const msg = document.getElementById('smtp-msg');
+  msg.style.color = 'var(--success)'; msg.textContent = '↺ Restored saved config.';
+  setTimeout(() => msg.textContent = '', 3000);
+}
+
+/* ═══ ADMIN USERS ═══════════════════════════════════ */
+let _editingUid = null;
+
+async function loadUsers() {
+  const r = await fetch('/api/users');
+  const data = await r.json();
+  const tbody = document.getElementById('user-tbody');
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="3" class="empty">No accounts yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(u => `
+    <tr>
+      <td><strong>${esc(u.username)}</strong></td>
+      <td class="text-muted">${fmt(u.created_at)}</td>
+      <td>
+        <button class="btn btn-secondary btn-sm"
+                onclick="openPwModal(${u.id},'${esc(u.username)}')">🔑 Change PW</button>
+        <button class="btn btn-danger btn-sm"
+                onclick="delUser(${u.id},'${esc(u.username)}')"
+                ${data.length <= 1 ? 'disabled title="Cannot delete the only account"' : ''}>🗑</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function addUser() {
+  const username = document.getElementById('new-username').value.trim();
+  const password = document.getElementById('new-password').value;
+  const msg = document.getElementById('user-msg');
+  if (!username || !password) {
+    msg.style.color='var(--danger)'; msg.textContent='Enter both name and password!'; return;
+  }
+  const r = await fetch('/api/users', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ username, password }),
+  });
+  if (r.ok) {
+    msg.style.color='var(--success)'; msg.textContent=`✅ Added "${username}".`;
+    document.getElementById('new-username').value = '';
+    document.getElementById('new-password').value = '';
+    loadUsers();
+  } else {
+    const d = await r.json();
+    msg.style.color='var(--danger)'; msg.textContent='❌ '+(d.detail||'Errors');
+  }
+}
+
+async function delUser(uid, name) {
+  if (!confirm(`Delete account "${name}"?`)) return;
+  const r = await fetch(`/api/users/${uid}`, { method:'DELETE' });
+  if (r.ok) loadUsers();
+  else { const d = await r.json(); alert('❌ '+(d.detail||'Errors')); }
+}
+
+function openPwModal(uid, name) {
+  _editingUid = uid;
+  document.getElementById('pw-modal-name').textContent = name;
+  document.getElementById('pw-new').value = '';
+  document.getElementById('pw-confirm').value = '';
+  document.getElementById('pw-msg').textContent = '';
+  document.getElementById('pw-overlay').classList.add('active');
+}
+function closePwModal(e)   { if (e.target.id==='pw-overlay') closePwModalDirect(); }
+function closePwModalDirect() { document.getElementById('pw-overlay').classList.remove('active'); }
+
+async function submitPwChange() {
+  const pw  = document.getElementById('pw-new').value;
+  const cf  = document.getElementById('pw-confirm').value;
+  const msg = document.getElementById('pw-msg');
+  if (!pw) { msg.style.color='var(--danger)'; msg.textContent='Enter new password!'; return; }
+  if (pw !== cf) { msg.style.color='var(--danger)'; msg.textContent='Passwords do not match!'; return; }
+  const r = await fetch(`/api/users/${_editingUid}/password`, {
+    method:'PUT', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ password: pw }),
+  });
+  if (r.ok) closePwModalDirect();
+  else { const d = await r.json(); msg.style.color='var(--danger)'; msg.textContent='❌ '+(d.detail||'Errors'); }
+}
+
+/* ═══ GOOGLE OAUTH ══════════════════════════════════ */
+async function loadGoogleOAuth() {
+  const r = await fetch('/api/google-oauth-config');
+  const d = await r.json();
+  document.getElementById('g-client-id').value = d.client_id || '';
+  const siteUrl = d.site_url || '';
+  document.getElementById('g-site-url').value = siteUrl;
+  if (siteUrl)
+    document.getElementById('redirect-uri-hint').textContent = siteUrl + '/portal/oauth/callback';
+  if (d.client_id)
+    document.getElementById('g-client-secret').placeholder = '(saved — leave empty to keep)';
+}
+
+document.getElementById('g-site-url').addEventListener('input', function () {
+  const v = this.value.trim().replace(/\/$/, '');
+  document.getElementById('redirect-uri-hint').textContent =
+    v ? v + '/portal/oauth/callback' : 'https://yourdomain.com/portal/oauth/callback';
+});
+
+async function saveGoogleOAuth() {
+  const msg = document.getElementById('g-msg');
+  const r = await fetch('/api/google-oauth-config', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      client_id:     document.getElementById('g-client-id').value.trim(),
+      client_secret: document.getElementById('g-client-secret').value,
+      site_url:      document.getElementById('g-site-url').value.trim(),
+    }),
+  });
+  if (r.ok) {
+    msg.style.color='var(--success)'; msg.textContent='✅ OAuth config saved.';
+    document.getElementById('g-client-secret').value = '';
+    document.getElementById('g-client-secret').placeholder = '(saved — leave empty to keep)';
+  } else { msg.style.color='var(--danger)'; msg.textContent='❌ Save failed.'; }
+}
+
+function importGoogleJson(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      const json = JSON.parse(e.target.result);
+      const data = json.web || json.installed || {};
+      if (data.client_id)     document.getElementById('g-client-id').value = data.client_id;
+      if (data.client_secret) document.getElementById('g-client-secret').value = data.client_secret;
+      const msg = document.getElementById('g-msg');
+      msg.style.color='var(--accent)'; msg.textContent='📂 Loaded successfully — click Save to apply.';
+    } catch {
+      const msg = document.getElementById('g-msg');
+      msg.style.color='var(--danger)'; msg.textContent='❌ Invalid JSON file.';
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+/* ── Helpers ── */
+function fmt(iso) {
+  if (!iso) return '—';
+  return new Date(iso.endsWith('Z') ? iso : iso+'Z')
+    .toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
+}
+function esc(s) {
+  return String(s||'').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ── Init ── */
+loadSMTP();
+loadUsers();
+loadGoogleOAuth();
+</script>
+{% endblock %}

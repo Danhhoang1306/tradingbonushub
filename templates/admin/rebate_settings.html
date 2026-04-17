@@ -1,0 +1,476 @@
+{% extends "base.html" %}
+{% block title %}Rebate Settings{% endblock %}
+{% block page_title %}Rebate Settings{% endblock %}
+
+{% block head %}
+<style>
+.promo-section {
+  background: #fff; border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  margin-bottom: 20px; overflow: hidden;
+}
+.promo-section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; background: linear-gradient(135deg, #1a1a2e, #0f3460);
+  cursor: pointer; user-select: none;
+}
+.promo-section-head:hover { background: linear-gradient(135deg, #22243e, #174070); }
+.promo-section-title { font-size: 14px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; }
+.promo-section-meta { font-size: 12px; color: rgba(255,255,255,.5); }
+.type-badge { display:inline-block;font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;text-transform:uppercase; }
+.type-backcom { background:rgba(240,192,64,.2);color:#f0c040;border:1px solid rgba(240,192,64,.3); }
+.type-tier    { background:rgba(77,159,255,.2);color:#7ec8ff;border:1px solid rgba(77,159,255,.3); }
+.chevron { color: rgba(255,255,255,.5); font-size: 12px; transition: transform .2s; }
+.chevron.open { transform: rotate(180deg); }
+
+.promo-section-body { padding: 20px; display: none; }
+.promo-section-body.open { display: block; }
+
+/* Backcom rebate form */
+.backcom-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; align-items: end; }
+.backcom-form .form-group { margin: 0; }
+
+/* Tier table */
+.tier-table-wrap { overflow-x: auto; }
+.tier-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tier-table th { background: #f8f9fa; padding: 9px 12px; text-align: left; font-weight: 600; color: #555; border-bottom: 2px solid #e0e0e0; white-space: nowrap; }
+.tier-table td { padding: 7px 8px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+.tier-table tr:hover td { background: #f9fbff; }
+.tier-table input[type="number"],
+.tier-table input[type="text"] {
+  width: 100%; padding: 6px 8px; border: 1.5px solid #ddd; border-radius: 6px;
+  font-size: 13px; min-width: 80px;
+}
+.tier-table input:focus { border-color: #1a73e8; outline: none; }
+.tier-num { font-weight: 700; color: #888; text-align: center; min-width: 30px; }
+.add-tier-btn { margin-top: 10px; }
+.save-row { margin-top: 16px; display: flex; align-items: center; gap: 10px; }
+.save-msg { font-size: 12px; color: #137333; display: none; }
+
+/* Backcom rebate_pct explanation */
+.rebate-hint { font-size: 11px; color: #888; margin-top: 4px; }
+
+/* Section filters */
+.section-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+.filter-chip { padding: 5px 14px; border-radius: 50px; font-size: 13px; font-weight: 600; cursor: pointer; border: 2px solid #ddd; background: #fff; color: #666; transition: all .15s; }
+.filter-chip:hover { border-color: #1a73e8; color: #1a73e8; }
+.filter-chip.active { background: #1a73e8; border-color: #1a73e8; color: #fff; }
+
+.formula-box {
+  background: #f0f4ff; border: 1px solid #c5d8f6; border-radius: 8px;
+  padding: 12px 16px; font-size: 12px; color: #1558b0; margin-bottom: 16px; line-height: 1.7;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:20px;">
+  <p style="font-size:13px;color:#666;">Configure rebate rates paid to customers per promotion program.</p>
+</div>
+
+<div class="formula-box">
+  <strong>Rebate formula:</strong><br>
+  <strong>Backcom:</strong> <code>customer_rebate = commission_IB × rebate_%</code> — example: IB receives $8/lot × 50% = customer gets <strong>$4/lot</strong><br>
+  <strong>Tier:</strong> Customers accumulate volume to lot milestones → receive rebate % commission or cash voucher
+</div>
+
+<div class="section-filters" id="broker-filters">
+  <span style="font-size:13px;color:#555;font-weight:600;">Filter by Broker:</span>
+  <button class="filter-chip active" onclick="filterBroker(this,'')">All</button>
+</div>
+
+<div id="promos-container">
+  <div class="empty" id="empty-state" style="display:none;">No programs found.</div>
+</div>
+
+<!-- Confirm dialog placeholder -->
+<div class="overlay" id="confirm-overlay">
+  <div class="modal" style="max-width:380px;text-align:center;">
+    <div style="font-size:32px;margin-bottom:10px;">⚠️</div>
+    <h3 id="confirm-msg" style="margin-bottom:16px;font-size:15px;"></h3>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="btn btn-secondary" onclick="closeConfirm(false)">Cancel</button>
+      <button class="btn btn-danger" onclick="closeConfirm(true)">Confirm</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allPromos = [];
+let _confirmResolve = null;
+
+async function init() {
+  const [promos, brokers] = await Promise.all([
+    fetch('/api/promotions').then(r => r.json()),
+    fetch('/api/brokers').then(r => r.json()),
+  ]);
+  allPromos = promos;
+
+  // Build broker filter chips
+  const fc = document.getElementById('broker-filters');
+  brokers.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-chip';
+    btn.dataset.slug = b.slug;
+    btn.textContent = b.name;
+    btn.onclick = () => filterBroker(btn, b.slug);
+    fc.appendChild(btn);
+  });
+
+  renderAll(promos);
+}
+
+function filterBroker(btn, slug) {
+  document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const filtered = slug ? allPromos.filter(p => p.broker_slug === slug) : allPromos;
+  renderAll(filtered);
+}
+
+function renderAll(list) {
+  const container = document.getElementById('promos-container');
+  const empty = document.getElementById('empty-state');
+  if (!list.length) { container.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  container.innerHTML = list.map(p => promoSectionHtml(p)).join('');
+  // Load tiers for visible sections
+  list.forEach(p => loadTiers(p));
+}
+
+function promoSectionHtml(p) {
+  const isTier = p.type && p.type.includes('tier');
+  const typeCls = isTier ? 'type-tier' : 'type-backcom';
+  const typeLabel = isTier ? 'Cumulative Tier' : 'Daily Backcom';
+  return `
+  <div class="promo-section" data-pid="${p.id}" data-broker="${p.broker_slug}">
+    <div class="promo-section-head" onclick="toggleSection(${p.id})">
+      <div class="promo-section-title">
+        <span class="type-badge ${typeCls}">${typeLabel}</span>
+        <span>${esc(p.name)}</span>
+        <span style="font-size:11px;color:rgba(255,255,255,.45);">${esc(p.broker_name)}</span>
+        ${!p.is_active ? '<span style="font-size:10px;color:#f88;background:rgba(255,80,80,.2);padding:1px 7px;border-radius:10px;">hidden</span>' : ''}
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <span class="promo-section-meta" id="meta-${p.id}">Loading...</span>
+        <span class="chevron" id="chev-${p.id}">▼</span>
+      </div>
+    </div>
+    <div class="promo-section-body" id="body-${p.id}">
+      ${isTier ? tierBodyHtml(p) : backcomBodyHtml(p)}
+    </div>
+  </div>`;
+}
+
+function backcomBodyHtml(p) {
+  const d = p.details || {};
+  const inp = (id, extra='') => `style="width:100%;max-width:320px;padding:8px 10px;border:1.5px solid #ddd;border-radius:6px;font-size:14px;${extra}" id="${id}"`;
+  return `
+  <!-- ── Rebate rates ── -->
+  <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#888;margin-bottom:10px;">Rebate Rate</div>
+  <div class="backcom-form" id="backcom-form-${p.id}" style="margin-bottom:20px;">
+    <div class="form-group">
+      <label style="font-size:13px;color:#555;display:block;margin-bottom:5px;">
+        % Rebate for Customer <span style="color:#c5221f;">*</span>
+      </label>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="number" id="bc-rebate-pct-${p.id}" min="0" max="100" step="0.1"
+          style="width:120px;padding:8px 10px;border:1.5px solid #ddd;border-radius:6px;font-size:14px;"
+          placeholder="50" value="" />
+        <span style="font-size:14px;color:#555;">%</span>
+      </div>
+      <p class="rebate-hint">Percentage of IB commission returned to customer. e.g. 50% → IB gets $8/lot, customer gets $4/lot.</p>
+    </div>
+    <div class="form-group">
+      <label style="font-size:13px;color:#555;display:block;margin-bottom:5px;">
+        Fixed Rebate (USD/lot) <span style="font-size:11px;color:#aaa;">optional</span>
+      </label>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="number" id="bc-rebate-lot-${p.id}" min="0" step="0.01"
+          style="width:120px;padding:8px 10px;border:1.5px solid #ddd;border-radius:6px;font-size:14px;"
+          placeholder="" value="" />
+        <span style="font-size:14px;color:#555;">USD/lot</span>
+      </div>
+      <p class="rebate-hint">If filled, shows fixed amount instead of %. Leave empty = calculated from % above.</p>
+    </div>
+  </div>
+
+  <!-- ── Card display info ── -->
+  <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#888;margin-bottom:10px;border-top:1px solid #eee;padding-top:16px;">Card Display Info</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:20px;">
+    <div class="form-group">
+      <label style="font-size:13px;color:#555;display:block;margin-bottom:5px;">Rebate XAU (label)</label>
+      <input type="text" ${inp(`bc-xau-${p.id}`)} placeholder="e.g. 8-9$/lot" />
+      <p class="rebate-hint">Displays "xau: ..." row on card.</p>
+    </div>
+    <div class="form-group">
+      <label style="font-size:13px;color:#555;display:block;margin-bottom:5px;">License</label>
+      <input type="text" ${inp(`bc-licenses-${p.id}`)} placeholder="e.g. ASIC, FCA, VFSC" />
+      <p class="rebate-hint">Separated by commas.</p>
+    </div>
+    <div class="form-group">
+      <label style="font-size:13px;color:#555;display:block;margin-bottom:5px;">Leverage</label>
+      <input type="text" ${inp(`bc-leverage-${p.id}`)} placeholder="e.g. unlimited or 1:500" />
+    </div>
+    <div class="form-group" style="grid-column:1/-1;">
+      <label style="font-size:13px;color:#555;display:block;margin-bottom:5px;">Highlights (each line = 1 bullet)</label>
+      <textarea ${inp(`bc-features-${p.id}`,'max-width:100%;')} rows="3" placeholder="supports multiple deposit/withdrawal methods&#10;lowest market spread"></textarea>
+      <p class="rebate-hint">Each line is 1 bullet point on the card.</p>
+    </div>
+    <div class="form-group">
+      <label style="font-size:13px;color:#555;display:block;margin-bottom:5px;">Badge Recommended</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" id="bc-recommended-${p.id}" style="width:16px;height:16px;" />
+        <span style="font-size:14px;color:#333;">Showing badge "Recommended"</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="save-row">
+    <button class="btn btn-primary btn-sm" onclick="saveBackcom(${p.id})">💾 Save</button>
+    <span class="save-msg" id="save-msg-${p.id}">✓ Saved</span>
+  </div>`;
+}
+
+function tierBodyHtml(p) {
+  return `
+  <p style="font-size:12px;color:#888;margin-bottom:12px;">
+    Configure cumulative volume milestones and corresponding rebate/voucher rates.
+    Customers receive rewards when reaching volume milestones per tier.
+  </p>
+  <div class="tier-table-wrap">
+    <table class="tier-table">
+      <thead>
+        <tr>
+          <th style="width:40px;">#</th>
+          <th>Min Lots <span style="font-weight:400;color:#aaa;font-size:11px;">(cumulative milestone)</span></th>
+          <th>Rebate % <span style="font-weight:400;color:#aaa;font-size:11px;">(% Commission IB)</span></th>
+          <th>Voucher (USD) <span style="font-weight:400;color:#aaa;font-size:11px;">(cash)</span></th>
+          <th>Label <span style="font-weight:400;color:#aaa;font-size:11px;">(display)</span></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tier-tbody-${p.id}"></tbody>
+    </table>
+  </div>
+  <button class="btn btn-secondary btn-sm add-tier-btn" onclick="addTierRow(${p.id})">+ Add Tier</button>
+  <div class="save-row">
+    <button class="btn btn-primary btn-sm" onclick="saveTiers(${p.id})">💾 Save All</button>
+    <span class="save-msg" id="save-msg-${p.id}">✓ Saved</span>
+  </div>`;
+}
+
+function tierRowHtml(pid, i, t) {
+  const v = t.voucher_usd != null ? t.voucher_usd : '';
+  return `
+  <tr id="tier-row-${pid}-${i}">
+    <td class="tier-num">${i}</td>
+    <td><input type="number" class="tier-min-lots" min="0" step="1" value="${t.min_lots ?? ''}" placeholder="0" /></td>
+    <td>
+      <div style="display:flex;align-items:center;gap:4px;">
+        <input type="number" class="tier-rebate-pct" min="0" max="100" step="0.1" value="${t.rebate_pct != null ? +(t.rebate_pct*100).toFixed(2) : ''}" placeholder="0" style="width:80px;" />
+        <span style="color:#888;font-size:13px;">%</span>
+      </div>
+    </td>
+    <td>
+      <div style="display:flex;align-items:center;gap:4px;">
+        <span style="color:#888;font-size:13px;">$</span>
+        <input type="number" class="tier-voucher" min="0" step="1" value="${v}" placeholder="—" style="width:90px;" />
+      </div>
+    </td>
+    <td><input type="text" class="tier-label" value="${esc(t.label||'')}" placeholder="e.g. Silver" style="width:110px;" /></td>
+    <td>
+      <button class="btn btn-danger btn-sm" onclick="removeTierRow(this)" title="Delete tier">×</button>
+    </td>
+  </tr>`;
+}
+
+function addTierRow(pid) {
+  const tbody = document.getElementById(`tier-tbody-${pid}`);
+  const i = tbody.rows.length + 1;
+  const tmp = document.createElement('tbody');
+  tmp.innerHTML = tierRowHtml(pid, i, {});
+  tbody.appendChild(tmp.firstElementChild);
+  renumberTierRows(pid);
+}
+
+function removeTierRow(btn) {
+  btn.closest('tr').remove();
+}
+
+function renumberTierRows(pid) {
+  const tbody = document.getElementById(`tier-tbody-${pid}`);
+  [...tbody.rows].forEach((tr, i) => {
+    tr.querySelector('.tier-num').textContent = i + 1;
+  });
+}
+
+async function loadTiers(p) {
+  const isTier = p.type && p.type.includes('tier');
+  const meta = document.getElementById(`meta-${p.id}`);
+  try {
+    const tiers = await fetch(`/api/promotions/${p.id}/tiers`).then(r => r.json());
+
+    if (isTier) {
+      const tbody = document.getElementById(`tier-tbody-${p.id}`);
+      if (tbody) {
+        tbody.innerHTML = '';
+        tiers.forEach((t, i) => {
+          const tmp = document.createElement('tbody');
+          tmp.innerHTML = tierRowHtml(p.id, i+1, t);
+          tbody.appendChild(tmp.firstElementChild);
+        });
+        if (!tiers.length) addTierRow(p.id);
+      }
+      meta.textContent = tiers.length ? `${tiers.length} tiers` : 'Not configured';
+    } else {
+      // Backcom: load rebate_pct from tiers row 0 (single-tier backcom)
+      const d = p.details || {};
+      const pctInput = document.getElementById(`bc-rebate-pct-${p.id}`);
+      const lotInput = document.getElementById(`bc-rebate-lot-${p.id}`);
+      if (pctInput) {
+        const pct = tiers.length && tiers[0].rebate_pct != null
+          ? +(tiers[0].rebate_pct * 100).toFixed(2)
+          : (d.rebate_pct != null ? +(d.rebate_pct * 100).toFixed(2) : '');
+        pctInput.value = pct;
+      }
+      if (lotInput) {
+        lotInput.value = p.rebate_usd_per_lot != null ? p.rebate_usd_per_lot : (d.rebate_per_lot != null ? d.rebate_per_lot : '');
+      }
+      // Card display fields
+      const xauEl  = document.getElementById(`bc-xau-${p.id}`);
+      const licEl  = document.getElementById(`bc-licenses-${p.id}`);
+      const levEl  = document.getElementById(`bc-leverage-${p.id}`);
+      const featEl = document.getElementById(`bc-features-${p.id}`);
+      const recEl  = document.getElementById(`bc-recommended-${p.id}`);
+      if (xauEl)  xauEl.value   = p.rebate_xau_label || '';
+      if (licEl)  licEl.value   = p.licenses || '';
+      if (levEl)  levEl.value   = p.leverage || '';
+      if (featEl) featEl.value  = p.features || '';
+      if (recEl)  recEl.checked = !!p.is_recommended;
+      const pct = tiers.length && tiers[0] ? +(tiers[0].rebate_pct * 100).toFixed(0) : null;
+      meta.textContent = pct != null ? `Rebate: ${pct}%` : (p.rebate_usd_per_lot ? `$${p.rebate_usd_per_lot}/lot` : 'Not configured');
+    }
+  } catch(e) {
+    meta.textContent = 'Error loading data';
+  }
+}
+
+function toggleSection(pid) {
+  const body = document.getElementById(`body-${pid}`);
+  const chev = document.getElementById(`chev-${pid}`);
+  body.classList.toggle('open');
+  chev.classList.toggle('open');
+}
+
+// ── Save backcom ──────────────────────────────────────────────────────────────
+
+async function saveBackcom(pid) {
+  const p = allPromos.find(x => x.id === pid);
+  if (!p) return;
+  const pctRaw = document.getElementById(`bc-rebate-pct-${pid}`).value;
+  const lotRaw = document.getElementById(`bc-rebate-lot-${pid}`).value;
+  const pct = pctRaw !== '' ? parseFloat(pctRaw) / 100 : null;
+  const lot = lotRaw !== '' ? parseFloat(lotRaw) : null;
+
+  // Card display fields
+  const xauVal  = (document.getElementById(`bc-xau-${pid}`)?.value || '').trim() || null;
+  const licVal  = (document.getElementById(`bc-licenses-${pid}`)?.value || '').trim() || null;
+  const levVal  = (document.getElementById(`bc-leverage-${pid}`)?.value || '').trim() || null;
+  const featVal = (document.getElementById(`bc-features-${pid}`)?.value || '').trim() || null;
+  const recVal  = document.getElementById(`bc-recommended-${pid}`)?.checked || false;
+
+  // Save via promotions PUT
+  await fetch(`/api/promotions/${pid}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ...p,
+      rebate_usd_per_lot: lot,
+      is_recommended: recVal,
+      licenses: licVal,
+      leverage: levVal,
+      features: featVal,
+      rebate_xau_label: xauVal,
+    }),
+  });
+
+  // Also save as tier row (single row for backcom) so both systems are in sync
+  if (pct !== null) {
+    await fetch(`/api/promotions/${pid}/tiers`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify([{ min_lots: 0, rebate_pct: pct, voucher_usd: null, label: '' }]),
+    });
+  }
+
+  // Update local cache
+  p.details = d;
+
+  // Update meta
+  const meta = document.getElementById(`meta-${pid}`);
+  meta.textContent = pct !== null ? `Rebate: ${+(pct*100).toFixed(0)}%` : (lot ? `$${lot}/lot` : 'Saved');
+
+  showSaveMsg(pid);
+}
+
+// ── Save tiers ────────────────────────────────────────────────────────────────
+
+async function saveTiers(pid) {
+  const tbody = document.getElementById(`tier-tbody-${pid}`);
+  const rows = [...tbody.rows];
+  const tiers = rows.map(tr => {
+    const minLots  = parseFloat(tr.querySelector('.tier-min-lots').value || 0);
+    const rebatePct = parseFloat(tr.querySelector('.tier-rebate-pct').value || 0) / 100;
+    const voucherRaw = tr.querySelector('.tier-voucher').value;
+    const voucher  = voucherRaw !== '' ? parseFloat(voucherRaw) : null;
+    const label    = tr.querySelector('.tier-label').value.trim();
+    return { min_lots: minLots, rebate_pct: rebatePct, voucher_usd: voucher, label };
+  });
+
+  const res = await fetch(`/api/promotions/${pid}/tiers`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(tiers),
+  });
+  if (!res.ok) { alert('Save failed'); return; }
+
+  // Update meta
+  const meta = document.getElementById(`meta-${pid}`);
+  meta.textContent = tiers.length ? `${tiers.length} tiers` : 'Not configured';
+
+  // Renumber rows after save
+  renumberTierRows(pid);
+  showSaveMsg(pid);
+}
+
+function showSaveMsg(pid) {
+  const msg = document.getElementById(`save-msg-${pid}`);
+  if (!msg) return;
+  msg.style.display = 'inline';
+  setTimeout(() => msg.style.display = 'none', 2000);
+}
+
+// ── Confirm helper ────────────────────────────────────────────────────────────
+
+function confirm(msg) {
+  return new Promise(resolve => {
+    _confirmResolve = resolve;
+    document.getElementById('confirm-msg').textContent = msg;
+    document.getElementById('confirm-overlay').classList.add('active');
+  });
+}
+
+function closeConfirm(yes) {
+  document.getElementById('confirm-overlay').classList.remove('active');
+  if (_confirmResolve) { _confirmResolve(yes); _confirmResolve = null; }
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+init();
+</script>
+{% endblock %}

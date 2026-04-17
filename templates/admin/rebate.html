@@ -1,0 +1,490 @@
+{% extends "base.html" %}
+{% block title %}Rebate Management — Trading Bonus{% endblock %}
+{% block page_title %}Rebate Management{% endblock %}
+
+{% block head %}
+<style>
+  .stats-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+  .stat-box { background:#fff; border-radius:10px; padding:18px 24px; min-width:160px; box-shadow:0 1px 4px rgba(0,0,0,.08); flex:1; }
+  .stat-box .val { font-size:24px; font-weight:700; color:#1a73e8; }
+  .stat-box .lbl { font-size:12px; color:#888; margin-top:4px; }
+  .tab-nav { display:flex; gap:0; border-bottom:2px solid #e0e0e0; margin-bottom:20px; }
+  .tab-nav button { background:none; border:none; padding:10px 20px; font-size:14px; cursor:pointer; color:#666; border-bottom:3px solid transparent; margin-bottom:-2px; }
+  .tab-nav button.active { color:#1a73e8; border-bottom-color:#1a73e8; font-weight:700; }
+  .broker-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+  .broker-tab { background:#f1f3f4; border:1px solid #ddd; border-radius:20px; padding:6px 16px; font-size:13px; cursor:pointer; color:#555; transition:all .15s; }
+  .broker-tab.active { background:#1a73e8; border-color:#1a73e8; color:#fff; font-weight:700; }
+  .broker-tab:hover:not(.active) { background:#e8f0fe; border-color:#aac4f0; }
+  .tab-pane { display:none; }
+  .tab-pane.active { display:block; }
+  .upload-area { border:2px dashed #ccc; border-radius:10px; padding:32px; text-align:center; cursor:pointer; transition:border-color .15s; }
+  .upload-area:hover, .upload-area.drag { border-color:#1a73e8; background:#f0f6ff; }
+  .upload-area input[type=file] { display:none; }
+  .upload-area .icon { font-size:40px; display:block; margin-bottom:10px; }
+  .upload-area .hint { font-size:13px; color:#888; margin-top:6px; }
+  .preview-table { font-size:12px; }
+  .preview-table th, .preview-table td { padding:7px 10px; }
+  .badge-no-prog { background:#fce8e6; color:#c5221f; }
+  .badge-prog   { background:#e6f4ea; color:#137333; }
+  .badge-pending  { background:#fff3cd; color:#856404; }
+  .badge-approved { background:#d1e7dd; color:#0a3622; }
+  .badge-exported { background:#cfe2ff; color:#084298; }
+  .badge-paid     { background:#d1e7dd; color:#0a3622; }
+  .totals-row { background:#f8f9fa; font-weight:700; }
+  .files-preview { margin-top:12px; }
+  .file-chip { display:inline-flex; align-items:center; gap:8px; background:#e8f4fd; border-radius:20px; padding:6px 14px; margin:4px; font-size:12px; color:#1558b0; }
+  .file-chip .rows { font-weight:700; }
+  .batch-row td { vertical-align:middle; }
+  #preview-section { display:none; }
+  #confirm-btn-row { display:none; margin-top:16px; }
+  .spinner { display:inline-block; width:16px; height:16px; border:2px solid #ccc; border-top-color:#1a73e8; border-radius:50%; animation:spin .6s linear infinite; vertical-align:middle; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="tab-nav">
+  <button class="active" onclick="switchTab('import')">Import & Calculate Rebate</button>
+  <button onclick="switchTab('batches')">Batch History</button>
+</div>
+
+<!-- ── TAB 1: IMPORT ── -->
+<div class="tab-pane active" id="tab-import">
+
+  <div class="card">
+    <h2>Upload file rebate</h2>
+
+    <!-- Broker selector -->
+    <div class="broker-tabs" id="broker-tabs">
+      <button class="broker-tab active" onclick="switchBroker('vantage', this)">🏦 Vantage</button>
+      <button class="broker-tab" onclick="switchBroker('exness', this)">📊 Exness</button>
+      <button class="broker-tab" onclick="switchBroker('ec', this)">📈 EC</button>
+      <button class="broker-tab" onclick="switchBroker('vt-market', this)">🔷 VT Market</button>
+      <button class="broker-tab" onclick="switchBroker('dupoin', this)">💎 Dupoin</button>
+    </div>
+
+    <!-- Broker info banner -->
+    <div id="broker-info" style="background:#e8f4fd;border-left:4px solid #1a73e8;padding:10px 14px;border-radius:4px;font-size:13px;margin-bottom:14px;"></div>
+
+    <div class="upload-area" id="drop-area" onclick="document.getElementById('file-input').click()"
+         ondragover="event.preventDefault();this.classList.add('drag')"
+         ondragleave="this.classList.remove('drag')"
+         ondrop="handleDrop(event)">
+      <span class="icon">📁</span>
+      <strong>Drag & drop file here or click to select</strong>
+      <div class="hint">Supports .xlsx, .xls, .csv — multiple files</div>
+      <input type="file" id="file-input" multiple accept=".xlsx,.xls,.csv"
+             onchange="handleFiles(this.files)" />
+    </div>
+    <div id="selected-files" style="margin-top:10px;font-size:13px;color:#555;"></div>
+    <div style="margin-top:14px; display:flex; gap:10px;">
+      <button class="btn btn-primary" onclick="doPreview()" id="preview-btn">
+        Preview & Calculate Rebate
+      </button>
+      <button class="btn btn-secondary" onclick="clearFiles()">Delete</button>
+    </div>
+  </div>
+
+  <!-- Preview results -->
+  <div id="preview-section">
+    <div class="stats-row" id="preview-stats"></div>
+
+    <div class="card">
+      <div class="flex-between">
+        <h2>Calculation Results rebate — <span id="preview-period"></span></h2>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <label style="font-size:13px;color:#555;">
+            <input type="checkbox" id="only-with-prog" onchange="filterPreview()"> Only show with program
+          </label>
+          <label style="font-size:13px;color:#555;">
+            <input type="checkbox" id="only-rebate-gt0" onchange="filterPreview()"> Rebate > 0
+          </label>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="preview-table" id="preview-table">
+          <thead>
+            <tr>
+              <th>MT5</th><th>Name</th><th>Email KH</th><th>IB</th>
+              <th>Program</th><th>Lots</th><th>Commission</th>
+              <th>Rate</th><th style="color:#1a73e8;">Rebate ($)</th><th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="preview-tbody"></tbody>
+        </table>
+      </div>
+      <div id="confirm-btn-row">
+        <button class="btn btn-primary" onclick="doConfirm()" style="padding:10px 28px;">
+          ✅ Confirm & Save Batch
+        </button>
+        <span style="font-size:12px;color:#888;margin-left:12px;">Only saves rows with rebate > 0</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── TAB 2: BATCHES ── -->
+<div class="tab-pane" id="tab-batches">
+  <div class="card">
+    <div class="flex-between">
+      <h2>Batch History rebate</h2>
+      <button class="btn btn-secondary btn-sm" onclick="loadBatches()">↺ Reload</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th><th>Period Date</th><th>Status</th>
+          <th>Accounts</th><th>Total Rebate ($)</th>
+          <th>Created</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="batches-tbody">
+        <tr><td colspan="7" class="empty">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Batch detail + export -->
+  <div id="batch-detail" style="display:none;">
+    <div class="card">
+      <div class="flex-between">
+        <h2>Details batch <span id="detail-batch-id"></span></h2>
+        <button class="btn btn-secondary btn-sm" onclick="closeBatchDetail()">Close</button>
+      </div>
+      <div id="batch-detail-stats" class="stats-row" style="margin-bottom:16px;"></div>
+
+      <div id="export-files-preview" class="files-preview" style="margin-bottom:14px;"></div>
+
+      <div style="display:flex;gap:10px;margin-bottom:16px;">
+        <button class="btn btn-primary" onclick="doExport()" id="export-btn">
+          ⬇️ Export CSV for Vantage
+        </button>
+        <span style="font-size:12px;color:#888;align-self:center;">Auto-group by IB, max 50 accounts/file</span>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="preview-table" id="detail-table">
+          <thead>
+            <tr>
+              <th>MT5</th><th>Email KH</th><th>IB</th>
+              <th>Program</th><th>Lots</th><th>Commission</th>
+              <th style="color:#1a73e8;">Rebate ($)</th><th>Notes</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="detail-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selectedFiles  = [];
+let previewData    = null;
+let currentBatchId = null;
+let currentBroker  = 'vantage';
+
+const BROKER_INFO = {
+  'vantage':   { label: 'Vantage', hint: 'Vantage commission report file (standard .xlsx format).' },
+  'exness':    { label: 'Exness',  hint: 'Upload Exness commission file. Contact admin to configure column format if needed.' },
+  'ec':        { label: 'EC',      hint: 'Upload EC (Eightcap) commission file. Contact admin to configure column format if needed.' },
+  'vt-market': { label: 'VT Market', hint: 'Upload VT Market commission file. Contact admin to configure column format if needed.' },
+  'dupoin':    { label: 'Dupoin',  hint: 'Upload Dupoin commission file. Contact admin to configure column format if needed.' },
+};
+
+function switchBroker(slug, btn) {
+  currentBroker = slug;
+  document.querySelectorAll('.broker-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const info = BROKER_INFO[slug] || { label: slug, hint: '' };
+  document.getElementById('broker-info').textContent = `Selected broker: ${info.label} — ${info.hint}`;
+  clearFiles();
+}
+
+// ── File handling ──────────────────────────────────────────────────────────────
+function handleFiles(fileList) {
+  selectedFiles = Array.from(fileList);
+  updateSelectedLabel();
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-area').classList.remove('drag');
+  selectedFiles = Array.from(e.dataTransfer.files).filter(f =>
+    /\.(xlsx|xls|csv)$/i.test(f.name));
+  updateSelectedLabel();
+}
+function updateSelectedLabel() {
+  const el = document.getElementById('selected-files');
+  el.textContent = selectedFiles.length
+    ? `Selected: ${selectedFiles.map(f => f.name).join(', ')}`
+    : '';
+}
+function clearFiles() {
+  selectedFiles = [];
+  const fi = document.getElementById('file-input');
+  if (fi) fi.value = '';
+  updateSelectedLabel();
+  document.getElementById('preview-section').style.display = 'none';
+  previewData = null;
+}
+
+// ── Preview ────────────────────────────────────────────────────────────────────
+async function doPreview() {
+  if (!selectedFiles.length) { alert('Please select at least 1 file'); return; }
+  const btn = document.getElementById('preview-btn');
+  btn.innerHTML = '<span class="spinner"></span> Đang tính…';
+  btn.disabled = true;
+
+  const fd = new FormData();
+  selectedFiles.forEach(f => fd.append('files', f));
+  fd.append('broker', currentBroker);
+
+  try {
+    const res = await fetch('/api/rebate/preview', { method:'POST', body:fd });
+    const data = await res.json();
+    if (!res.ok) { alert(data.detail || 'Processing error'); return; }
+    previewData = data;
+    renderPreview(data);
+    document.getElementById('preview-section').style.display = 'block';
+  } catch(e) {
+    alert('Connection error: ' + e.message);
+  } finally {
+    btn.innerHTML = 'Preview & Calculate Rebate';
+    btn.disabled = false;
+  }
+}
+
+function renderPreview(data) {
+  const brokerLabel = (BROKER_INFO[data.broker] || {}).label || (data.broker || 'Unknown');
+  document.getElementById('preview-period').textContent =
+    (data.period_date || '—') + ' — ' + brokerLabel;
+  const s = data.stats || {};
+  document.getElementById('preview-stats').innerHTML = `
+    <div class="stat-box"><div class="val">${s.total_mt5||s.total_accounts||0}</div><div class="lbl">Total TK MT5</div></div>
+    <div class="stat-box"><div class="val">${s.with_program||0}</div><div class="lbl">Có chương trình</div></div>
+    <div class="stat-box"><div class="val">$${(+(s.total_commission||s.total_comm||0)).toFixed(2)}</div><div class="lbl">Total Commission</div></div>
+    <div class="stat-box" style="background:#e6f4ea;"><div class="val" style="color:#137333;">$${(+(s.total_rebate||0)).toFixed(2)}</div><div class="lbl">Total Rebate Calculated</div></div>
+  `;
+  renderPreviewRows(data.rows);
+  document.getElementById('confirm-btn-row').style.display = data.rows.length > 0 ? 'block' : 'none';
+}
+
+function filterPreview() {
+  if (!previewData) return;
+  const onlyProg    = document.getElementById('only-with-prog').checked;
+  const onlyRebate  = document.getElementById('only-rebate-gt0').checked;
+  let rows = previewData.rows;
+  if (onlyProg)   rows = rows.filter(r => r.program_name || r.promo_name);
+  if (onlyRebate) rows = rows.filter(r => r.rebate_amount > 0);
+  renderPreviewRows(rows);
+}
+
+function renderPreviewRows(rows) {
+  const tbody = document.getElementById('preview-tbody');
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="10" class="empty">No data</td></tr>'; return; }
+  let totalLots=0, totalComm=0, totalRebate=0;
+  tbody.innerHTML = rows.map(r => {
+    const lots  = +(r.total_volume ?? r.total_lots ?? 0);
+    const comm  = +(r.total_commission ?? r.total_comm ?? 0);
+    const rebate = +(r.rebate_amount ?? 0);
+    totalLots   += lots;
+    totalComm   += comm;
+    totalRebate += rebate;
+    const mt5   = r.trading_account || r.mt5_account || '—';
+    const email = r.login_email || r.customer_email || '';
+    const pname = r.program_name || r.promo_name || '';
+    const progBadge = pname
+      ? `<span class="badge badge-prog">${pname}</span>`
+      : `<span class="badge badge-no-prog">Not Enrolled</span>`;
+    const rateDisp = r.rebate_rate ? `${r.rebate_rate}%` : '—';
+    return `<tr>
+      <td><b>${mt5}</b></td>
+      <td>${r.name||'—'}</td>
+      <td style="font-size:11px;">${email||'<span style="color:#c5221f">Chưa link</span>'}</td>
+      <td style="font-size:11px;">${r.ib_name||'—'}</td>
+      <td>${progBadge}</td>
+      <td>${lots.toFixed(2)}</td>
+      <td>$${comm.toFixed(2)}</td>
+      <td>${rateDisp}</td>
+      <td style="font-weight:700;color:${rebate>0?'#137333':'#aaa'};">$${rebate.toFixed(2)}</td>
+      <td style="font-size:11px;color:#666;">${r.note||'—'}</td>
+    </tr>`;
+  }).join('');
+  tbody.innerHTML += `<tr class="totals-row">
+    <td colspan="5">TOTAL</td>
+    <td>${totalLots.toFixed(2)}</td>
+    <td>$${totalComm.toFixed(2)}</td>
+    <td></td>
+    <td style="color:#137333;">$${totalRebate.toFixed(2)}</td>
+    <td></td>
+  </tr>`;
+}
+
+// ── Confirm ────────────────────────────────────────────────────────────────────
+async function doConfirm() {
+  if (!previewData) return;
+  if (!confirm(`Confirm save rebate batch for ${previewData.period_date}?`)) return;
+  const btn = document.querySelector('#confirm-btn-row button');
+  btn.innerHTML = '<span class="spinner"></span> Đang lưu…';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/rebate/confirm', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ rows: previewData.rows, period_date: previewData.period_date, broker: previewData.broker || currentBroker }),
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.detail || 'Save error'); return; }
+    alert(`Saved batch #${data.batch_id} — ${data.batch.total_rows} accounts — $${data.batch.total_amount.toFixed(2)}`);
+    clearFiles();
+    switchTab('batches');
+    loadBatches();
+  } catch(e) {
+    alert('Error: ' + e.message);
+  } finally {
+    btn.innerHTML = '✅ Confirm & Save Batch';
+    btn.disabled = false;
+  }
+}
+
+// ── Batches ────────────────────────────────────────────────────────────────────
+async function loadBatches() {
+  const tbody = document.getElementById('batches-tbody');
+  tbody.innerHTML = '<tr><td colspan="7" class="empty">Loading...</td></tr>';
+  try {
+    const res = await fetch('/api/rebate/batches');
+    const rows = await res.json();
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty">Chưa có batch nào</td></tr>'; return; }
+    tbody.innerHTML = rows.map(b => {
+      const status = {draft:'⏳ Draft', confirmed:'✅ Confirmed', exported:'📤 Exported', paid:'💰 Paid'}[b.status] || b.status;
+      const statusClass = {draft:'badge-draft', confirmed:'badge-approved', exported:'badge-exported', paid:'badge-done'}[b.status] || '';
+      const brokerTag = (() => {
+        const m = (b.notes||'').match(/^\[(\w[\w-]*)\]/);
+        return m ? `<span style="font-size:10px;background:#e8f4fd;color:#1558b0;border-radius:3px;padding:1px 5px;margin-right:4px;">${m[1]}</span>` : '';
+      })();
+      return `<tr class="batch-row">
+        <td>#${b.id}</td>
+        <td>${b.period_date||'—'}</td>
+        <td><span class="badge ${statusClass}">${status}</span></td>
+        <td>${brokerTag}${b.total_rows}</td>
+        <td style="font-weight:700;color:#137333;">$${(b.total_amount||0).toFixed(2)}</td>
+        <td style="font-size:11px;">${(b.created_at||'').substring(0,16)}</td>
+        <td>
+          <button class="btn btn-secondary btn-sm" onclick="openBatchDetail(${b.id})">Details</button>
+          ${b.status !== 'draft' ? `<button class="btn btn-primary btn-sm" onclick="openBatchDetail(${b.id});setTimeout(doExport,300)">Export CSV</button>` : ''}
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty">Errors: ${e.message}</td></tr>`;
+  }
+}
+
+async function openBatchDetail(batchId) {
+  currentBatchId = batchId;
+  document.getElementById('batch-detail').style.display = 'block';
+  document.getElementById('detail-batch-id').textContent = `#${batchId}`;
+  document.getElementById('detail-tbody').innerHTML = '<tr><td colspan="9" class="empty">Loading...</td></tr>';
+  document.getElementById('export-files-preview').innerHTML = '';
+
+  const [detRes, preRes] = await Promise.all([
+    fetch(`/api/rebate/batches/${batchId}`),
+    fetch(`/api/rebate/batches/${batchId}/preview-export`),
+  ]);
+  const det = await detRes.json();
+  const pre = await preRes.json();
+
+  // Stats
+  const b = det.batch;
+  document.getElementById('batch-detail-stats').innerHTML = `
+    <div class="stat-box"><div class="val">${b.total_rows}</div><div class="lbl">Accounts</div></div>
+    <div class="stat-box" style="background:#e6f4ea;"><div class="val" style="color:#137333;">$${(b.total_amount||0).toFixed(2)}</div><div class="lbl">Total Rebate</div></div>
+    <div class="stat-box"><div class="val">${b.period_date||'—'}</div><div class="lbl">Rebate Period</div></div>
+  `;
+
+  // File preview chips
+  if (pre.files && pre.files.length) {
+    document.getElementById('export-files-preview').innerHTML =
+      `<div style="font-size:13px;font-weight:700;color:#555;margin-bottom:6px;">Files to create (${pre.files.length} file):</div>` +
+      pre.files.map(f => `<div class="file-chip">📄 ${f.filename} — <span class="rows">${f.row_count} TK</span> — $${f.total_amount.toFixed(2)}</div>`).join('');
+  }
+
+  // Detail rows
+  const rows = det.rows || [];
+  const tbody = document.getElementById('detail-tbody');
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty">No data</td></tr>'; return; }
+  tbody.innerHTML = rows.map(r => {
+    const sClass = {pending:'badge-pending', approved:'badge-approved', exported:'badge-exported', paid:'badge-done'}[r.status] || '';
+    return `<tr>
+      <td><b>${r.mt5_account}</b></td>
+      <td style="font-size:11px;">${r.customer_email||'—'}</td>
+      <td style="font-size:11px;">${r.ib_name||'—'}</td>
+      <td style="font-size:11px;">${r.promo_name||'—'}</td>
+      <td>${(r.total_lots||0).toFixed(2)}</td>
+      <td>$${(r.total_comm||0).toFixed(2)}</td>
+      <td style="font-weight:700;color:#137333;">$${(r.rebate_amount||0).toFixed(2)}</td>
+      <td style="font-size:11px;color:#666;">${r.note||'—'}</td>
+      <td><span class="badge ${sClass}">${r.status||'—'}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function closeBatchDetail() {
+  document.getElementById('batch-detail').style.display = 'none';
+  currentBatchId = null;
+}
+
+async function doExport() {
+  if (!currentBatchId) return;
+  const btn = document.getElementById('export-btn');
+  btn.innerHTML = '<span class="spinner"></span> Creating files...';
+  btn.disabled = true;
+  try {
+    const res = await fetch(`/api/rebate/batches/${currentBatchId}/export`, { method:'POST' });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert(err.detail || 'Export error');
+      return;
+    }
+    const blob = await res.blob();
+    const cd   = res.headers.get('content-disposition') || '';
+    const fname = cd.match(/filename="([^"]+)"/)?.[1] || `rebate_export.csv`;
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement('a');
+    a.href = url; a.download = fname; a.click();
+    URL.revokeObjectURL(url);
+    loadBatches();
+    openBatchDetail(currentBatchId);
+  } catch(e) {
+    alert('Error: ' + e.message);
+  } finally {
+    btn.innerHTML = '⬇️ Export CSV for Vantage';
+    btn.disabled = false;
+  }
+}
+
+// ── Tabs ───────────────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-nav button').forEach((b,i) => {
+    b.classList.toggle('active', b.getAttribute('onclick').includes(name));
+  });
+  document.querySelectorAll('.tab-pane').forEach(p => {
+    p.classList.toggle('active', p.id === 'tab-' + name);
+  });
+  if (name === 'batches') loadBatches();
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+  // Set default broker info
+  const defaultBtn = document.querySelector('.broker-tab.active');
+  switchBroker('vantage', defaultBtn);
+});
+</script>
+{% endblock %}

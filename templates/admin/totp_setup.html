@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Setup 2FA — Trading Bonus</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .wrap { width: 100%; max-width: 440px; padding: 16px; }
+    .logo { text-align: center; font-size: 22px; font-weight: 700; color: #1a1f2e; margin-bottom: 28px; }
+    .logo span { color: #1a73e8; }
+    .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.1); padding: 36px 32px; }
+    h2 { font-size: 18px; color: #1a1f2e; margin-bottom: 8px; text-align: center; }
+    .subtitle { font-size: 13px; color: #666; text-align: center; margin-bottom: 20px; line-height: 1.5; }
+    .qr-wrap { text-align: center; margin-bottom: 16px; }
+    .qr-wrap img { border-radius: 8px; }
+    .secret-box {
+      background: #f7f8fa; border: 1px solid #e0e0e0; border-radius: 6px;
+      padding: 10px; text-align: center; font-family: monospace; font-size: 14px;
+      letter-spacing: 2px; margin-bottom: 20px; word-break: break-all;
+    }
+    .secret-label { font-size: 12px; color: #888; margin-bottom: 4px; text-align: center; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; color: #555; margin-bottom: 6px; font-weight: 600; }
+    .form-group input {
+      width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 7px;
+      font-size: 18px; text-align: center; letter-spacing: 8px; outline: none;
+    }
+    .form-group input:focus { border-color: #1a73e8; }
+    .btn {
+      width: 100%; padding: 11px; background: #1a73e8; color: #fff; border: none;
+      border-radius: 7px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 8px;
+    }
+    .btn:hover { background: #1558b0; }
+    .error { background: #fce8e6; color: #c5221f; border-radius: 6px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; text-align: center; }
+    .steps { font-size: 13px; color: #555; margin-bottom: 20px; line-height: 1.7; }
+    .steps b { color: #1a1f2e; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">Trading<span>BonusHub</span></div>
+  <div class="card">
+    <h2>Setup Two-Factor Authentication</h2>
+    <p class="subtitle">Scan the QR code below with your authenticator app (Google Authenticator, Authy, etc.)</p>
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+    <div class="steps">
+      <b>1.</b> Open your authenticator app<br>
+      <b>2.</b> Scan the QR code or enter the key manually<br>
+      <b>3.</b> Enter the 6-digit code to verify setup
+    </div>
+    <div class="qr-wrap">
+      <img src="data:image/png;base64,{{ qr_base64 }}" alt="TOTP QR Code" width="200" height="200" />
+    </div>
+    <p class="secret-label">Manual entry key:</p>
+    <div class="secret-box">{{ secret }}</div>
+    <form method="post" action="/admin/totp-setup">
+      {{ csrf_input(request) }}
+      <input type="hidden" name="secret" value="{{ secret }}" />
+      <div class="form-group">
+        <label>Enter verification code</label>
+        <input type="text" name="code" maxlength="6" pattern="[0-9]{6}" inputmode="numeric"
+               autocomplete="one-time-code" required autofocus placeholder="000000" />
+      </div>
+      <button type="submit" class="btn">Activate 2FA</button>
+    </form>
+  </div>
+</div>
+</body>
+</html>

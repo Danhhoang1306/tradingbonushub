@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+{% block title %}System Monitor — Admin{% endblock %}
+
+{% block head %}
+<style>
+.sys-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+.sys-card { background: var(--glass); border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 18px; text-align: center; }
+.sys-card .num { font-size: 28px; font-weight: 700; color: var(--gold); }
+.sys-card .lbl { font-size: 12px; color: rgba(255,255,255,.5); margin-top: 4px; }
+.tab-bar { display: flex; gap: 0; border-bottom: 1px solid rgba(255,255,255,.1); margin-bottom: 20px; }
+.tab-bar button { background: none; border: none; color: rgba(255,255,255,.5); padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; }
+.tab-bar button.active { color: var(--gold); border-bottom-color: var(--gold); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.data-table th { text-align: left; padding: 8px 12px; color: rgba(255,255,255,.5); font-weight: 600; border-bottom: 1px solid rgba(255,255,255,.1); font-size: 11px; text-transform: uppercase; }
+.data-table td { padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,.05); color: rgba(255,255,255,.8); }
+.data-table tr:hover td { background: rgba(255,255,255,.03); }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.badge-admin { background: rgba(59,130,246,.2); color: #60a5fa; }
+.badge-customer { background: rgba(16,185,129,.2); color: #6ee7b7; }
+.badge-warn { background: rgba(245,158,11,.2); color: #fbbf24; }
+.badge-ok { background: rgba(16,185,129,.2); color: #6ee7b7; }
+.filter-row { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+.filter-row input, .filter-row select { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); color: #fff; padding: 7px 12px; border-radius: 6px; font-size: 13px; }
+.filter-row input { min-width: 200px; }
+.btn-sm { padding: 5px 12px; border-radius: 5px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; }
+.btn-danger { background: #ef4444; color: #fff; }
+.btn-danger:hover { background: #dc2626; }
+.btn-secondary { background: rgba(255,255,255,.1); color: rgba(255,255,255,.7); }
+.btn-secondary:hover { background: rgba(255,255,255,.15); }
+.detail-json { font-family: monospace; font-size: 11px; color: rgba(255,255,255,.5); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.detail-json:hover { white-space: normal; color: rgba(255,255,255,.8); }
+.pager { display: flex; gap: 8px; margin-top: 12px; align-items: center; font-size: 13px; color: rgba(255,255,255,.5); }
+.empty { text-align: center; padding: 40px; color: rgba(255,255,255,.3); }
+@media (max-width: 900px) { .sys-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .sys-grid { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 style="font-size:20px;margin-bottom:20px;">System Monitor</h1>
+
+<!-- Stats cards -->
+<div class="sys-grid" id="statsGrid">
+  <div class="sys-card"><div class="num" id="statSessions">-</div><div class="lbl">Active Sessions</div></div>
+  <div class="sys-card"><div class="num" id="statAudit">-</div><div class="lbl">Audit Events (24h)</div></div>
+  <div class="sys-card"><div class="num" id="statLogins">-</div><div class="lbl">Failed Logins (24h)</div></div>
+  <div class="sys-card"><div class="num" id="statJobs">-</div><div class="lbl">Pending Jobs</div></div>
+</div>
+
+<!-- Tabs -->
+<div class="tab-bar" id="tabBar">
+  <button class="active" onclick="switchTab('audit')">Audit Log</button>
+  <button onclick="switchTab('logins')">Login History</button>
+  <button onclick="switchTab('sessions')">Active Sessions</button>
+  <button onclick="switchTab('jobs')">Job Queue</button>
+</div>
+
+<!-- Tab: Audit Log -->
+<div class="tab-panel active" id="panel-audit">
+  <div class="filter-row">
+    <input type="text" id="auditSearch" placeholder="Search actor, action, entity..." oninput="debounceAudit()">
+    <select id="auditAction" onchange="loadAudit()"><option value="">All actions</option></select>
+    <button class="btn-sm btn-secondary" onclick="loadAudit()">Refresh</button>
+  </div>
+  <div id="auditBody"></div>
+  <div class="pager" id="auditPager"></div>
+</div>
+
+<!-- Tab: Login History -->
+<div class="tab-panel" id="panel-logins">
+  <div class="filter-row">
+    <input type="text" id="loginSearch" placeholder="Search email or username..." oninput="debounceLogin()">
+    <select id="loginType" onchange="loadLogins()">
+      <option value="">All types</option>
+      <option value="admin">Admin</option>
+      <option value="customer">Customer</option>
+    </select>
+    <button class="btn-sm btn-secondary" onclick="loadLogins()">Refresh</button>
+  </div>
+  <div id="loginsBody"></div>
+  <div class="pager" id="loginsPager"></div>
+</div>
+
+<!-- Tab: Active Sessions -->
+<div class="tab-panel" id="panel-sessions">
+  <div class="filter-row">
+    <button class="btn-sm btn-secondary" onclick="loadSessions()">Refresh</button>
+  </div>
+  <div id="sessionsBody"></div>
+</div>
+
+<!-- Tab: Job Queue -->
+<div class="tab-panel" id="panel-jobs">
+  <div class="filter-row">
+    <select id="jobStatus" onchange="loadJobs()">
+      <option value="">All</option>
+      <option value="pending">Pending</option>
+      <option value="running">Running</option>
+      <option value="done">Done</option>
+      <option value="failed">Failed</option>
+    </select>
+    <button class="btn-sm btn-secondary" onclick="loadJobs()">Refresh</button>
+  </div>
+  <div id="jobsBody"></div>
+</div>
+
+<script>
+const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+const fmt = d => { if (!d) return '-'; const dt = new Date(d); return dt.toLocaleString('en-GB', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}); };
+
+let auditOffset = 0, loginOffset = 0, auditTimer, loginTimer;
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'audit') loadAudit();
+  if (name === 'logins') loadLogins();
+  if (name === 'sessions') loadSessions();
+  if (name === 'jobs') loadJobs();
+}
+
+// ── Stats ──
+async function loadStats() {
+  try {
+    const r = await fetch('/api/admin/system-stats');
+    const d = await r.json();
+    document.getElementById('statSessions').textContent = d.active_sessions;
+    document.getElementById('statAudit').textContent = d.audit_events_24h;
+    document.getElementById('statLogins').textContent = d.failed_logins_24h;
+    document.getElementById('statJobs').textContent = d.pending_jobs;
+  } catch(e) {}
+}
+
+// ── Audit Log ──
+function debounceAudit() { clearTimeout(auditTimer); auditTimer = setTimeout(() => { auditOffset = 0; loadAudit(); }, 300); }
+
+async function loadAudit() {
+  const search = document.getElementById('auditSearch').value;
+  const action = document.getElementById('auditAction').value;
+  const params = new URLSearchParams({ limit: 50, offset: auditOffset });
+  if (search) params.set('search', search);
+  if (action) params.set('action', action);
+
+  const r = await fetch('/api/admin/audit-logs?' + params);
+  const d = await r.json();
+
+  if (!d.items.length) { document.getElementById('auditBody').innerHTML = '<div class="empty">No audit events found</div>'; document.getElementById('auditPager').innerHTML = ''; return; }
+
+  let html = '<table class="data-table"><thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Entity</th><th>Detail</th><th>IP</th></tr></thead><tbody>';
+  d.items.forEach(i => {
+    const detail = i.detail ? JSON.stringify(i.detail) : '';
+    html += `<tr>
+      <td>${esc(fmt(i.created_at))}</td>
+      <td><b>${esc(i.actor||'')}</b></td>
+      <td>${esc(i.action||'')}</td>
+      <td>${esc((i.entity_type||'')+(i.entity_id?' #'+i.entity_id:''))}</td>
+      <td class="detail-json" title="${esc(detail)}">${esc(detail)}</td>
+      <td>${esc(i.ip_address||'')}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('auditBody').innerHTML = html;
+
+  let pager = `Showing ${auditOffset+1}-${Math.min(auditOffset+50, d.total)} of ${d.total}`;
+  if (auditOffset > 0) pager = `<button class="btn-sm btn-secondary" onclick="auditOffset-=50;loadAudit()">Prev</button> ` + pager;
+  if (auditOffset + 50 < d.total) pager += ` <button class="btn-sm btn-secondary" onclick="auditOffset+=50;loadAudit()">Next</button>`;
+  document.getElementById('auditPager').innerHTML = pager;
+}
+
+async function loadAuditActions() {
+  try {
+    const r = await fetch('/api/admin/audit-logs/actions');
+    const actions = await r.json();
+    const sel = document.getElementById('auditAction');
+    actions.forEach(a => { const o = document.createElement('option'); o.value = a; o.textContent = a; sel.appendChild(o); });
+  } catch(e) {}
+}
+
+// ── Login History ──
+function debounceLogin() { clearTimeout(loginTimer); loginTimer = setTimeout(() => { loginOffset = 0; loadLogins(); }, 300); }
+
+async function loadLogins() {
+  const search = document.getElementById('loginSearch').value;
+  const type = document.getElementById('loginType').value;
+  const params = new URLSearchParams({ limit: 50, offset: loginOffset });
+  if (search) params.set('identifier', search);
+  if (type) params.set('user_type', type);
+
+  const r = await fetch('/api/admin/login-history?' + params);
+  const d = await r.json();
+
+  if (!d.items.length) { document.getElementById('loginsBody').innerHTML = '<div class="empty">No failed login attempts</div>'; document.getElementById('loginsPager').innerHTML = ''; return; }
+
+  let html = '<table class="data-table"><thead><tr><th>Time</th><th>Identifier</th><th>Type</th><th>IP Address</th></tr></thead><tbody>';
+  d.items.forEach(i => {
+    html += `<tr>
+      <td>${esc(fmt(i.attempted_at))}</td>
+      <td><b>${esc(i.identifier)}</b></td>
+      <td><span class="badge badge-${i.user_type==='admin'?'admin':'customer'}">${esc(i.user_type)}</span></td>
+      <td>${esc(i.ip_address||'')}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('loginsBody').innerHTML = html;
+
+  let pager = `Showing ${loginOffset+1}-${Math.min(loginOffset+50, d.total)} of ${d.total}`;
+  if (loginOffset > 0) pager = `<button class="btn-sm btn-secondary" onclick="loginOffset-=50;loadLogins()">Prev</button> ` + pager;
+  if (loginOffset + 50 < d.total) pager += ` <button class="btn-sm btn-secondary" onclick="loginOffset+=50;loadLogins()">Next</button>`;
+  document.getElementById('loginsPager').innerHTML = pager;
+}
+
+// ── Sessions ──
+async function loadSessions() {
+  const r = await fetch('/api/admin/sessions');
+  const items = await r.json();
+
+  if (!items.length) { document.getElementById('sessionsBody').innerHTML = '<div class="empty">No active sessions</div>'; return; }
+
+  let html = '<table class="data-table"><thead><tr><th>User</th><th>Type</th><th>Role</th><th>Created</th><th>Last Active</th><th>Action</th></tr></thead><tbody>';
+  items.forEach(s => {
+    const lastActive = s.last_active ? fmt(new Date(s.last_active * 1000).toISOString()) : '-';
+    html += `<tr>
+      <td><b>${esc(s.user || s.customer_email)}</b></td>
+      <td><span class="badge badge-${s.type}">${esc(s.type)}</span></td>
+      <td>${esc(s.role||'-')}</td>
+      <td>${esc(fmt(s.created_at))}</td>
+      <td>${lastActive}</td>
+      <td><button class="btn-sm btn-danger" onclick="forceLogout('${esc(s.session_id_full)}')">Logout</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('sessionsBody').innerHTML = html;
+}
+
+async function forceLogout(sid) {
+  if (!confirm('Force logout this session?')) return;
+  const r = await fetch('/api/admin/sessions/' + encodeURIComponent(sid), { method: 'DELETE' });
+  const d = await r.json();
+  if (d.ok) { showToast('Session terminated: ' + (d.target||''), 'success'); loadSessions(); loadStats(); }
+  else showToast(d.detail || 'Error', 'error');
+}
+
+// ── Jobs ──
+async function loadJobs() {
+  const status = document.getElementById('jobStatus').value;
+  const params = new URLSearchParams({ limit: 50 });
+  if (status) params.set('status', status);
+
+  const r = await fetch('/api/admin/jobs?' + params);
+  const items = await r.json();
+
+  if (!items.length) { document.getElementById('jobsBody').innerHTML = '<div class="empty">No jobs</div>'; return; }
+
+  let html = '<table class="data-table"><thead><tr><th>ID</th><th>Type</th><th>Status</th><th>Created</th><th>Started</th><th>Finished</th><th>Error</th></tr></thead><tbody>';
+  items.forEach(j => {
+    const statusCls = j.status === 'done' ? 'ok' : j.status === 'failed' ? 'warn' : '';
+    html += `<tr>
+      <td>${j.id}</td>
+      <td>${esc(j.job_type||'')}</td>
+      <td><span class="badge badge-${statusCls}">${esc(j.status)}</span></td>
+      <td>${esc(fmt(j.created_at))}</td>
+      <td>${esc(fmt(j.started_at))}</td>
+      <td>${esc(fmt(j.finished_at))}</td>
+      <td class="detail-json">${esc(j.error_msg||'')}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('jobsBody').innerHTML = html;
+}
+
+// ── Init ──
+loadStats();
+loadAuditActions();
+loadAudit();
+setInterval(loadStats, 60000);
+</script>
+{% endblock %}
