@@ -47,6 +47,21 @@ def _csp_nonce(request) -> str:
     return getattr(getattr(request, "state", None), "csp_nonce", "")
 
 
+def _lang_url(path: str, lang: str) -> str:
+    """Build a URL that carries the current language when non-default.
+
+    Vietnamese is the default — VI URLs stay clean. English URLs get `lang=en`
+    appended so the page renders correctly even without a cookie (shared links,
+    SEO, cookie expiry). Handles both `?` and `&` joiners.
+    """
+    if lang != "en":
+        return path
+    if "lang=" in path:
+        return path
+    sep = "&" if "?" in path else "?"
+    return f"{path}{sep}lang=en"
+
+
 def make_templates(*dirs: str) -> Jinja2Templates:
     """Return a Jinja2Templates instance that searches `dirs` then `templates/shared`."""
     tpl = Jinja2Templates(directory=dirs[0])
@@ -58,5 +73,6 @@ def make_templates(*dirs: str) -> Jinja2Templates:
     tpl.env.globals["freq_label"] = _freq_label
     tpl.env.globals["t"] = _t
     tpl.env.globals["static_url"] = _static_url
+    tpl.env.globals["lang_url"] = _lang_url
     tpl.env.filters["sanitize"] = _sanitize_html
     return tpl

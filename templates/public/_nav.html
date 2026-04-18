@@ -38,14 +38,14 @@
 }
 </style>
 <header class="header">
-  <a class="logo" href="/{% if lang == 'en' %}?lang=en{% endif %}"><img src="/static/logo-tb.png" alt="TradingBonusHub" style="height:40px;width:auto;vertical-align:middle;margin-right:10px;">Trading<span>Bonus</span></a>
+  <a class="logo" href="{{ lang_url('/', lang) }}"><img src="/static/logo-tb.png" alt="TradingBonusHub" style="height:40px;width:auto;vertical-align:middle;margin-right:10px;">Trading<span>Bonus</span></a>
   <nav class="header-nav">
-    <a class="nav-link nav-desktop" href="/{% if lang == 'en' %}?lang=en{% endif %}">{{ t('nav_home', lang) }}</a>
-    <a class="nav-link nav-desktop" href="/promotions{% if lang == 'en' %}?lang=en{% endif %}">{{ t('nav_promotions', lang) }}</a>
-    <a class="nav-link nav-desktop" href="/#how">{{ t('nav_guide', lang) }}</a>
-    <a class="nav-link nav-desktop" href="/brokers{% if lang == 'en' %}?lang=en{% endif %}">{{ t('nav_brokers', lang) }}</a>
-    <a class="nav-link nav-desktop" href="/blog{% if lang == 'en' %}?lang=en{% endif %}">{{ t('nav_blog', lang) }}</a>
-    <a class="nav-link nav-desktop" href="/about{% if lang == 'en' %}?lang=en{% endif %}">{{ t('nav_contact', lang) }}</a>
+    <a class="nav-link nav-desktop" href="{{ lang_url('/', lang) }}">{{ t('nav_home', lang) }}</a>
+    <a class="nav-link nav-desktop" href="{{ lang_url('/promotions', lang) }}">{{ t('nav_promotions', lang) }}</a>
+    <a class="nav-link nav-desktop" href="{{ lang_url('/#how', lang) }}">{{ t('nav_guide', lang) }}</a>
+    <a class="nav-link nav-desktop" href="{{ lang_url('/brokers', lang) }}">{{ t('nav_brokers', lang) }}</a>
+    <a class="nav-link nav-desktop" href="{{ lang_url('/blog', lang) }}">{{ t('nav_blog', lang) }}</a>
+    <a class="nav-link nav-desktop" href="{{ lang_url('/about', lang) }}">{{ t('nav_contact', lang) }}</a>
 
     <!-- Language switcher -->
     <div class="lang-switch nav-desktop">
@@ -64,12 +64,12 @@
 
 <!-- Mobile drawer -->
 <div class="nav-drawer" id="navDrawer">
-  <a href="/{% if lang == 'en' %}?lang=en{% endif %}" onclick="closeDrawer()">{{ t('nav_home', lang) }}</a>
-  <a href="/promotions{% if lang == 'en' %}?lang=en{% endif %}" onclick="closeDrawer()">{{ t('nav_promotions', lang) }}</a>
-  <a href="/#how" onclick="closeDrawer()">{{ t('nav_guide', lang) }}</a>
-  <a href="/brokers{% if lang == 'en' %}?lang=en{% endif %}" onclick="closeDrawer()">{{ t('nav_brokers', lang) }}</a>
-  <a href="/blog{% if lang == 'en' %}?lang=en{% endif %}" onclick="closeDrawer()">{{ t('nav_blog', lang) }}</a>
-  <a href="/about{% if lang == 'en' %}?lang=en{% endif %}" onclick="closeDrawer()">{{ t('nav_contact', lang) }}</a>
+  <a href="{{ lang_url('/', lang) }}" onclick="closeDrawer()">{{ t('nav_home', lang) }}</a>
+  <a href="{{ lang_url('/promotions', lang) }}" onclick="closeDrawer()">{{ t('nav_promotions', lang) }}</a>
+  <a href="{{ lang_url('/#how', lang) }}" onclick="closeDrawer()">{{ t('nav_guide', lang) }}</a>
+  <a href="{{ lang_url('/brokers', lang) }}" onclick="closeDrawer()">{{ t('nav_brokers', lang) }}</a>
+  <a href="{{ lang_url('/blog', lang) }}" onclick="closeDrawer()">{{ t('nav_blog', lang) }}</a>
+  <a href="{{ lang_url('/about', lang) }}" onclick="closeDrawer()">{{ t('nav_contact', lang) }}</a>
   <div class="lang-switch-mobile">
     <a class="lang-btn{% if lang != 'en' %} lang-active{% endif %}" href="?lang=vi" onclick="closeDrawer()">🇻🇳 Tiếng Việt</a>
     <a class="lang-btn{% if lang == 'en' %} lang-active{% endif %}" href="?lang=en" onclick="closeDrawer()">🇬🇧 English</a>

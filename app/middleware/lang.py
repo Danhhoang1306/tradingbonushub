@@ -1,13 +1,18 @@
 """Language detection middleware — auto-detect language from IP geolocation.
 
 Priority order:
-  1. Explicit `?lang=` query parameter (user clicked switcher)
-  2. `lang` cookie (returning visitor who already chose)
-  3. Cloudflare CF-IPCountry header (auto-detect by IP)
-  4. Default to English ("en")
+  1. Explicit `?lang=` query parameter (user clicked switcher) — sets `lang_explicit` cookie
+  2. `lang` cookie IF `lang_explicit=1` cookie present (user previously chose)
+  3. Cloudflare CF-IPCountry header (auto-detect by IP) — overrides stale auto-detected cookie
+  4. `lang` cookie without explicit flag (last resort if no geo signal)
+  5. Accept-Language header (dev / non-CF environments)
+  6. Default to English ("en")
 
-When auto-detected or explicitly chosen, a `lang` cookie is set so the
-detection only runs once per browser.
+Two cookies are used:
+  - `lang`         — the active language value ("vi" / "en")
+  - `lang_explicit`— "1" when the user explicitly chose via switcher; absent otherwise
+This lets region-based detection override an old auto-detected cookie, while
+still respecting an explicit user choice across sessions.
 """
 
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -19,7 +24,19 @@ _VN_COUNTRIES = {"VN"}
 
 # Cookie settings
 _COOKIE_NAME = "lang"
+_EXPLICIT_COOKIE = "lang_explicit"
 _COOKIE_MAX_AGE = 365 * 24 * 3600  # 1 year
+
+
+def _detect_from_accept_language(header: str) -> str | None:
+    """Parse Accept-Language header — return 'vi' if Vietnamese preferred, else None."""
+    if not header:
+        return None
+    # Take the primary language tag (before first comma / semicolon)
+    primary = header.split(",", 1)[0].split(";", 1)[0].strip().lower()
+    if primary.startswith("vi"):
+        return "vi"
+    return None
 
 
 class LangMiddleware(BaseHTTPMiddleware):
@@ -31,29 +48,49 @@ class LangMiddleware(BaseHTTPMiddleware):
         if request.url.path.startswith("/static/"):
             return await call_next(request)
 
-        lang = None
+        lang: str | None = None
         set_cookie = False
+        set_explicit = False
 
-        # 1. Explicit query parameter — highest priority
+        cookie_lang = request.cookies.get(_COOKIE_NAME)
+        if cookie_lang not in ("vi", "en"):
+            cookie_lang = None
+        explicit_cookie = request.cookies.get(_EXPLICIT_COOKIE) == "1"
+
+        # 1. Explicit query param — user clicked switcher (highest priority)
         qs_lang = request.query_params.get("lang")
         if qs_lang in ("vi", "en"):
             lang = qs_lang
-            set_cookie = True  # remember explicit choice
+            set_cookie = True
+            set_explicit = True
 
-        # 2. Cookie — returning visitor
-        if lang is None:
-            cookie_lang = request.cookies.get(_COOKIE_NAME)
-            if cookie_lang in ("vi", "en"):
-                lang = cookie_lang
+        # 2. User previously made an explicit choice — honor it
+        if lang is None and explicit_cookie and cookie_lang:
+            lang = cookie_lang
 
-        # 3. Cloudflare CF-IPCountry header — geo-detect
+        # 3. Geo-detect via Cloudflare header — overrides stale auto-detected cookie
         if lang is None:
             country = request.headers.get("cf-ipcountry", "").upper()
-            if country and country != "XX":  # XX = unknown
-                lang = "vi" if country in _VN_COUNTRIES else "en"
-                set_cookie = True  # persist auto-detected result
+            if country and country != "XX":
+                geo_lang = "vi" if country in _VN_COUNTRIES else "en"
+                lang = geo_lang
+                # Refresh cookie only if it was missing or didn't match region
+                if cookie_lang != geo_lang:
+                    set_cookie = True
 
-        # 4. Fallback — default to English for international users
+        # 4. Non-explicit cookie (no CF header available)
+        if lang is None and cookie_lang:
+            lang = cookie_lang
+
+        # 5. Accept-Language header — helps dev / non-Cloudflare environments
+        if lang is None:
+            lang = _detect_from_accept_language(
+                request.headers.get("accept-language", "")
+            )
+            if lang:
+                set_cookie = True
+
+        # 6. Fallback — default to English for international users
         if lang is None:
             lang = "en"
 
@@ -62,13 +99,22 @@ class LangMiddleware(BaseHTTPMiddleware):
 
         response = await call_next(request)
 
-        # Set cookie if language was just determined
+        # Persist language cookie if newly determined or refreshed
         if set_cookie:
             response.set_cookie(
                 _COOKIE_NAME,
                 lang,
                 max_age=_COOKIE_MAX_AGE,
                 httponly=False,  # JS needs to read it for client-side rendering
+                samesite="lax",
+                path="/",
+            )
+        if set_explicit:
+            response.set_cookie(
+                _EXPLICIT_COOKIE,
+                "1",
+                max_age=_COOKIE_MAX_AGE,
+                httponly=False,
                 samesite="lax",
                 path="/",
             )
