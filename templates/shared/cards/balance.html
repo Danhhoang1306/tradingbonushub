@@ -1,49 +1,59 @@
 {#
-  Card: balance
-  Compact, 2-col stats grid, suitable when displaying many parameters
+  Card: balance — horizontal scannable layout
+  Compact header (logo + broker + badge), 4-col stat strip,
+  optional features + license pills body.
 #}
 <div class="pc pc--balance" data-broker="{{ p.broker_slug }}">
-  <div class="pc__head">
+  <div class="pc__bal-head">
     <div class="pc__logo">
       {% if p.broker_slug %}<img src="/static/logo-{{ p.broker_slug }}.png" alt="{{ p.broker_name }}" onerror="this.style.display='none'">{% endif %}
     </div>
-    <div>
+    <div class="pc__bal-head-text">
       <div class="pc__title">{{ p.broker_name }}</div>
       <div class="pc__desc">{{ p.short_desc or p.name }}</div>
     </div>
+    {% if 'tier' in (p.type or '') %}
+    <span class="pc__badge pc__badge--tier">Tier</span>
+    {% else %}
+    <span class="pc__badge pc__badge--backcom">Backcom</span>
+    {% endif %}
   </div>
 
-  <div class="pc__stats-grid">
-    <div class="pc__stat">
-      <div class="pc__stat-val">{{ p.rebate_pct | int }}%</div>
-      <div class="pc__stat-lbl">Rebate rate</div>
+  <div class="pc__bal-strip">
+    <div class="pc__bal-col">
+      <div class="pc__bal-val pc__bal-val--hero">{{ p.rebate_pct | int }}%</div>
+      <div class="pc__bal-lbl">Rebate</div>
     </div>
     {% if p.rebate_xau_label or p.rebate_usd_per_lot %}
-    <div class="pc__stat">
-      <div class="pc__stat-val">{{ p.rebate_xau_label or ('~$%s/lot' % p.rebate_usd_per_lot) }}</div>
-      <div class="pc__stat-lbl">XAUUSD</div>
+    <div class="pc__bal-col">
+      <div class="pc__bal-val">{{ p.rebate_xau_label or ('$%s' % p.rebate_usd_per_lot) }}</div>
+      <div class="pc__bal-lbl">XAU/lot</div>
     </div>
     {% endif %}
     {% if p.leverage %}
-    <div class="pc__stat">
-      <div class="pc__stat-val">{{ p.leverage }}</div>
-      <div class="pc__stat-lbl">Leverage</div>
+    <div class="pc__bal-col">
+      <div class="pc__bal-val">{{ p.leverage }}</div>
+      <div class="pc__bal-lbl">Leverage</div>
     </div>
     {% endif %}
-    <div class="pc__stat">
-      <div class="pc__stat-val">{{ freq_label(p.rebate_frequency) }}</div>
-      <div class="pc__stat-lbl">Payout</div>
+    <div class="pc__bal-col">
+      <div class="pc__bal-val">{{ freq_label(p.rebate_frequency) }}</div>
+      <div class="pc__bal-lbl">Payout</div>
     </div>
   </div>
 
-  {% if p.licenses %}
-  <div class="pc__body" style="padding-top:8px;">
-    <div class="pc__info-row">
-      <span class="pc__info-key">License</span>
-      <span class="pc__info-val">
-        {% for lic in p.licenses.split(',') %}<span class="pc__pill">{{ lic.strip() }}</span>{% endfor %}
-      </span>
+  {% if p.licenses or p.features %}
+  <div class="pc__bal-body">
+    {% if p.licenses %}
+    <div class="pc__bal-licenses">
+      {% for lic in p.licenses.split(',') %}<span class="pc__pill">{{ lic.strip() }}</span>{% endfor %}
     </div>
+    {% endif %}
+    {% if p.features %}
+    <ul class="pc__features">
+      {% for feat in p.features.split('\n') %}{% if feat.strip() %}<li>{{ feat.strip() }}</li>{% endif %}{% endfor %}
+    </ul>
+    {% endif %}
   </div>
   {% endif %}
 
