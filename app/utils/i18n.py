@@ -111,6 +111,8 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
     "footer_tg_support":   {"vi": "Telegram hỗ trợ",       "en": "Telegram Support"},
     "footer_tg_cta":       {"vi": "Nhắn tin ngay →",       "en": "Message us →"},
     "footer_address":      {"vi": "Địa chỉ văn phòng",     "en": "Office Address"},
+    "footer_address_value":{"vi": "Toà M3 Masteri Waterfront, KĐT Vinhomes Ocean Park, Đa Tốn, Gia Lâm, Hà Nội",
+                            "en": "Tower M3, Masteri Waterfront, Vinhomes Ocean Park, Da Ton, Gia Lam, Hanoi, Vietnam"},
     "footer_privacy":      {"vi": "Chính sách bảo mật",    "en": "Privacy Policy"},
     "footer_terms":        {"vi": "Điều khoản sử dụng",    "en": "Terms of Service"},
     "footer_license_title":{"vi": "Mạng lưới đối tác uy tín", "en": "Trusted Partner Network"},

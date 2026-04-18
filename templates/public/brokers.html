@@ -218,12 +218,22 @@
           {% for b in brokers %}
           {% set rating_int = (b.rating or 0)|int %}
           {% set features_text = (b.features_en if lang == 'en' and b.features_en else b.features) or '' %}
+          {% set assets_display = (b.assets_count or '').replace('.', ',') if lang == 'en' else (b.assets_count or '') %}
+          {% set min_dep_display = (b.min_deposit or '').replace('.', ',') if lang == 'en' else (b.min_deposit or '') %}
+          {% set badge_key = (b.badge_text or '').strip().lower() %}
+          {% if badge_key == 'cashback' %}
+            {% set badge_display = t('brokers_badge_cashback', lang) %}
+          {% elif badge_key == 'trusted' %}
+            {% set badge_display = t('brokers_badge_trusted', lang) %}
+          {% else %}
+            {% set badge_display = b.badge_text %}
+          {% endif %}
           <tr{% if b.status == 'coming_soon' %} class="bct-dimmed"{% endif %}>
             <!-- Logo cell -->
             <td class="bct-logo-cell" style="padding-left:24px;">
               <div class="bct-rank">{{ loop.index }}</div>
               {% if b.badge_text %}
-              <div class="bct-trusted-badge">&#10003; {{ b.badge_text }}</div>
+              <div class="bct-trusted-badge">&#10003; {{ badge_display }}</div>
               {% endif %}
               {% if b.logo_url %}
               <div class="bct-logo-box">
@@ -265,10 +275,10 @@
             <!-- Stats cell -->
             <td class="bct-stats-cell">
               {% if b.assets_count %}
-              <div class="bct-stat"><span class="bct-stat-icon">&#128202;</span><div><span class="bct-stat-label">{{ t('brokers_stat_assets', lang) }}</span><span class="bct-stat-value">{{ b.assets_count }}</span></div></div>
+              <div class="bct-stat"><span class="bct-stat-icon">&#128202;</span><div><span class="bct-stat-label">{{ t('brokers_stat_assets', lang) }}</span><span class="bct-stat-value">{{ assets_display }}</span></div></div>
               {% endif %}
               {% if b.min_deposit %}
-              <div class="bct-stat"><span class="bct-stat-icon">&#128176;</span><div><span class="bct-stat-label">{{ t('brokers_stat_min_dep', lang) }}</span><span class="bct-stat-value">{{ b.min_deposit }}</span></div></div>
+              <div class="bct-stat"><span class="bct-stat-icon">&#128176;</span><div><span class="bct-stat-label">{{ t('brokers_stat_min_dep', lang) }}</span><span class="bct-stat-value">{{ min_dep_display }}</span></div></div>
               {% endif %}
               <div class="bct-stat"><span class="bct-stat-icon">&#128241;</span><div><span class="bct-stat-label">{{ t('brokers_stat_mobile', lang) }}</span><span class="bct-stat-value">{{ t('brokers_stat_yes', lang) }}</span></div></div>
               {% if b.extra_stat_label and b.extra_stat_value %}
@@ -401,7 +411,7 @@
         </div>
         <div class="footer-contact-text">
           {{ t('footer_address', lang) }}<br>
-          <span style="color:rgba(255,255,255,.55);">Toà M3 Masteri Waterfront, KĐT Vinhomes Ocean Park, Đa Tốn, Gia Lâm, Hà Nội</span>
+          <span style="color:rgba(255,255,255,.55);">{{ t('footer_address_value', lang) }}</span>
         </div>
       </div>
     </div>
