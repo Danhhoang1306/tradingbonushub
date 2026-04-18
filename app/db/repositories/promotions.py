@@ -30,7 +30,7 @@ def update_broker(broker_id: int, **fields) -> None:
     allowed = {
         "name", "is_active", "display_order",
         "learn_more_url", "transfer_guide_url", "rebate_sequence",
-        "logo_url", "logo_color", "rating", "licenses",
+        "logo_url", "logo_color", "rating", "licenses", "leverage",
         "features", "features_en", "assets_count", "min_deposit",
         "visit_url", "review_url", "review_article_slug",
         "status", "badge_text",

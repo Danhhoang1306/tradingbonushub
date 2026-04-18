@@ -207,6 +207,11 @@ async def public_promotions_index(request: Request):
             p.setdefault("broker_slug", b["slug"])
             p.setdefault("broker_name", b["name"])
             p.setdefault("broker_learn_more_url", b.get("learn_more_url") or "")
+            # Fall back to broker-level values when program row has none
+            if not p.get("licenses"):
+                p["licenses"] = b.get("licenses")
+            if not p.get("leverage"):
+                p["leverage"] = b.get("leverage")
         programs.extend(broker_programs)
 
     # FAQ for promotions page (generic only)

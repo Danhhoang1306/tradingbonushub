@@ -267,6 +267,10 @@
           <label>Licenses</label>
           <input type="text" id="licenses-{{ b.id }}" value="{{ b.licenses or '' }}" placeholder="ASIC,FCA,VFSC">
         </div>
+        <div class="bm-field">
+          <label>Leverage</label>
+          <input type="text" id="leverage-{{ b.id }}" value="{{ b.leverage or '' }}" placeholder="1:2000">
+        </div>
       </div>
     </div>
 
@@ -413,6 +417,7 @@ async function saveBroker(id) {
     logo_font_size:       parseInt(g('fontsize')) || null,
     logo_url:             g('logourl') || null,
     licenses:             g('licenses') || null,
+    leverage:             g('leverage') || null,
     assets_count:         g('assets') || null,
     min_deposit:          g('deposit') || null,
     extra_stat_label:     g('statlabel') || null,

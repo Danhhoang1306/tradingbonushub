@@ -613,6 +613,7 @@ def _run_migrations() -> None:
             "logo_color":       "NVARCHAR(20) NULL",
             "rating":           "DECIMAL(2,1) NULL",
             "licenses":         "NVARCHAR(500) NULL",
+            "leverage":         "NVARCHAR(100) NULL",
             "features":         "NVARCHAR(MAX) NULL",
             "features_en":      "NVARCHAR(MAX) NULL",
             "assets_count":     "NVARCHAR(50) NULL",

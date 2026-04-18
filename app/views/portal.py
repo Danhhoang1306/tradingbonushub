@@ -283,9 +283,11 @@ def _load_promotions_for_portal() -> list:
         # All broker links for active programs
         broker_rows = conn.execute(
             """SELECT pb.program_id,
-                      b.id   AS broker_id,
-                      b.name AS broker_name,
-                      b.slug AS broker_slug
+                      b.id       AS broker_id,
+                      b.name     AS broker_name,
+                      b.slug     AS broker_slug,
+                      b.licenses AS broker_licenses,
+                      b.leverage AS broker_leverage
                FROM program_brokers pb
                JOIN brokers b ON b.id = pb.broker_id
                WHERE b.is_active = 1
@@ -329,12 +331,18 @@ def _load_promotions_for_portal() -> list:
     for r in rows:
         pid = r["id"]
         prog_brokers = brokers_map.get(pid, [])
+        prog = _fix_dec(dict(r))
+        primary = prog_brokers[0] if prog_brokers else {}
+        if not prog.get("licenses"):
+            prog["licenses"] = primary.get("broker_licenses")
+        if not prog.get("leverage"):
+            prog["leverage"] = primary.get("broker_leverage")
         result.append({
-            **_fix_dec(dict(r)),
+            **prog,
             # Primary broker (for display / filter)
-            "broker_id":   prog_brokers[0]["broker_id"]   if prog_brokers else None,
-            "broker_name": prog_brokers[0]["broker_name"] if prog_brokers else "",
-            "broker_slug": prog_brokers[0]["broker_slug"] if prog_brokers else "",
+            "broker_id":   primary.get("broker_id"),
+            "broker_name": primary.get("broker_name", ""),
+            "broker_slug": primary.get("broker_slug", ""),
             # All broker IDs linked to this program (for multi-broker filter)
             "broker_ids":  [b["broker_id"] for b in prog_brokers],
             "short_desc":  "",
