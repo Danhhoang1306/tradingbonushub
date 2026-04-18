@@ -70,6 +70,7 @@ async def api_create_promotion(request: Request):
         name_en=(data.get("name_en") or "").strip() or None,
         promo_days=_opt_int(data.get("promo_days")),
         revert_to_program_id=_opt_int(data.get("revert_to_program_id")),
+        first_time_only=bool(data.get("first_time_only", False)),
         type_=data.get("type", "backcom").strip(),
         is_active=bool(data.get("is_active", True)),
         display_order=int(data.get("display_order", 0)),
@@ -110,6 +111,9 @@ async def api_update_promotion(pid: int, request: Request):
             _opt_int(data["revert_to_program_id"])
             if "revert_to_program_id" in data
             else p.get("revert_to_program_id")
+        ),
+        first_time_only=bool(
+            data["first_time_only"] if "first_time_only" in data else p.get("first_time_only", False)
         ),
         type_=data.get("type", p.get("type", "backcom")).strip(),
         is_active=bool(data.get("is_active", p["is_active"])),

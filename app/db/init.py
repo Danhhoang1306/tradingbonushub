@@ -797,6 +797,13 @@ def _run_migrations() -> None:
             conn.execute("ALTER TABLE programs ADD promo_days INT NULL")
         if not _col_exists("programs", "revert_to_program_id"):
             conn.execute("ALTER TABLE programs ADD revert_to_program_id INT NULL")
+        # first_time_only: only show on portal to customers with no active
+        # or pending enrollment on any of this program's brokers.
+        if not _col_exists("programs", "first_time_only"):
+            conn.execute(
+                "ALTER TABLE programs ADD first_time_only BIT NOT NULL "
+                "CONSTRAINT DF_programs_first_time_only DEFAULT 0"
+            )
         if not _col_exists("programs", "geo_targets"):
             conn.execute(
                 "ALTER TABLE programs ADD geo_targets NVARCHAR(500) NULL"

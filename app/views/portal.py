@@ -274,6 +274,7 @@ def _load_promotions_for_portal(lang: str = "en") -> list:
                       p.rebate_usd_per_lot,
                       ISNULL(p.card_template, 'default') AS card_template,
                       ISNULL(p.is_recommended, 0)        AS is_recommended,
+                      ISNULL(p.first_time_only, 0)       AS first_time_only,
                       p.licenses, p.leverage, p.features, p.rebate_xau_label
                FROM programs p
                WHERE p.is_active = 1
@@ -384,6 +385,14 @@ async def portal_dashboard(request: Request):
         a["broker_id"] for a in broker_accounts
         if a.get("pending_program_id") or a.get("program_id")
     }
+
+    # Hide first_time_only programs when the customer already has an enrollment
+    # on any of that program's brokers (i.e. they are no longer a first-timer).
+    promotions = [
+        p for p in promotions
+        if not p.get("first_time_only")
+        or not (set(p.get("broker_ids") or []) & enrolled_broker_ids)
+    ]
     # Promo IDs customer is currently enrolled in (to show "Enrolled")
     enrolled_promo_ids: set = (
         {a["pending_program_id"] for a in broker_accounts if a.get("pending_program_id")} |

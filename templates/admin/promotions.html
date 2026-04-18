@@ -167,6 +167,15 @@
         <select id="f-revert-to"><option value="">-- None (clear program) --</option></select>
       </div>
     </div>
+    <div style="display:flex;gap:12px;margin-bottom:12px;">
+      <div class="form-group" style="display:flex;align-items:flex-start;gap:8px;">
+        <input type="checkbox" id="f-first-time-only" style="width:auto;margin-top:2px;" />
+        <div>
+          <label for="f-first-time-only" style="margin:0;cursor:pointer;">First-time customers only</label>
+          <p class="hint" style="font-size:11px;color:#888;margin-top:2px;">Hide on portal for customers already enrolled at this broker.</p>
+        </div>
+      </div>
+    </div>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
       <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
       <button class="btn btn-primary" onclick="savePromo()">Save</button>
@@ -274,6 +283,12 @@ function cardHtml(p) {
             ${promotions.filter(x => x.id !== p.id).map(x => `<option value="${x.id}" ${p.revert_to_program_id === x.id ? 'selected' : ''}>${esc(x.name)} (#${x.id})</option>`).join('')}
           </select>
         </div>
+      </div>
+      <div class="toggle-row">
+        <label class="toggle-label">
+          <input type="checkbox" id="d-first-time-only-${p.id}" ${p.first_time_only ? 'checked' : ''} />
+          First-time customers only <span style="font-size:11px;color:#888;">(hide on portal after first enrollment at broker)</span>
+        </label>
       </div>
 
       <!-- Rebate config -->
@@ -417,6 +432,7 @@ async function saveAll(pid) {
     name_en: (document.getElementById('d-name-en-' + pid)?.value || '').trim() || null,
     promo_days: Number.isFinite(_pd) && _pd > 0 ? _pd : null,
     revert_to_program_id: Number.isFinite(_rt) && _rt > 0 ? _rt : null,
+    first_time_only: document.getElementById('d-first-time-only-' + pid)?.checked ? 1 : 0,
     type: p.type || 'backcom',
     rebate_pct: pct,
     rebate_usd_per_lot: lotVal !== '' ? parseFloat(lotVal) : null,
@@ -467,6 +483,7 @@ function openAddModal() {
   document.getElementById('f-name').value = '';
   document.getElementById('f-name-en').value = '';
   document.getElementById('f-promo-days').value = '';
+  document.getElementById('f-first-time-only').checked = false;
   document.getElementById('f-type').value = 'backcom';
   // Populate revert-to dropdown with existing programs
   const revSel = document.getElementById('f-revert-to');
@@ -493,6 +510,7 @@ async function savePromo() {
     name_en: document.getElementById('f-name-en').value.trim() || null,
     promo_days: Number.isFinite(_fpd) && _fpd > 0 ? _fpd : null,
     revert_to_program_id: Number.isFinite(_frt) && _frt > 0 ? _frt : null,
+    first_time_only: document.getElementById('f-first-time-only').checked ? 1 : 0,
     type: document.getElementById('f-type').value,
     card_template: document.getElementById('f-card-template').value,
     rebate_pct: parseFloat(document.getElementById('f-rebate-pct').value) || 80,
