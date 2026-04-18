@@ -790,6 +790,13 @@ def _run_migrations() -> None:
             conn.execute("ALTER TABLE programs ADD description_en NVARCHAR(MAX) NULL")
         if not _col_exists("programs", "name_en"):
             conn.execute("ALTER TABLE programs ADD name_en NVARCHAR(255) NULL")
+        # Time-limited promo config: promo_days = auto-revert after N days
+        # (per-customer, measured from program_joined_at); revert_to_program_id =
+        # program to switch the customer to when the promo expires (NULL = clear).
+        if not _col_exists("programs", "promo_days"):
+            conn.execute("ALTER TABLE programs ADD promo_days INT NULL")
+        if not _col_exists("programs", "revert_to_program_id"):
+            conn.execute("ALTER TABLE programs ADD revert_to_program_id INT NULL")
         if not _col_exists("programs", "geo_targets"):
             conn.execute(
                 "ALTER TABLE programs ADD geo_targets NVARCHAR(500) NULL"

@@ -156,6 +156,17 @@
         <label for="f-active" style="margin:0;cursor:pointer;">Active</label>
       </div>
     </div>
+    <div style="display:flex;gap:12px;margin-bottom:12px;">
+      <div class="form-group" style="flex:1;">
+        <label>Promo Days <span style="font-size:11px;color:#888;">(optional)</span></label>
+        <input type="number" id="f-promo-days" min="1" placeholder="e.g. 30" />
+        <p class="hint" style="font-size:11px;color:#888;margin-top:4px;">If set, customer auto-reverts after N days.</p>
+      </div>
+      <div class="form-group" style="flex:1;">
+        <label>Revert To Program <span style="font-size:11px;color:#888;">(when promo expires)</span></label>
+        <select id="f-revert-to"><option value="">-- None (clear program) --</option></select>
+      </div>
+    </div>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
       <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
       <button class="btn btn-primary" onclick="savePromo()">Save</button>
@@ -245,6 +256,23 @@ function cardHtml(p) {
           <label>Program Name (English)</label>
           <input type="text" id="d-name-en-${p.id}" value="${esc(p.name_en || '')}" placeholder="e.g. First-time sign up" />
           <p class="hint">Shown when the site is viewed in English. Leave blank to fall back to "${esc(p.name || '')}".</p>
+        </div>
+      </div>
+
+      <!-- Time-limited promo -->
+      <div class="section-title">Time-Limited Promo</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Promo Days</label>
+          <input type="number" id="d-promo-days-${p.id}" min="1" value="${p.promo_days || ''}" placeholder="e.g. 30" />
+          <p class="hint">Customer auto-reverts after N days from enrollment. Leave blank = permanent.</p>
+        </div>
+        <div class="form-group">
+          <label>Revert To Program</label>
+          <select id="d-revert-to-${p.id}">
+            <option value="">-- None (clear program) --</option>
+            ${promotions.filter(x => x.id !== p.id).map(x => `<option value="${x.id}" ${p.revert_to_program_id === x.id ? 'selected' : ''}>${esc(x.name)} (#${x.id})</option>`).join('')}
+          </select>
         </div>
       </div>
 
@@ -382,9 +410,13 @@ async function saveAll(pid) {
   const lotVal = document.getElementById('d-lot-' + pid).value;
 
   // Save program
+  const _pd = parseInt(document.getElementById('d-promo-days-' + pid)?.value || '', 10);
+  const _rt = parseInt(document.getElementById('d-revert-to-' + pid)?.value || '', 10);
   const progBody = {
     name: p.name,
     name_en: (document.getElementById('d-name-en-' + pid)?.value || '').trim() || null,
+    promo_days: Number.isFinite(_pd) && _pd > 0 ? _pd : null,
+    revert_to_program_id: Number.isFinite(_rt) && _rt > 0 ? _rt : null,
     type: p.type || 'backcom',
     rebate_pct: pct,
     rebate_usd_per_lot: lotVal !== '' ? parseFloat(lotVal) : null,
@@ -434,7 +466,12 @@ function openAddModal() {
   document.getElementById('modal-title').textContent = 'Add Program';
   document.getElementById('f-name').value = '';
   document.getElementById('f-name-en').value = '';
+  document.getElementById('f-promo-days').value = '';
   document.getElementById('f-type').value = 'backcom';
+  // Populate revert-to dropdown with existing programs
+  const revSel = document.getElementById('f-revert-to');
+  revSel.innerHTML = '<option value="">-- None (clear program) --</option>' +
+    promotions.map(x => `<option value="${x.id}">${esc(x.name)} (#${x.id})</option>`).join('');
   document.getElementById('f-card-template').value = 'default';
   document.getElementById('f-rebate-pct').value = '80';
   document.getElementById('f-order').value = '0';
@@ -448,10 +485,14 @@ function openAddModal() {
 function closeModal() { document.getElementById('modal-overlay').classList.remove('active'); }
 
 async function savePromo() {
+  const _fpd = parseInt(document.getElementById('f-promo-days').value || '', 10);
+  const _frt = parseInt(document.getElementById('f-revert-to').value || '', 10);
   const body = {
     broker_ids: [parseInt(document.getElementById('f-broker-id').value)],
     name: document.getElementById('f-name').value.trim(),
     name_en: document.getElementById('f-name-en').value.trim() || null,
+    promo_days: Number.isFinite(_fpd) && _fpd > 0 ? _fpd : null,
+    revert_to_program_id: Number.isFinite(_frt) && _frt > 0 ? _frt : null,
     type: document.getElementById('f-type').value,
     card_template: document.getElementById('f-card-template').value,
     rebate_pct: parseFloat(document.getElementById('f-rebate-pct').value) || 80,

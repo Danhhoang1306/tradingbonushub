@@ -59,9 +59,17 @@ def _card_fields(data: dict, p: dict | None = None) -> dict:
 async def api_create_promotion(request: Request):
     data = await request.json()
     cf = _card_fields(data)
+    def _opt_int(v):
+        try:
+            return int(v) if v not in (None, "", "null") else None
+        except (TypeError, ValueError):
+            return None
+
     pid = create_program(
         name=data["name"].strip(),
         name_en=(data.get("name_en") or "").strip() or None,
+        promo_days=_opt_int(data.get("promo_days")),
+        revert_to_program_id=_opt_int(data.get("revert_to_program_id")),
         type_=data.get("type", "backcom").strip(),
         is_active=bool(data.get("is_active", True)),
         display_order=int(data.get("display_order", 0)),
@@ -87,10 +95,22 @@ async def api_update_promotion(pid: int, request: Request):
     if not p:
         raise HTTPException(404, "Program not found")
     cf = _card_fields(data, p)
+    def _opt_int(v):
+        try:
+            return int(v) if v not in (None, "", "null") else None
+        except (TypeError, ValueError):
+            return None
+
     update_program(
         program_id=pid,
         name=data.get("name", p["name"]).strip(),
         name_en=(data.get("name_en") if "name_en" in data else p.get("name_en")) or None,
+        promo_days=_opt_int(data["promo_days"]) if "promo_days" in data else p.get("promo_days"),
+        revert_to_program_id=(
+            _opt_int(data["revert_to_program_id"])
+            if "revert_to_program_id" in data
+            else p.get("revert_to_program_id")
+        ),
         type_=data.get("type", p.get("type", "backcom")).strip(),
         is_active=bool(data.get("is_active", p["is_active"])),
         display_order=int(data.get("display_order", p["display_order"])),
