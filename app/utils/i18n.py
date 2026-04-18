@@ -440,11 +440,19 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
 
 
 def t(key: str, lang: str = "en") -> str:
-    """Look up a translation. Falls back to English, then to the key itself."""
+    """Look up a translation. Falls back to English, then to the key itself.
+
+    Treats an empty string as a valid explicit translation (e.g. a suffix that
+    intentionally disappears in one language), not as a missing value.
+    """
     entry = TRANSLATIONS.get(key)
     if entry is None:
         return key
-    return entry.get(lang) or entry.get("en") or key
+    if lang in entry:
+        return entry[lang]
+    if "en" in entry:
+        return entry["en"]
+    return key
 
 
 def freq_label(value: str | None, lang: str = "en") -> str:
