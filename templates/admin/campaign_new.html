@@ -81,6 +81,30 @@
     padding: 8px 0 12px; font-size: 13px; color: #555;
   }
   .row-selector select { padding: 4px 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
+
+  /* Data source toggle */
+  .src-tabs {
+    display: flex; gap: 0; margin-bottom: 16px;
+    border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;
+  }
+  .src-tabs button {
+    flex: 1; padding: 10px 12px; border: none; background: #f8f9fa;
+    color: #555; cursor: pointer; font-size: 13px; font-weight: 600;
+  }
+  .src-tabs button.active { background: #1a73e8; color: #fff; }
+  .src-tabs button + button { border-left: 1px solid #e0e0e0; }
+
+  .lead-filter-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px;
+  }
+  .lead-filter-grid label {
+    display: block; font-size: 12px; color: #555; margin-bottom: 4px; font-weight: 600;
+  }
+  .lead-filter-grid select, .lead-filter-grid input,
+  #lead-search {
+    width: 100%; padding: 7px 10px; border: 1px solid #ddd;
+    border-radius: 6px; font-size: 13px; box-sizing: border-box;
+  }
 </style>
 {% endblock %}
 
@@ -127,29 +151,83 @@
   <!-- ── STEP 2: Upload file ── -->
   <div class="step" id="step-2">
     <div class="card">
-      <h2>Upload Recipient List</h2>
-      <p style="font-size:13px;color:#555;margin-bottom:14px;">
-        Supports <strong>.xlsx</strong> (Excel) and <strong>.csv</strong> files.
-        First row must be column headers.
-      </p>
+      <h2>Recipient Source</h2>
 
-      <div class="drop-zone" id="drop-zone"
-           onclick="document.getElementById('file-input').click()"
-           ondragover="event.preventDefault();this.classList.add('over')"
-           ondragleave="this.classList.remove('over')"
-           ondrop="handleDrop(event)">
-        <div id="drop-label">📂 Drag & drop file here or click to browse</div>
-        <input type="file" id="file-input" accept=".xlsx,.xls,.csv"
-               style="display:none" onchange="handleFile(this.files[0])">
+      <div class="src-tabs">
+        <button type="button" id="src-btn-file" class="active" onclick="setDataSource('file')">
+          📁 Upload File
+        </button>
+        <button type="button" id="src-btn-leads" onclick="setDataSource('leads')">
+          🗄️ From Leads Database
+        </button>
       </div>
 
-      <div id="file-preview" style="display:none;">
-        <p id="file-summary" style="font-size:13px;color:#137333;margin:12px 0 6px;"></p>
-        <div class="preview-wrap">
-          <table id="preview-table">
-            <thead id="preview-head"></thead>
-            <tbody id="preview-body"></tbody>
-          </table>
+      <!-- File upload panel -->
+      <div id="file-panel">
+        <p style="font-size:13px;color:#555;margin-bottom:14px;">
+          Supports <strong>.xlsx</strong> (Excel) and <strong>.csv</strong> files.
+          First row must be column headers.
+        </p>
+
+        <div class="drop-zone" id="drop-zone"
+             onclick="document.getElementById('file-input').click()"
+             ondragover="event.preventDefault();this.classList.add('over')"
+             ondragleave="this.classList.remove('over')"
+             ondrop="handleDrop(event)">
+          <div id="drop-label">📂 Drag & drop file here or click to browse</div>
+          <input type="file" id="file-input" accept=".xlsx,.xls,.csv"
+                 style="display:none" onchange="handleFile(this.files[0])">
+        </div>
+
+        <div id="file-preview" style="display:none;">
+          <p id="file-summary" style="font-size:13px;color:#137333;margin:12px 0 6px;"></p>
+          <div class="preview-wrap">
+            <table id="preview-table">
+              <thead id="preview-head"></thead>
+              <tbody id="preview-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leads DB panel -->
+      <div id="leads-panel" style="display:none;">
+        <p style="font-size:13px;color:#555;margin-bottom:14px;">
+          Select leads from the database by filters. Unsubscribed customers are automatically excluded.
+        </p>
+
+        <div class="lead-filter-grid">
+          <div>
+            <label>Country</label>
+            <select id="lead-country"><option value="">-- All countries --</option></select>
+          </div>
+          <div>
+            <label>Source</label>
+            <select id="lead-source"><option value="">-- All sources --</option></select>
+          </div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:600;">
+            Search (email / name / user ID)
+          </label>
+          <input id="lead-search" placeholder="Optional keyword..." />
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:center;">
+          <button type="button" class="btn btn-secondary" onclick="loadLeadPreview()">
+            🔍 Apply Filters & Preview
+          </button>
+          <span id="lead-preview-status" style="font-size:13px;"></span>
+        </div>
+
+        <div id="lead-preview-wrap" style="display:none;">
+          <p id="lead-summary" style="font-size:13px;color:#137333;margin:12px 0 6px;"></p>
+          <div class="preview-wrap">
+            <table id="lead-preview-table">
+              <thead id="lead-preview-head"></thead>
+              <tbody id="lead-preview-body"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -251,6 +329,12 @@ let placeholders = [];   // from template
 let cachedTemplateHtml = null;
 const EMAIL_SENTINEL = '__email__';
 
+// Data-source selection: 'file' (Excel/CSV upload) or 'leads' (DB)
+let dataSource = 'file';
+let leadFilters = { country: '', source: '', search: '' };
+let leadsTotal = 0;
+let _leadFiltersLoaded = false;
+
 // ── Step nav ───────────────────────────────────────────────────────────────
 function setStep(n) {
   document.getElementById('step-' + currentStep).classList.remove('active');
@@ -278,6 +362,118 @@ async function goStep2() {
   const d = await r.json();
   placeholders = d.placeholders;
   setStep(2);
+}
+
+// ── Step 2: data-source toggle ─────────────────────────────────────────────
+function setDataSource(src) {
+  dataSource = src;
+  document.getElementById('src-btn-file').classList.toggle('active', src === 'file');
+  document.getElementById('src-btn-leads').classList.toggle('active', src === 'leads');
+  document.getElementById('file-panel').style.display = src === 'file' ? 'block' : 'none';
+  document.getElementById('leads-panel').style.display = src === 'leads' ? 'block' : 'none';
+
+  // Reset readiness when switching source
+  document.getElementById('btn-step3').disabled = true;
+  fileColumns = [];
+  fileRows = [];
+
+  if (src === 'leads') ensureLeadFiltersLoaded();
+}
+
+async function ensureLeadFiltersLoaded() {
+  if (_leadFiltersLoaded) return;
+  try {
+    const r = await fetch('/api/imported-leads/filters');
+    const d = await r.json();
+    const cSel = document.getElementById('lead-country');
+    const sSel = document.getElementById('lead-source');
+    cSel.innerHTML = '<option value="">-- All countries --</option>' +
+      (d.countries || []).map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    sSel.innerHTML = '<option value="">-- All sources --</option>' +
+      (d.sources || []).map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+    _leadFiltersLoaded = true;
+  } catch (e) {
+    console.error('Could not load lead filters', e);
+  }
+}
+
+async function loadLeadPreview() {
+  leadFilters = {
+    country: document.getElementById('lead-country').value.trim(),
+    source:  document.getElementById('lead-source').value.trim(),
+    search:  document.getElementById('lead-search').value.trim(),
+  };
+  const status = document.getElementById('lead-preview-status');
+  status.style.color = '#555';
+  status.textContent = '⏳ Loading...';
+
+  const qs = new URLSearchParams({
+    limit: '5', offset: '0',
+    country: leadFilters.country,
+    source:  leadFilters.source,
+    search:  leadFilters.search,
+  }).toString();
+
+  let d;
+  try {
+    const r = await fetch(`/api/imported-leads?${qs}`);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    d = await r.json();
+  } catch (e) {
+    status.style.color = '#c5221f';
+    status.textContent = '❌ Error loading leads';
+    return;
+  }
+
+  leadsTotal = d.total || 0;
+  if (leadsTotal === 0) {
+    status.style.color = '#c5221f';
+    status.textContent = '❌ No leads match these filters';
+    document.getElementById('lead-preview-wrap').style.display = 'none';
+    document.getElementById('btn-step3').disabled = true;
+    return;
+  }
+
+  // Normalize leads → row objects with extra_data merged
+  const leadRows = (d.items || []).map(l => {
+    const row = {
+      email: l.email || '', name: l.name || '', country: l.country || '',
+      mobile: l.mobile || '', user_id: l.user_id || '', sales: l.sales || '',
+      affid: l.affid || '', leads_type: l.leads_type || '', source: l.source || '',
+    };
+    if (l.extra_data) {
+      try {
+        const extra = typeof l.extra_data === 'string' ? JSON.parse(l.extra_data) : l.extra_data;
+        if (extra && typeof extra === 'object') Object.assign(row, extra);
+      } catch (_) {}
+    }
+    return row;
+  });
+
+  // Collect columns (fixed lead fields + any extra_data keys)
+  const baseCols = ['email', 'name', 'country', 'mobile', 'user_id', 'sales', 'affid', 'leads_type', 'source'];
+  const colSet = new Set(baseCols);
+  leadRows.forEach(r => Object.keys(r).forEach(k => colSet.add(k)));
+  fileColumns = Array.from(colSet);
+  fileRows = leadRows;
+
+  // Render preview table
+  const thead = document.getElementById('lead-preview-head');
+  const tbody = document.getElementById('lead-preview-body');
+  thead.innerHTML = '<tr>' + fileColumns.map(c =>
+    `<th style="padding:6px 10px;border-bottom:2px solid #eee;">${esc(c)}</th>`).join('') + '</tr>';
+  tbody.innerHTML = leadRows.map(row =>
+    '<tr>' + fileColumns.map(c =>
+      `<td style="padding:6px 10px;border-bottom:1px solid #f0f0f0;">${esc(row[c] || '')}</td>`
+    ).join('') + '</tr>'
+  ).join('');
+
+  document.getElementById('lead-preview-wrap').style.display = 'block';
+  document.getElementById('lead-summary').textContent =
+    `${leadsTotal} leads match — preview of first ${leadRows.length} rows:`;
+  status.style.color = '#137333';
+  status.textContent = `✅ ${leadsTotal} matching leads`;
+  document.getElementById('btn-step3').disabled = false;
 }
 
 // ── Step 2: file upload ────────────────────────────────────────────────────
@@ -327,7 +523,12 @@ async function handleFile(file) {
 }
 
 function goStep3() {
-  if (!uploadedFile) { alert('Please upload a file first!'); return; }
+  if (dataSource === 'file' && !uploadedFile) {
+    alert('Please upload a file first!'); return;
+  }
+  if (dataSource === 'leads' && fileRows.length === 0) {
+    alert('Please apply filters & preview leads first!'); return;
+  }
   buildMappingTable();
   setStep(3);
 }
@@ -481,10 +682,22 @@ function renderConfirm() {
   const nameCol   = document.getElementById('map-name').value;
   const mappingObj = buildMapping();
 
+  let srcDesc;
+  if (dataSource === 'leads') {
+    const parts = [];
+    if (leadFilters.country) parts.push(`country=${esc(leadFilters.country)}`);
+    if (leadFilters.source)  parts.push(`source=${esc(leadFilters.source)}`);
+    if (leadFilters.search)  parts.push(`search="${esc(leadFilters.search)}"`);
+    const filterStr = parts.length ? parts.join(', ') : 'all leads';
+    srcDesc = `<div><strong>Source:</strong> Leads DB (${filterStr}) — <strong>${leadsTotal}</strong> recipients</div>`;
+  } else {
+    srcDesc = `<div><strong>File:</strong> ${esc(uploadedFile?.name || '')} (${fileRows.length}+ preview rows)</div>`;
+  }
+
   let html = `
     <div><strong>Campaign name:</strong> ${esc(document.getElementById('f-name').value)}</div>
     <div><strong>Subject:</strong> ${esc(document.getElementById('f-subject').value)}</div>
-    <div><strong>File:</strong> ${esc(uploadedFile?.name || '')} (${fileRows.length}+ preview rows)</div>
+    ${srcDesc}
     <div><strong>Email Column:</strong> <span class="ph-badge">${esc(emailCol)}</span></div>
     <div><strong>Name Column:</strong> ${nameCol ? `<span class="ph-badge">${esc(nameCol)}</span>` : '(not selected)'}</div>
     <hr style="margin:10px 0;border:none;border-top:1px solid #eee;">
@@ -521,17 +734,42 @@ async function submitCampaign() {
   btn.disabled = true;
   status.textContent = '⏳ Creating...';
 
-  const form = new FormData();
-  form.append('name',         document.getElementById('f-name').value.trim());
-  form.append('template_id',  document.getElementById('f-template').value);
-  form.append('subject',      document.getElementById('f-subject').value.trim());
-  form.append('base_url',     document.getElementById('f-baseurl').value.trim() || 'https://tradingbonushub.com');
-  form.append('email_column', document.getElementById('map-email').value);
-  form.append('name_column',  document.getElementById('map-name').value);
-  form.append('mapping_json', JSON.stringify(buildMapping()));
-  form.append('data_file',    uploadedFile);
+  const name        = document.getElementById('f-name').value.trim();
+  const templateId  = document.getElementById('f-template').value;
+  const subject     = document.getElementById('f-subject').value.trim();
+  const baseUrl     = document.getElementById('f-baseurl').value.trim() || 'https://tradingbonushub.com';
 
-  const r = await fetch('/api/campaigns', { method: 'POST', body: form });
+  let r;
+  try {
+    if (dataSource === 'leads') {
+      r = await fetch('/api/campaigns/from-leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name, template_id: +templateId, subject, base_url: baseUrl,
+          mapping: buildMapping(),
+          filters: leadFilters,
+        }),
+      });
+    } else {
+      const form = new FormData();
+      form.append('name',         name);
+      form.append('template_id',  templateId);
+      form.append('subject',      subject);
+      form.append('base_url',     baseUrl);
+      form.append('email_column', document.getElementById('map-email').value);
+      form.append('name_column',  document.getElementById('map-name').value);
+      form.append('mapping_json', JSON.stringify(buildMapping()));
+      form.append('data_file',    uploadedFile);
+      r = await fetch('/api/campaigns', { method: 'POST', body: form });
+    }
+  } catch (e) {
+    status.style.color = '#c5221f';
+    status.textContent = '❌ ' + e.message;
+    btn.disabled = false;
+    return;
+  }
+
   if (r.ok) {
     const d = await r.json();
     status.style.color = '#137333';
