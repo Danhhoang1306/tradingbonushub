@@ -2146,9 +2146,9 @@ def _seed_promo_bar(conn) -> None:
 <section class="hero-promo" id="heroPromo">
   <div class="promo-inner">
     <div class="promo-left">
-      <div class="promo-badge">New members only</div>
-      <h2 class="promo-title">Sign up for the first time \u2014 get <em>100% Rebate</em></h2>
-      <p class="promo-sub">100% commission rebate for your first 30 days. No hidden conditions, no order limits.</p>
+      <div class="promo-badge">Vantage customers only</div>
+      <h2 class="promo-title">Sign up for the first time \u2014 get <em>100% exclusive for Vantage customers</em></h2>
+      <p class="promo-sub">100% refund exclusively for Vantage customers for your first 30 days. No hidden conditions, no order limits.</p>
       <ul class="promo-perks">
         <li>Applies from your very first trade</li>
         <li>No trading volume limits</li>
@@ -2162,7 +2162,7 @@ def _seed_promo_bar(conn) -> None:
     <div class="promo-right">
       <div class="promo-big">
         <div class="promo-number">100%</div>
-        <div class="promo-number-label">Rebate for new members</div>
+        <div class="promo-number-label">Exclusive for Vantage customers</div>
         <div class="promo-countdown" id="promoCountdown">
           <div class="promo-cd-item"><div class="promo-cd-val" id="cdDays">18</div><div class="promo-cd-lbl">Days</div></div>
           <div class="promo-cd-item"><div class="promo-cd-val" id="cdHours">05</div><div class="promo-cd-lbl">Hours</div></div>
@@ -2176,5 +2176,5 @@ def _seed_promo_bar(conn) -> None:
 </section>"""
     conn.execute(
         "INSERT INTO promo_bar_templates (name, html, css, is_active) VALUES (?,?,?,?)",
-        ("100% Rebate new members (original template)", default_html, "", 0),
+        ("100% exclusive for Vantage customers (original template)", default_html, "", 0),
     )

@@ -209,14 +209,14 @@
 
       <div class="field">
         <label>Nội dung (Tiếng Việt)</label>
-        <input type="text" id="f-sticky_text_vi" placeholder="🔥 100% REBATE cho khách đăng ký mới"
-               value="{{ settings.get('sticky_text_vi', '🔥 100% REBATE cho khách đăng ký mới') }}" />
+        <input type="text" id="f-sticky_text_vi" placeholder="🔥 100% dành riêng cho khách hàng Vantage"
+               value="{{ settings.get('sticky_text_vi', '🔥 100% dành riêng cho khách hàng Vantage') }}" />
       </div>
 
       <div class="field">
         <label>Nội dung (English)</label>
-        <input type="text" id="f-sticky_text_en" placeholder="🔥 100% REBATE for new sign-ups"
-               value="{{ settings.get('sticky_text_en', '🔥 100% REBATE for new sign-ups') }}" />
+        <input type="text" id="f-sticky_text_en" placeholder="🔥 100% exclusive for Vantage customers"
+               value="{{ settings.get('sticky_text_en', '🔥 100% exclusive for Vantage customers') }}" />
       </div>
 
       <div class="field">
@@ -252,7 +252,7 @@
           padding:8px 16px; border-radius:7px; display:flex; align-items:center;
           justify-content:center; gap:10px; font-size:13px; font-weight:700; color:#fff;
         ">
-          <span id="sticky-preview-text">{{ settings.get('sticky_text_vi', '🔥 100% REBATE cho khách đăng ký mới') }}</span>
+          <span id="sticky-preview-text">{{ settings.get('sticky_text_vi', '🔥 100% dành riêng cho khách hàng Vantage') }}</span>
           <span style="padding:3px 12px;border-radius:50px;font-size:11px;font-weight:800;background:#fff;color:#dc3545;" id="sticky-preview-cta">{{ settings.get('sticky_cta_vi', 'Nhận ngay') }}</span>
         </div>
       </div>

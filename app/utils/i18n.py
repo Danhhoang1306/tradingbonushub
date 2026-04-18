@@ -12,16 +12,16 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
 
     # ── Hero section ──
     "promo_badge":        {"vi": "Chỉ dành cho khách mới",   "en": "New Members Only"},
-    "promo_title":        {"vi": 'Đăng ký lần đầu — nhận ngay <em>100% Rebate</em>',
-                           "en": 'First signup — get <em>100% Rebate</em> instantly'},
-    "promo_sub":          {"vi": "Hoàn trả 100% hoa hồng giao dịch trong 30 ngày đầu tiên. Không điều kiện ẩn, không giới hạn số lệnh.",
-                           "en": "Get 100% commission refund for the first 30 days. No hidden conditions, no trade limits."},
+    "promo_title":        {"vi": 'Đăng ký lần đầu — nhận ngay <em>100% dành riêng cho khách hàng Vantage</em>',
+                           "en": 'First signup — get <em>100% exclusive for Vantage customers</em>'},
+    "promo_sub":          {"vi": "Hoàn trả 100% dành riêng cho khách hàng Vantage trong 30 ngày đầu tiên. Không điều kiện ẩn, không giới hạn số lệnh.",
+                           "en": "Get a 100% refund exclusively for Vantage customers for the first 30 days. No hidden conditions, no trade limits."},
     "promo_perk1":        {"vi": "Áp dụng ngay từ lệnh đầu tiên",      "en": "Applies from your very first trade"},
     "promo_perk2":        {"vi": "Không giới hạn volume giao dịch",     "en": "No trading volume limits"},
     "promo_perk3":        {"vi": "Rút tiền rebate bất cứ lúc nào",     "en": "Withdraw rebate anytime"},
     "promo_cta":          {"vi": "Đăng ký nhận ưu đãi →",              "en": "Claim Offer →"},
     "promo_cta_ghost":    {"vi": "Xem cách tính rebate",               "en": "See rebate calculator"},
-    "promo_number_label": {"vi": "Rebate cho khách mới",               "en": "Rebate for new members"},
+    "promo_number_label": {"vi": "Dành riêng cho khách hàng Vantage",  "en": "Exclusive for Vantage customers"},
     "promo_social":       {"vi": "Đã có",                               "en": "Already"},
     "promo_social_suffix":{"vi": "trader nhận ưu đãi",                  "en": "traders claimed this offer"},
     "cd_days":            {"vi": "Ngày",  "en": "Days"},
@@ -30,7 +30,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
     "cd_secs":            {"vi": "Giây",  "en": "Secs"},
 
     # ── Sticky promo bar ──
-    "sticky_text":  {"vi": "🔥 100% REBATE cho khách đăng ký mới", "en": "🔥 100% REBATE for new sign-ups"},
+    "sticky_text":  {"vi": "🔥 100% dành riêng cho khách hàng Vantage", "en": "🔥 100% exclusive for Vantage customers"},
     "sticky_cta":   {"vi": "Nhận ngay",                             "en": "Claim Now"},
 
     # ── Marquee ──

@@ -203,7 +203,7 @@
 }
 </style>
 <div id="promoSticky">
-  <span>{% if lang == 'vi' %}{{ ps.get('sticky_text_vi', '🔥 100% REBATE cho khách đăng ký mới') }}{% else %}{{ ps.get('sticky_text_en', '🔥 100% REBATE for new sign-ups') }}{% endif %}</span>
+  <span>{% if lang == 'vi' %}{{ ps.get('sticky_text_vi', '🔥 100% dành riêng cho khách hàng Vantage') }}{% else %}{{ ps.get('sticky_text_en', '🔥 100% exclusive for Vantage customers') }}{% endif %}</span>
   <span id="stickyTimer" style="font-variant-numeric:tabular-nums;"></span>
   <a class="sticky-cta" href="{{ ps.get('sticky_link', '/portal/login') }}">{% if lang == 'vi' %}{{ ps.get('sticky_cta_vi', 'Nhận ngay') }}{% else %}{{ ps.get('sticky_cta_en', 'Claim Now') }}{% endif %}</a>
 </div>
