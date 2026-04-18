@@ -39,8 +39,8 @@ def _get_trader_count() -> int:
     val = ps.get("promo_trader_count")
     if val is not None:
         return int(val)
-    save_portal_settings({"promo_trader_count": "523"})
-    return 523
+    save_portal_settings({"promo_trader_count": "789"})
+    return 789
 
 
 def _mask_email(email: str) -> str:

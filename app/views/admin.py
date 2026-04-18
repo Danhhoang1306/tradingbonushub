@@ -687,8 +687,8 @@ async def admin_public_edit_mode(request: Request, page: str = "home"):
     if tc_val is not None:
         trader_count = int(tc_val)
     else:
-        save_portal_settings({"promo_trader_count": "523"})
-        trader_count = 523
+        save_portal_settings({"promo_trader_count": "789"})
+        trader_count = 789
 
     return public_tpl.TemplateResponse("index.html", {
         "request":       request,
