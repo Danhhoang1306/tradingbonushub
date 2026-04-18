@@ -48,13 +48,15 @@
         <th>Program</th>
         <th>Broker</th>
         <th>MT5</th>
+        <th>IB Name</th>
+        <th>IB Number</th>
         <th>Status</th>
         <th>Enrolled Date</th>
         <th>Actions</th>
       </tr>
     </thead>
     <tbody id="enrollment-tbody">
-      <tr><td colspan="8" class="empty">Loading...</td></tr>
+      <tr><td colspan="10" class="empty">Loading...</td></tr>
     </tbody>
   </table>
 </div>
@@ -130,7 +132,7 @@ function renderTable() {
   const tbody = document.getElementById('enrollment-tbody');
   document.getElementById('count-label').textContent = `${enrollments.length} results`;
   if (!enrollments.length) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty">No data found.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="empty">No data found.</td></tr>';
     return;
   }
   tbody.innerHTML = enrollments.map((e, i) => `
@@ -140,6 +142,8 @@ function renderTable() {
       <td>${esc(e.promo_name)}</td>
       <td>${esc(e.broker_name)}</td>
       <td><code style="font-size:12px;">${esc(e.mt5_account) || '—'}</code></td>
+      <td>${esc(e.ib_name) || '<span style="color:#c00;">—</span>'}</td>
+      <td><code style="font-size:12px;">${esc(e.ib_number) || '<span style="color:#c00;">—</span>'}</code></td>
       <td><span class="badge badge-${e.program_status}">${statusLabel(e.program_status)}</span></td>
       <td style="font-size:12px;color:#666;">${fmt(e.created_at)}</td>
       <td>
@@ -169,8 +173,11 @@ function openConfirm(eid) {
   const e = enrollments.find(x => x.id === eid);
   if (!e) return;
   document.getElementById('confirm-eid').value = eid;
+  const ibLine = (e.ib_name || e.ib_number)
+    ? `<br>IB: ${esc(e.ib_name) || '—'} (${esc(e.ib_number) || '—'})`
+    : '<br><span style="color:#c00;">⚠ No IB info</span>';
   document.getElementById('confirm-info').innerHTML =
-    `<b>${esc(e.customer_email)}</b> enrolled in program <b>${esc(e.promo_name)}</b><br>Broker: ${esc(e.broker_name)}${e.mt5_account ? ' — MT5: ' + esc(e.mt5_account) : ''}`;
+    `<b>${esc(e.customer_email)}</b> enrolled in program <b>${esc(e.promo_name)}</b><br>Broker: ${esc(e.broker_name)}${e.mt5_account ? ' — MT5: ' + esc(e.mt5_account) : ''}${ibLine}`;
   document.getElementById('confirm-modal').classList.add('active');
 }
 

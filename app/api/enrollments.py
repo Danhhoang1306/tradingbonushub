@@ -201,6 +201,8 @@ def _format_enrollment(row: dict) -> dict:
         "broker_slug":    row.get("broker_slug") or "",
         "promo_name":     row.get("pending_promo_name") or row.get("active_promo_name") or "—",
         "mt5_account":    row.get("mt5_account") or "",
+        "ib_name":        row.get("ib_name") or "",
+        "ib_number":      row.get("ib_number") or "",
         "program_status": row.get("program_status") or "",
         "pending_program_id": row.get("pending_program_id"),
         "created_at":     str(row["created_at"]) if row.get("created_at") else None,
@@ -277,6 +279,15 @@ async def api_confirm_enrollment(eid: int, request: Request):
     # Prevents race condition if admin clicks confirm twice simultaneously
     pending_pid = account["pending_program_id"]
 
+    # If the pending program is a time-limited promo (programs.promo_days set),
+    # stamp promo_expires_at / promo_original_program_id so the hourly
+    # downgrade loop auto-reverts the customer when it expires.
+    pending_prog = await asyncio.to_thread(get_program, pending_pid) or {}
+    promo_days = pending_prog.get("promo_days")
+    revert_pid = pending_prog.get("revert_to_program_id")
+    from datetime import timedelta as _td
+    promo_expires = (datetime.utcnow() + _td(days=int(promo_days))) if promo_days else None
+
     def _atomic_confirm():
         from app.db.connection import get_conn as _gc
         with _gc() as conn:
@@ -286,11 +297,13 @@ async def api_confirm_enrollment(eid: int, request: Request):
                      pending_program_id = NULL,
                      program_status = 'confirmed',
                      client_status = 'active',
-                     program_joined_at = GETUTCDATE()
+                     program_joined_at = GETUTCDATE(),
+                     promo_expires_at = ?,
+                     promo_original_program_id = ?
                    WHERE id = ?
                      AND pending_program_id = ?
                      AND program_status = 'unconfirmed'""",
-                (pending_pid, eid, pending_pid),
+                (pending_pid, promo_expires, revert_pid, eid, pending_pid),
             )
             if result.rowcount == 0:
                 raise ValueError("State changed — enrollment already confirmed or cancelled")

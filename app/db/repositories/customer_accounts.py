@@ -120,12 +120,14 @@ def get_all_customer_accounts(
                        c.login_email, c.name AS customer_name,
                        pp.name AS pending_promo_name,
                        p.name  AS active_promo_name,
-                       ta_latest.trading_account AS mt5_account
+                       ta_latest.trading_account AS mt5_account,
+                       ib.ib_name AS ib_name
                 FROM customer_accounts ca
                 JOIN brokers b ON b.id = ca.broker_id
                 LEFT JOIN customers c ON c.id = ca.customer_id
                 LEFT JOIN programs pp ON pp.id = ca.pending_program_id
                 LEFT JOIN programs p  ON p.id  = ca.program_id
+                LEFT JOIN ibs ib ON ib.broker_id = ca.broker_id AND ib.ib_number = ca.ib_number
                 LEFT JOIN (
                     SELECT customer_account_id,
                            trading_account,
