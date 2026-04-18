@@ -1,11 +1,8 @@
 {#
   Enrollment Modal — simplified 3-step wizard.
   Call openEnrollModal(promoId, promoName, brokerName) to open.
-  Flow:
-    - No linked vantage_email → Step 1 (ask if has account)
-      · No account → reg link → "Registration complete" → redirect dashboard (registered_new)
-      · Already has → Step 2 (enter Vantage email) → Step T (transfer)
-    - Already linked vantage_email → Step T directly
+  All user-facing strings are localised via t(..., lang); dynamic JS strings
+  are exposed through the window._EM_STR dict built at render time.
 #}
 
 <!-- ── Enrollment Modal Overlay ─────────────────────────────────────── -->
@@ -21,7 +18,7 @@
     <!-- Header -->
     <div style="background:linear-gradient(135deg,#1a1a2e,#0f3460);padding:20px 24px;display:flex;align-items:flex-start;justify-content:space-between;">
       <div>
-        <div style="font-size:11px;font-weight:700;letter-spacing:.8px;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:4px;">Enroll in Program</div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:.8px;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:4px;">{{ t('em_header', lang) }}</div>
         <div id="em-promo-name" style="font-size:17px;font-weight:700;color:#f0c040;"></div>
         <div id="em-broker-name" style="font-size:12px;color:rgba(255,255,255,.6);margin-top:2px;"></div>
       </div>
@@ -31,63 +28,63 @@
     <!-- ── STEP 0: Ineligible ──────────────────────────────────────── -->
     <div id="em-step-0" class="em-step" style="display:none;padding:28px;">
       <div style="background:rgba(197,34,31,.15);border:1.5px solid rgba(197,34,31,.4);border-radius:10px;padding:18px 20px;margin-bottom:20px;">
-        <p style="font-size:15px;font-weight:700;color:#c5221f;margin-bottom:8px;">⛔ Not Eligible to Enroll</p>
+        <p style="font-size:15px;font-weight:700;color:#c5221f;margin-bottom:8px;">{{ t('em_s0_not_eligible', lang) }}</p>
         <p id="em-ineligible-msg" style="font-size:13px;color:rgba(255,255,255,.7);line-height:1.7;margin:0;"></p>
       </div>
-      <button onclick="closeEnrollModal()" style="width:100%;padding:11px;border-radius:8px;border:none;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);font-size:13px;font-weight:600;cursor:pointer;">Close</button>
+      <button onclick="closeEnrollModal()" style="width:100%;padding:11px;border-radius:8px;border:none;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);font-size:13px;font-weight:600;cursor:pointer;">{{ t('em_close', lang) }}</button>
     </div>
 
     <!-- ── STEP 1: Already have a broker account? ──────────────────────── -->
     <div id="em-step-1" class="em-step" style="display:none;padding:28px 28px 24px;">
       <p style="font-size:14px;font-weight:600;color:#fff;margin-bottom:20px;">
-        Do you already have a trading account with <span id="em-s1-broker-name" style="color:#f0c040;"></span>?
+        {{ t('em_s1_has_account_q', lang) }} <span id="em-s1-broker-name" style="color:#f0c040;"></span>?
       </p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
         <button class="em-type-btn" id="em-btn-no" onclick="emSelectHasAccount(false)">
           <span style="font-size:26px;display:block;margin-bottom:6px;">🆕</span>
-          <span style="font-size:13px;font-weight:700;color:rgba(255,255,255,.85);">Not Yet</span>
-          <span style="font-size:11px;color:rgba(255,255,255,.4);display:block;margin-top:3px;">Open New Account</span>
+          <span style="font-size:13px;font-weight:700;color:rgba(255,255,255,.85);">{{ t('em_s1_not_yet', lang) }}</span>
+          <span style="font-size:11px;color:rgba(255,255,255,.4);display:block;margin-top:3px;">{{ t('em_s1_open_new', lang) }}</span>
         </button>
         <button class="em-type-btn" id="em-btn-yes" onclick="emSelectHasAccount(true)">
           <span style="font-size:26px;display:block;margin-bottom:6px;">✅</span>
-          <span style="font-size:13px;font-weight:700;color:rgba(255,255,255,.85);">Yes, I Have One</span>
-          <span style="font-size:11px;color:rgba(255,255,255,.4);display:block;margin-top:3px;">Continue Enrollment</span>
+          <span style="font-size:13px;font-weight:700;color:rgba(255,255,255,.85);">{{ t('em_s1_yes', lang) }}</span>
+          <span style="font-size:11px;color:rgba(255,255,255,.4);display:block;margin-top:3px;">{{ t('em_s1_continue_enroll', lang) }}</span>
         </button>
       </div>
 
       <!-- Panel when "Not Yet" -->
       <div id="em-reg-panel" style="display:none;background:rgba(26,115,232,.12);border:1px solid rgba(26,115,232,.35);border-radius:10px;padding:16px 18px;">
-        <p style="font-size:13px;font-weight:700;color:#7ab4f5;margin-bottom:10px;">📎 Open a broker account through our IB:</p>
+        <p style="font-size:13px;font-weight:700;color:#7ab4f5;margin-bottom:10px;">{{ t('em_s1_open_ib', lang) }}</p>
         <a id="em-reg-link" href="#" target="_blank" style="
           display:block;padding:11px 16px;background:#1a73e8;color:#fff;border-radius:8px;
           font-size:14px;font-weight:700;text-align:center;text-decoration:none;margin-bottom:12px;">
-          Open Account Now →
+          {{ t('em_s1_open_now', lang) }}
         </a>
         <p style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:12px;">
-          After registering, click the button below. We will contact you to confirm via email.
+          {{ t('em_s1_after_reg', lang) }}
         </p>
         <button onclick="emSubmitNewAccount()" style="
           width:100%;padding:11px;border-radius:8px;border:none;
           background:linear-gradient(135deg,#c8972a,#f0c040);color:#1a1a2e;font-size:13px;font-weight:700;cursor:pointer;">
-          I Have Registered ✓
+          {{ t('em_s1_registered', lang) }}
         </button>
       </div>
     </div>
 
     <!-- ── STEP 2: Enter broker email ─────────────────────────────────── -->
     <div id="em-step-2" class="em-step" style="display:none;padding:28px 28px 24px;">
-      <p style="font-size:14px;font-weight:600;color:#fff;margin-bottom:6px;">Link Account <span id="em-s2-broker-name" style="color:#f0c040;"></span></p>
+      <p style="font-size:14px;font-weight:600;color:#fff;margin-bottom:6px;">{{ t('em_s2_link_account', lang) }} <span id="em-s2-broker-name" style="color:#f0c040;"></span></p>
       <p style="font-size:13px;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:18px;">
-        Enter the email you used to register your account with <span class="em-s2-broker-name-ref"></span>.
+        {{ t('em_s2_enter_email_pre', lang) }} <span class="em-s2-broker-name-ref"></span>.
       </p>
-      <input id="em-vantage-email-input" type="email" placeholder="email@example.com"
+      <input id="em-vantage-email-input" type="email" placeholder="{{ t('em_s2_email_placeholder', lang) }}"
         style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid rgba(255,255,255,.2);border-radius:8px;font-size:14px;outline:none;transition:border-color .15s;margin-bottom:6px;background:#1e2a3a;color:#fff;"
         onfocus="this.style.borderColor='#c8972a'" onblur="this.style.borderColor='rgba(255,255,255,.2)'"
         onkeydown="if(event.key==='Enter')emSaveVantageEmail()" />
       <p id="em-link-error" style="display:none;font-size:12px;color:#c5221f;margin-bottom:12px;"></p>
       <div style="display:flex;gap:10px;margin-top:16px;">
-        <button onclick="emGoStep1()" style="flex:1;padding:11px;border-radius:8px;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);font-size:13px;font-weight:600;cursor:pointer;">← Go Back</button>
-        <button id="em-save-btn" onclick="emSaveVantageEmail()" style="flex:2;padding:11px;border-radius:8px;border:none;background:linear-gradient(135deg,#c8972a,#f0c040);color:#1a1a2e;font-size:14px;font-weight:700;cursor:pointer;">Save & Continue →</button>
+        <button onclick="emGoStep1()" style="flex:1;padding:11px;border-radius:8px;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);font-size:13px;font-weight:600;cursor:pointer;">{{ t('em_s2_back', lang) }}</button>
+        <button id="em-save-btn" onclick="emSaveVantageEmail()" style="flex:2;padding:11px;border-radius:8px;border:none;background:linear-gradient(135deg,#c8972a,#f0c040);color:#1a1a2e;font-size:14px;font-weight:700;cursor:pointer;">{{ t('em_s2_save_continue', lang) }}</button>
       </div>
     </div>
 
@@ -97,10 +94,10 @@
       <!-- Shown when already under valid IB (alreadyUnderIb=true) -->
       <div id="em-t-already-ib" style="display:none;">
         <p style="font-size:13px;color:#4caf50;font-weight:600;line-height:1.7;margin-bottom:10px;">
-          ✅ Click <strong>Confirm Enrollment</strong> to continue.
+          {{ t('em_t_already_ok', lang) | safe }}
         </p>
         <p style="font-size:11px;color:#e65c00;line-height:1.6;margin-bottom:14px;">
-          ⚠️ Note: After confirming enrollment, you cannot change for <strong>1 day</strong>.
+          {{ t('em_t_lock_note', lang) | safe }}
         </p>
       </div>
 
@@ -110,40 +107,39 @@
         <span id="em-t-ib-name-transfer" style="display:none;"></span>
         <span id="em-t-ib-number-transfer" style="display:none;"></span>
 
-        <p style="font-size:13px;font-weight:700;color:#fff;margin-bottom:10px;">📋 Pre-written email — just click Send:</p>
+        <p style="font-size:13px;font-weight:700;color:#fff;margin-bottom:10px;">{{ t('em_t_prewritten', lang) }}</p>
         <div style="background:rgba(26,115,232,.1);border:1px solid rgba(26,115,232,.3);border-radius:8px;padding:12px 14px;font-size:12px;color:rgba(255,255,255,.85);line-height:1.9;margin-bottom:12px;">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-            <div><span style="color:rgba(255,255,255,.4);">To:</span> <strong id="em-t-to-display">—</strong></div>
-            <button type="button" id="em-t-to-copy-btn" onclick="emCopy(document.getElementById('em-t-to-display').textContent,this)" style="flex-shrink:0;padding:2px 8px;font-size:11px;border:1px solid rgba(255,255,255,.25);border-radius:5px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);cursor:pointer;">Copy</button>
+            <div><span style="color:rgba(255,255,255,.4);">{{ t('em_t_to', lang) }}</span> <strong id="em-t-to-display">—</strong></div>
+            <button type="button" id="em-t-to-copy-btn" onclick="emCopy(document.getElementById('em-t-to-display').textContent,this)" style="flex-shrink:0;padding:2px 8px;font-size:11px;border:1px solid rgba(255,255,255,.25);border-radius:5px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);cursor:pointer;">{{ t('em_t_copy', lang) }}</button>
           </div>
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-            <div><span style="color:rgba(255,255,255,.4);">Subject:</span> <strong>Change account owner</strong></div>
-            <button type="button" onclick="emCopy('Change account owner',this)" style="flex-shrink:0;padding:2px 8px;font-size:11px;border:1px solid rgba(255,255,255,.25);border-radius:5px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);cursor:pointer;">Copy</button>
+            <div><span style="color:rgba(255,255,255,.4);">{{ t('em_t_subject', lang) }}</span> <strong>{{ t('em_t_subject_change', lang) }}</strong></div>
+            <button type="button" onclick="emCopy('{{ t('em_t_subject_change', lang) }}',this)" style="flex-shrink:0;padding:2px 8px;font-size:11px;border:1px solid rgba(255,255,255,.25);border-radius:5px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);cursor:pointer;">{{ t('em_t_copy', lang) }}</button>
           </div>
           <hr style="border:none;border-top:1px solid #dde;margin:8px 0;" />
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
             <div id="em-t-body-display" style="white-space:pre-line;">—</div>
-            <button type="button" id="em-copy-body-btn" onclick="emCopyBody(this)" style="flex-shrink:0;padding:2px 8px;font-size:11px;border:1px solid rgba(255,255,255,.25);border-radius:5px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);cursor:pointer;">Copy</button>
+            <button type="button" id="em-copy-body-btn" onclick="emCopyBody(this)" style="flex-shrink:0;padding:2px 8px;font-size:11px;border:1px solid rgba(255,255,255,.25);border-radius:5px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);cursor:pointer;">{{ t('em_t_copy', lang) }}</button>
           </div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
           <a id="em-t-mailto" href="#" target="_blank"
              style="flex:1;min-width:130px;padding:10px 12px;background:#1a73e8;color:#fff;border-radius:7px;font-size:13px;font-weight:700;text-align:center;text-decoration:none;display:none;">
-            📨 Open Mail App
+            {{ t('em_t_open_mail', lang) }}
           </a>
           <a id="em-t-gmail" href="#" target="_blank"
              style="flex:1;min-width:130px;padding:10px 12px;background:#ea4335;color:#fff;border-radius:7px;font-size:13px;font-weight:700;text-align:center;text-decoration:none;display:block;">
-            ✉️ Open Gmail
+            {{ t('em_t_open_gmail', lang) }}
           </a>
         </div>
         <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 14px;margin-bottom:14px;">
           <p style="font-size:12px;color:rgba(255,255,255,.6);line-height:1.7;margin:0;">
-            ⚠️ The IB transfer request email must be sent from <strong style="color:rgba(255,255,255,.85);">the email address registered with the broker</strong>.<br>
-            If the email app opens with a different account, please resend the email with the same content from the correct registered email address.
+            {{ t('em_t_warn_registered', lang) | safe }}
           </p>
         </div>
         <p style="font-size:11px;color:rgba(255,255,255,.4);line-height:1.6;margin-bottom:16px;">
-          ⏱ After sending the email, click Confirm below. Broker processes in <strong>1-2 business days</strong>.
+          {{ t('em_t_processing_note', lang) | safe }}
         </p>
       </div>
 
@@ -154,7 +150,7 @@
         <input type="hidden" name="mt5_account"     value="" />
         <input type="hidden" name="transfer_method" id="em-f-transfer-method" value="mailto_send" />
         <button type="submit" style="width:100%;padding:13px;border-radius:8px;border:none;background:linear-gradient(135deg,#c8972a,#f0c040);color:#1a1a2e;font-size:14px;font-weight:700;cursor:pointer;">
-          ✅ Confirm Enrollment
+          {{ t('em_confirm_enrollment', lang) }}
         </button>
       </form>
     </div>
@@ -164,32 +160,32 @@
 
       <!-- Sub-section A: has MT5 → dropdown -->
       <div id="em-v-has-mt5">
-        <p style="font-size:14px;font-weight:600;color:#fff;margin-bottom:6px;">Select MT5 Account to Participate</p>
+        <p style="font-size:14px;font-weight:600;color:#fff;margin-bottom:6px;">{{ t('em_v_select_mt5', lang) }}</p>
         <p style="font-size:13px;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:18px;">
-          Volume accumulation program — only eligible accounts are shown.
+          {{ t('em_v_intro', lang) }}
         </p>
         <label style="display:block;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);margin-bottom:7px;">
-          MT5 Account <span style="color:#c5221f;">*</span>
+          {{ t('em_v_mt5_label', lang) }} <span style="color:#c5221f;">*</span>
         </label>
         <select id="em-v-mt5-select" style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid rgba(255,255,255,.2);border-radius:8px;font-size:14px;outline:none;background:#1e2a3a;color:#fff;margin-bottom:20px;">
-          <option value="">-- Select Account --</option>
+          <option value="">{{ t('em_v_select_default', lang) }}</option>
         </select>
       </div>
 
       <!-- Sub-section B: no MT5 → guide to create + manual input -->
       <div id="em-v-no-mt5" style="display:none;">
         <div style="background:rgba(26,115,232,.12);border:1px solid rgba(26,115,232,.35);border-radius:10px;padding:14px 16px;margin-bottom:18px;">
-          <p style="font-size:13px;font-weight:700;color:#7ab4f5;margin-bottom:6px;">📋 Instructions</p>
+          <p style="font-size:13px;font-weight:700;color:#7ab4f5;margin-bottom:6px;">{{ t('em_v_instructions', lang) }}</p>
           <p style="font-size:13px;color:rgba(255,255,255,.85);line-height:1.7;margin:0;">
-            Please create a new MT5 account of type <strong id="em-v-actype-label">—</strong> at Vantage.<br>
-            After creating, enter the account number in the field below.<br>
-            We will confirm the program as soon as possible.
+            {{ t('em_v_create_mt5_pre', lang) }} <strong id="em-v-actype-label">—</strong> {{ t('em_v_create_mt5_post', lang) }}<br>
+            {{ t('em_v_after_create', lang) }}<br>
+            {{ t('em_v_confirm_asap', lang) }}
           </p>
         </div>
         <label style="display:block;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);margin-bottom:7px;">
-          MT5 Account Number <span style="color:#c5221f;">*</span>
+          {{ t('em_v_mt5_number', lang) }} <span style="color:#c5221f;">*</span>
         </label>
-        <input id="em-v-mt5-input" type="text" placeholder="e.g. 12345678"
+        <input id="em-v-mt5-input" type="text" placeholder="{{ t('em_v_mt5_placeholder', lang) }}"
           style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;outline:none;margin-bottom:6px;"
           onfocus="this.style.borderColor='#c8972a'" onblur="this.style.borderColor='#ddd'" />
         <p id="em-v-input-error" style="display:none;font-size:12px;color:#c5221f;margin-bottom:8px;"></p>
@@ -203,7 +199,7 @@
         <input type="hidden" name="mt5_account"     id="em-v-mt5-account" value="" />
         <input type="hidden" name="transfer_method" id="em-v-transfer-method" value="already_ib" />
         <button type="submit" style="width:100%;padding:13px;border-radius:8px;border:none;background:linear-gradient(135deg,#c8972a,#f0c040);color:#1a1a2e;font-size:14px;font-weight:700;cursor:pointer;">
-          ✅ Confirm Enrollment
+          {{ t('em_confirm_enrollment', lang) }}
         </button>
       </form>
     </div>
@@ -212,33 +208,33 @@
     <div id="em-step-d" class="em-step" style="display:none;padding:24px 28px;">
 
       <!-- Question: already have Dupoin account? -->
-      <p style="font-size:14px;font-weight:600;color:#fff;margin-bottom:16px;">Do you already have a Dupoin account?</p>
+      <p style="font-size:14px;font-weight:600;color:#fff;margin-bottom:16px;">{{ t('em_d_has_account_q', lang) }}</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
         <button class="em-type-btn" id="em-d-btn-no" onclick="emDupoinSelectHasAccount(false)">
           <span style="font-size:26px;display:block;margin-bottom:6px;">🆕</span>
-          <span style="font-size:13px;font-weight:700;color:rgba(255,255,255,.85);">Not Yet</span>
-          <span style="font-size:11px;color:rgba(255,255,255,.4);display:block;margin-top:3px;">Open New Account</span>
+          <span style="font-size:13px;font-weight:700;color:rgba(255,255,255,.85);">{{ t('em_s1_not_yet', lang) }}</span>
+          <span style="font-size:11px;color:rgba(255,255,255,.4);display:block;margin-top:3px;">{{ t('em_s1_open_new', lang) }}</span>
         </button>
         <button class="em-type-btn" id="em-d-btn-yes" onclick="emDupoinSelectHasAccount(true)">
           <span style="font-size:26px;display:block;margin-bottom:6px;">✅</span>
-          <span style="font-size:13px;font-weight:700;color:rgba(255,255,255,.85);">Yes, I Have One</span>
-          <span style="font-size:11px;color:rgba(255,255,255,.4);display:block;margin-top:3px;">Continue Enrollment</span>
+          <span style="font-size:13px;font-weight:700;color:rgba(255,255,255,.85);">{{ t('em_s1_yes', lang) }}</span>
+          <span style="font-size:11px;color:rgba(255,255,255,.4);display:block;margin-top:3px;">{{ t('em_s1_continue_enroll', lang) }}</span>
         </button>
       </div>
 
       <!-- Panel: No account yet -->
       <div id="em-d-panel-new" style="display:none;">
         <div style="background:rgba(26,115,232,.12);border:1px solid rgba(26,115,232,.35);border-radius:10px;padding:14px 16px;margin-bottom:14px;">
-          <p style="font-size:13px;font-weight:700;color:#7ab4f5;margin-bottom:8px;">📎 Open a Dupoin account through our IB:</p>
+          <p style="font-size:13px;font-weight:700;color:#7ab4f5;margin-bottom:8px;">{{ t('em_d_open_ib', lang) }}</p>
           <a id="em-d-reg-link" href="#" target="_blank" style="
             display:block;padding:11px 14px;background:#1a73e8;color:#fff;border-radius:8px;
             font-size:14px;font-weight:700;text-align:center;text-decoration:none;margin-bottom:10px;">
-            Open Registration Link →
+            {{ t('em_d_open_link', lang) }}
           </a>
           <p style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:12px;">
-            After registering, enter your Dupoin email below to complete.
+            {{ t('em_d_after_reg', lang) }}
           </p>
-          <input id="em-d-email-input" type="email" placeholder="Your Dupoin email"
+          <input id="em-d-email-input" type="email" placeholder="{{ t('em_d_email_placeholder', lang) }}"
             style="width:100%;box-sizing:border-box;padding:10px 13px;border:1.5px solid rgba(76,175,80,.4);border-radius:7px;font-size:14px;outline:none;transition:border-color .15s;margin-bottom:4px;background:#1e2a3a;color:#fff;"
             onfocus="this.style.borderColor='#4caf50'" onblur="this.style.borderColor='rgba(76,175,80,.4)'"
             onkeydown="if(event.key==='Enter')emDupoinSubmit()" />
@@ -252,7 +248,7 @@
           <input type="hidden" name="mt5_account"     value="" />
           <input type="hidden" name="transfer_method" value="dupoin_new_account" />
           <button type="button" onclick="emDupoinSubmit()" style="width:100%;padding:13px;border-radius:8px;border:none;background:linear-gradient(135deg,#c8972a,#f0c040);color:#1a1a2e;font-size:14px;font-weight:700;cursor:pointer;">
-            ✅ Confirm Enrollment
+            {{ t('em_confirm_enrollment', lang) }}
           </button>
         </form>
       </div>
@@ -260,46 +256,45 @@
       <!-- Panel: Has account → send deletion email -->
       <div id="em-d-panel-has" style="display:none;">
         <div style="background:rgba(200,151,42,.1);border:1px solid rgba(200,151,42,.35);border-radius:10px;padding:16px 18px;margin-bottom:14px;">
-          <p style="font-size:13px;font-weight:700;color:#f0c040;margin-bottom:6px;">⚠️ Must delete old account first</p>
+          <p style="font-size:13px;font-weight:700;color:#f0c040;margin-bottom:6px;">{{ t('em_d_must_delete', lang) }}</p>
           <p style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.6;margin:0;">
-            Fill in the details below, then click to send the account deletion request to Dupoin. After deletion, come back and select "Not Yet" to register again.
+            {{ t('em_d_delete_instr', lang) }}
           </p>
         </div>
         <div style="margin-bottom:10px;">
-          <label style="font-size:12px;color:rgba(255,255,255,.5);display:block;margin-bottom:4px;">Your Name (My Name)</label>
-          <input id="em-d-del-name" type="text" placeholder="John Doe"
+          <label style="font-size:12px;color:rgba(255,255,255,.5);display:block;margin-bottom:4px;">{{ t('em_d_your_name', lang) }}</label>
+          <input id="em-d-del-name" type="text" placeholder="{{ t('em_d_name_placeholder', lang) }}"
             style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);color:#fff;font-size:14px;box-sizing:border-box;">
         </div>
         <div style="margin-bottom:14px;">
-          <label style="font-size:12px;color:rgba(255,255,255,.5);display:block;margin-bottom:4px;">Dupoin Account UID</label>
-          <input id="em-d-del-uid" type="text" placeholder="123456"
+          <label style="font-size:12px;color:rgba(255,255,255,.5);display:block;margin-bottom:4px;">{{ t('em_d_uid', lang) }}</label>
+          <input id="em-d-del-uid" type="text" placeholder="{{ t('em_d_uid_placeholder', lang) }}"
             style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);color:#fff;font-size:14px;box-sizing:border-box;">
         </div>
         <div id="em-d-del-error" style="display:none;color:#f87171;font-size:12px;margin-bottom:10px;"></div>
         <button id="em-d-del-btn" onclick="emDupoinOpenDeleteEmail()" style="width:100%;padding:13px;border-radius:8px;border:none;background:linear-gradient(135deg,#c8972a,#f0c040);color:#1a1a2e;font-size:14px;font-weight:700;cursor:pointer;">
-          ✉️ Open email to send account deletion request →
+          {{ t('em_d_open_delete_email', lang) }}
         </button>
 
         <!-- Choose email app (mobile) -->
         <div id="em-d-del-preview" style="display:none;margin-top:14px;">
-          <p style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:10px;text-align:center;">Choose app to send email:</p>
+          <p style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:10px;text-align:center;">{{ t('em_d_choose_app', lang) }}</p>
           <a id="em-d-del-gmail-btn" href="#" target="_blank"
             style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px;border-radius:8px;background:#fff;color:#444;font-size:14px;font-weight:700;text-decoration:none;margin-bottom:10px;box-sizing:border-box;">
             <img src="https://www.google.com/gmail/about/static/images/logo-gmail.png" alt="Gmail"
               onerror="this.style.display='none'"
               style="height:20px;width:auto;">
-            Open Gmail
+            {{ t('em_d_open_gmail', lang) }}
           </a>
           <a id="em-d-del-mailto-btn" href="#"
             style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px;border-radius:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:14px;font-weight:700;text-decoration:none;box-sizing:border-box;">
-            📨 Open Default Mail App
+            {{ t('em_d_open_default_mail', lang) }}
           </a>
-          <p style="font-size:11px;color:rgba(255,255,255,.3);margin-top:10px;margin-bottom:0;text-align:center;">After deletion, come back and select "Not Yet" to register again.</p>
+          <p style="font-size:11px;color:rgba(255,255,255,.3);margin-top:10px;margin-bottom:0;text-align:center;">{{ t('em_d_after_delete', lang) }}</p>
         </div>
         <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 14px;margin-top:14px;">
           <p style="font-size:12px;color:rgba(255,255,255,.6);line-height:1.7;margin:0;">
-            ⚠️ The account deletion email must be sent from <strong style="color:rgba(255,255,255,.85);">the email address registered with Dupoin</strong>.<br>
-            If the email app opens with a different account, please resend the email with the same content from the correct registered email address.
+            {{ t('em_d_warn_registered', lang) | safe }}
           </p>
         </div>
       </div>
@@ -328,17 +323,17 @@
               border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.6);
               padding:36px 32px;max-width:400px;width:100%;text-align:center;">
     <div style="font-size:52px;margin-bottom:12px;">🎉</div>
-    <h3 style="font-size:20px;font-weight:700;color:#fff;margin-bottom:8px;">Congratulations!</h3>
+    <h3 style="font-size:20px;font-weight:700;color:#fff;margin-bottom:8px;">{{ t('em_success_title', lang) }}</h3>
     <p style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.7;margin-bottom:6px;">
-      You have enrolled in <strong id="em-success-promo-name"></strong> successfully.
+      {{ t('em_success_pre', lang) }} <strong id="em-success-promo-name"></strong> {{ t('em_success_post', lang) }}
     </p>
     <p style="font-size:13px;color:rgba(255,255,255,.6);line-height:1.7;margin-bottom:24px;">
-      We will notify you via email when your enrollment is confirmed.
+      {{ t('em_success_notify', lang) }}
     </p>
     <a href="/portal/" style="display:inline-block;padding:12px 28px;
        background:linear-gradient(135deg,#c8972a,#f0c040);color:#1a1a2e;
        border-radius:8px;font-size:14px;font-weight:700;text-decoration:none;">
-      Return to Profile
+      {{ t('em_success_return', lang) }}
     </a>
   </div>
 </div>
@@ -353,6 +348,25 @@
 </style>
 
 <script>
+// Localised strings for JS-driven flows (error messages, dynamic labels, email bodies).
+window._EM_STR = {
+  processing:        {{ t('em_processing', lang) | tojson }},
+  confirm_enrollment: {{ t('em_confirm_enrollment', lang) | tojson }},
+  save_continue:     {{ t('em_s2_save_continue', lang) | tojson }},
+  saving:            {{ t('em_saving', lang) | tojson }},
+  generic_error:     {{ t('em_generic_error', lang) | tojson }},
+  s0_default_msg:    {{ t('em_s0_default_msg', lang) | tojson }},
+  s2_invalid_email:  {{ t('em_s2_invalid_email', lang) | tojson }},
+  v_enter_mt5:       {{ t('em_v_enter_mt5', lang) | tojson }},
+  v_compatible:      {{ t('em_v_compatible', lang) | tojson }},
+  d_invalid_email:   {{ t('em_d_invalid_email', lang) | tojson }},
+  d_fill_name_uid:   {{ t('em_d_fill_name_uid', lang) | tojson }},
+  t_no_config:       {{ t('em_t_no_config', lang) | tojson }},
+  t_body_vantage:    {{ t('em_t_body_vantage', lang) | tojson }},
+  t_body_ultima:     {{ t('em_t_body_ultima', lang) | tojson }},
+  t_body_dupoin:     {{ t('em_t_body_dupoin', lang) | tojson }},
+};
+
 let _emPromoId = null, _emIbName = '', _emIbNumber = '', _emRegLink = '', _emOwnerId = null, _emBrokerName = '', _emBrokerId = null;
 let _emMt5Accounts = [], _emTransferRequired = false, _emHasBrokerEmail = false, _emIsVolumePromo = false, _emAccountType = '', _emRequiredTypes = [], _emRequiredTypeLabels = [], _emRegistrationType = '', _emBrokerSlug = '', _emIbStatus = '';
 
@@ -391,7 +405,7 @@ async function openEnrollModal(promoId, promoName, brokerName, brokerSlug) {
     const d = await r.json();
 
     if (d.eligible === false) {
-      document.getElementById('em-ineligible-msg').textContent = d.message || 'You are not eligible to enroll in this program.';
+      document.getElementById('em-ineligible-msg').textContent = d.message || _EM_STR.s0_default_msg;
       startStep = '0';
     } else {
       _emIbName           = d.owner_ib_name || '';
@@ -467,7 +481,8 @@ function _emSetupVolumeStep() {
 
   if (hasMt5) {
     const sel = document.getElementById('em-v-mt5-select');
-    sel.innerHTML = '<option value="">-- Select Account --</option>' +
+    const selDefault = {{ t('em_v_select_default', lang) | tojson }};
+    sel.innerHTML = `<option value="">${selDefault}</option>` +
       _emMt5Accounts.map(a => {
         const lbl = (a.display_name || a.account_type) ? ` (${a.display_name || a.account_type})` : '';
         return `<option value="${a.mt5_number}">${a.mt5_number}${lbl}</option>`;
@@ -477,7 +492,7 @@ function _emSetupVolumeStep() {
     // Use display names from DB (required_type_labels) — e.g. "Raw ECN"
     const atLabel = _emRequiredTypeLabels.length > 0
       ? _emRequiredTypeLabels.join(' / ')
-      : (_emAtLabel[_emAccountType] || _emAccountType || 'compatible');
+      : (_emAtLabel[_emAccountType] || _emAccountType || _EM_STR.v_compatible);
     document.getElementById('em-v-actype-label').textContent = atLabel;
     document.getElementById('em-v-mt5-input').value = '';
     document.getElementById('em-v-input-error').style.display = 'none';
@@ -501,7 +516,7 @@ function emVolumeFinalValidate() {
     const errEl = document.getElementById('em-v-input-error');
     if (!val) {
       inp.style.borderColor = '#c5221f';
-      errEl.textContent = 'Please enter your MT5 account number.';
+      errEl.textContent = _EM_STR.v_enter_mt5;
       errEl.style.display = 'block';
       inp.focus();
       return false;
@@ -526,31 +541,23 @@ function _emSetupTransferStep() {
 
     // Broker-specific transfer email config — keep in sync with
     // BROKER_TRANSFER_CONFIG in app/services/gmail.py
+    const _ib = _emIbNumber || '—';
     const _brokerTransferCfg = {
-      vantage: {
-        to:   'vietnam.support@vantagemarkets.com',
-        body: `Hi team,\n\nPlease transfer my account to under IB ${_emIbNumber || '—'}\n\nThank you.`,
-      },
-      ultima: {
-        to:   'vietnam.cs@ultimamarkets.com',
-        body: `Dear team,\n\nPlease transfer me to under ${_emIbNumber || '—'}.\n\nThank you.`,
-      },
-      dupoin: {
-        to:   'support@dupoin.com',
-        body: `Hi Support,\n\nPlease transfer my account to under IB ${_emIbNumber || '—'}.\n\nThank you.`,
-      },
+      vantage: { to: 'vietnam.support@vantagemarkets.com', body: _EM_STR.t_body_vantage.replace('{ib}', _ib) },
+      ultima:  { to: 'vietnam.cs@ultimamarkets.com',       body: _EM_STR.t_body_ultima.replace('{ib}', _ib)  },
+      dupoin:  { to: 'support@dupoin.com',                 body: _EM_STR.t_body_dupoin.replace('{ib}', _ib)  },
     };
     const _tcfg = _brokerTransferCfg[_emBrokerSlug];
     if (!_tcfg) {
       // Unknown broker — show warning instead of wrong email address
       document.getElementById('em-t-transfer-section').innerHTML =
         '<div style="background:rgba(197,34,31,.15);border:1.5px solid rgba(197,34,31,.4);border-radius:10px;padding:18px 20px;">' +
-        '<p style="font-size:13px;color:#c5221f;font-weight:600;">⚠️ No IB transfer email configuration for this broker. Please contact support.</p></div>';
+        '<p style="font-size:13px;color:#c5221f;font-weight:600;">' + _EM_STR.t_no_config + '</p></div>';
     }
     const _tcfgSafe = _tcfg || _brokerTransferCfg['vantage'];
     const to      = _tcfgSafe.to;
     const body    = _tcfgSafe.body;
-    const subject = 'Change account owner';
+    const subject = {{ t('em_t_subject_change', lang) | tojson }};
 
     document.getElementById('em-t-to-display').textContent  = to;
     document.getElementById('em-t-body-display').textContent = body;
@@ -610,7 +617,7 @@ function emDupoinOpenDeleteEmail() {
   const uid  = (document.getElementById('em-d-del-uid').value  || '').trim();
   const errEl = document.getElementById('em-d-del-error');
   if (!name || !uid) {
-    errEl.textContent = 'Please fill in both Name and UID.';
+    errEl.textContent = _EM_STR.d_fill_name_uid;
     errEl.style.display = 'block';
     return;
   }
@@ -638,7 +645,7 @@ function emDupoinSubmit() {
   const email = (inp.value || '').trim();
   const errEl = document.getElementById('em-d-error');
   if (!email || !email.includes('@')) {
-    errEl.textContent = 'Please enter a valid Dupoin email.';
+    errEl.textContent = _EM_STR.d_invalid_email;
     errEl.style.display = 'block';
     inp.focus();
     return;
@@ -655,7 +662,7 @@ function closeEnrollModal() {
 // AJAX submit helper for all enrollment forms
 async function _emAjaxSubmit(form) {
   const btn = form.querySelector('button[type=submit]');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Processing...'; }
+  if (btn) { btn.disabled = true; btn.textContent = _EM_STR.processing; }
   try {
     const fd = new FormData(form);
     const r = await fetch('/portal/enroll', { method: 'POST', body: fd });
@@ -668,13 +675,13 @@ async function _emAjaxSubmit(form) {
     } else {
       var msg = (typeof d.detail === 'string') ? d.detail
                : Array.isArray(d.detail) ? d.detail.map(function(e){ return e.msg || JSON.stringify(e); }).join(', ')
-               : 'An error occurred. Please try again.';
+               : _EM_STR.generic_error;
       alert(msg);
-      if (btn) { btn.disabled = false; btn.textContent = '✅ Confirm Enrollment'; }
+      if (btn) { btn.disabled = false; btn.textContent = _EM_STR.confirm_enrollment; }
     }
   } catch(err) {
-    alert('An error occurred. Please try again.');
-    if (btn) { btn.disabled = false; btn.textContent = '✅ Confirm Enrollment'; }
+    alert(_EM_STR.generic_error);
+    if (btn) { btn.disabled = false; btn.textContent = _EM_STR.confirm_enrollment; }
   }
 }
 
@@ -728,7 +735,7 @@ async function emSaveVantageEmail() {
   const errEl = document.getElementById('em-link-error');
 
   if (!email || !email.includes('@')) {
-    errEl.textContent = 'Please enter a valid email.';
+    errEl.textContent = _EM_STR.s2_invalid_email;
     errEl.style.display = 'block';
     inp.focus();
     return;
@@ -737,7 +744,7 @@ async function emSaveVantageEmail() {
 
   const btn = document.getElementById('em-save-btn');
   btn.disabled = true;
-  btn.textContent = 'Saving...';
+  btn.textContent = _EM_STR.saving;
 
   try {
     const r = await fetch('/portal/api/link-vantage-email', {
@@ -760,7 +767,7 @@ async function emSaveVantageEmail() {
     errEl.style.display = 'block';
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Save & Continue →';
+    btn.textContent = _EM_STR.save_continue;
   }
 }
 
