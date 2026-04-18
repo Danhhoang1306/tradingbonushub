@@ -28,10 +28,14 @@ def _clean(val: str) -> str:
     return "" if v.lower() in _JUNK_VALUES else v
 
 
-# Normalised aliases → canonical field names
+# Aliases → canonical field names. Matches current Vantage export format:
+# User ID, Sales, Account Owner, Client Name (IPT/EN), AFFID, Leads Type,
+# Country, Mobile, Email, ... (see table_export_YYYYMMDD_*.csv).
+# Order within each alias list = preference: first match wins, later
+# matches do NOT override. Use this to prefer EN over IPT for name.
 _FIELD_ALIASES = {
     "email":      ["email", "e-mail", "mail", "email address"],
-    "name":       ["name", "full name", "client name", "client name (en)",
+    "name":       ["client name (en)", "name", "full name", "client name",
                    "client name (ipt)", "họ tên", "tên"],
     "country":    ["country", "contry", "quốc gia", "quoc gia"],
     "mobile":     ["mobile", "phone", "điện thoại", "dien thoai", "số điện thoại"],
@@ -41,14 +45,20 @@ _FIELD_ALIASES = {
     "leads_type": ["leads type", "lead type", "loại lead"],
 }
 
+
 def _build_field_map(columns: list[str]) -> dict[str, str]:
-    """Map actual column names to canonical field names using aliases."""
-    result = {}
-    for col in columns:
-        col_lower = col.strip().lower()
-        for field, aliases in _FIELD_ALIASES.items():
-            if col_lower in aliases:
-                result[field] = col
+    """Map actual column names to canonical field names using aliases.
+
+    When multiple columns match a canonical field, the alias appearing
+    earliest in its alias list wins (so "Client Name (EN)" beats
+    "Client Name (IPT)" for `name`).
+    """
+    col_lookup = {c.strip().lower(): c for c in columns}
+    result: dict[str, str] = {}
+    for field, aliases in _FIELD_ALIASES.items():
+        for alias in aliases:
+            if alias in col_lookup:
+                result[field] = col_lookup[alias]
                 break
     return result
 

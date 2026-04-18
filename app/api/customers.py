@@ -502,7 +502,39 @@ async def api_customer_detail(email: str):
 
 # ── Client folder import ──────────────────────────────────────────────────────
 
-# Old format: "Registration Date" column
+# Current Vantage CRM export format (table_export_YYYYMMDD_HHMM.csv).
+# Columns present: User ID, Sales, Account Owner, Client Name (IPT),
+# Client Name (EN), CPA, AFFID, DAP CPA, DAP CPA Owner, Leads Type, Country,
+# Authentication, KYC Authentication, Mobile, Email, Demo Account,
+# Create time, Retail Source, Lead Source, IB Campaign Source, referral,
+# WebsiteID, Update Time, Sales Notes, Sales follow-up, Rating, Sales Status,
+# Resource Pool, Data Owner, Webinar, Mark Type.
+_CLIENT_COL_MAP_CURRENT = {
+    "User ID":            "use_id",
+    "Email":              "broker_email",
+    "Client Name (EN)":   "client_name",
+    "Client Name (IPT)":  "client_name_ipt",
+    "Country":            "country",
+    "Account Owner":      "ib_name",
+    "AFFID":              "ib_number",
+    "Mobile":             "mobile",
+    "Leads Type":         "leads_type",
+    "Demo Account":       "demo_account",
+    "IB Campaign Source": "ib_campaign_source",
+}
+
+# Legacy "Register Date" format — kept for backward compat with older exports.
+_CLIENT_COL_MAP_LEGACY_NEW = {
+    "Sales":              "use_id",
+    "Client Name (IPT)":  "ib_info",
+    "Client Name (EN)":   "client_name",
+    "Account":            "broker_email",
+    "Register Date":      "country",
+    "Update Date":        "trading_account",
+    "IB Campaign Source": "account_type",
+}
+
+# Oldest format.
 _CLIENT_COL_MAP_OLD = {
     "User ID":            "use_id",
     "Account Owner":      "ib_name",
@@ -513,18 +545,18 @@ _CLIENT_COL_MAP_OLD = {
     "Source Adjustment":  "mt5_accounts_raw",
 }
 
-# New format: "Register Date" column
-_CLIENT_COL_MAP_NEW = {
-    "Sales":              "use_id",
-    "Client Name (IPT)":  "ib_info",
-    "Client Name (EN)":   "client_name",
-    "Account":            "broker_email",
-    "Register Date":      "country",
-    "Update Date":        "trading_account",
-    "IB Campaign Source": "account_type",
-}
-
 _IB_INFO_RE = re.compile(r'^(.*?)\((\d+)\)\s*$')
+# Demo Account format: "4-893248043" → extract trailing digits.
+_DEMO_ACCT_RE = re.compile(r'(\d{4,})$')
+
+
+def _detect_client_format(fieldnames: set) -> str:
+    """Identify the CSV format: current / legacy_new / old."""
+    if {"User ID", "AFFID", "Leads Type", "Email"}.issubset(fieldnames):
+        return "current"
+    if "Register Date" in fieldnames:
+        return "legacy_new"
+    return "old"
 
 
 def _parse_client_csv(content: bytes) -> list:
@@ -532,8 +564,12 @@ def _parse_client_csv(content: bytes) -> list:
     text = content.decode("utf-8-sig", errors="replace")
     reader = _csv.DictReader(io.StringIO(text))
     fieldnames = set(reader.fieldnames or [])
-    is_new = "Register Date" in fieldnames
-    col_map = _CLIENT_COL_MAP_NEW if is_new else _CLIENT_COL_MAP_OLD
+    fmt = _detect_client_format(fieldnames)
+    col_map = {
+        "current":    _CLIENT_COL_MAP_CURRENT,
+        "legacy_new": _CLIENT_COL_MAP_LEGACY_NEW,
+        "old":        _CLIENT_COL_MAP_OLD,
+    }[fmt]
 
     result = []
     for raw_row in reader:
@@ -545,10 +581,28 @@ def _parse_client_csv(content: bytes) -> list:
 
         use_id       = str(data.get("use_id") or "").strip()
         broker_email = str(data.get("broker_email") or "").strip().lower()
-        client_name  = str(data.get("client_name") or "").strip()
+        # Emails masked as "click to show" in export can't be used as match key.
+        if broker_email == "click to show":
+            broker_email = ""
         country      = str(data.get("country") or "").strip()
 
-        if is_new:
+        if fmt == "current":
+            # Prefer English name; fall back to native (IPT) if EN blank.
+            client_name = (str(data.get("client_name") or "").strip()
+                           or str(data.get("client_name_ipt") or "").strip())
+            ib_name     = str(data.get("ib_name") or "").strip()
+            ib_number   = str(data.get("ib_number") or "").strip()
+            # Leads Type = "Demo" → extract MT5 from Demo Account.
+            leads_type  = str(data.get("leads_type") or "").strip().lower()
+            demo_raw    = str(data.get("demo_account") or "").strip()
+            mt5_list    = []
+            if leads_type == "demo" and demo_raw and demo_raw != "-":
+                m = _DEMO_ACCT_RE.search(demo_raw)
+                if m:
+                    mt5_list = [m.group(1)]
+            account_type = str(data.get("ib_campaign_source") or "").strip()
+        elif fmt == "legacy_new":
+            client_name = str(data.get("client_name") or "").strip()
             ib_info = data.get("ib_info", "")
             m = _IB_INFO_RE.match(ib_info)
             ib_name    = m.group(1).strip() if m else ib_info
@@ -556,7 +610,8 @@ def _parse_client_csv(content: bytes) -> list:
             ta_raw     = data.get("trading_account", "").strip()
             mt5_list   = [ta_raw] if ta_raw.isdigit() else []
             account_type = str(data.get("account_type") or "").strip()
-        else:
+        else:  # old
+            client_name = str(data.get("client_name") or "").strip()
             ib_name    = str(data.get("ib_name") or "").strip()
             ib_number  = ""
             raw_mt5    = str(data.get("mt5_accounts_raw") or "").strip()
