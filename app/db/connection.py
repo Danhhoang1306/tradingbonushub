@@ -124,11 +124,33 @@ def init_pool(size: int = _POOL_SIZE) -> None:
 
     Pool size is controlled by the DB_POOL_SIZE environment variable (default 20).
     Each connection is validated with a SELECT 1 before being added to the pool.
+
+    Startup resilience: waits up to 60s for SQL Server to become ready (handles
+    the case where app boots before SQL Server after a Windows reboot).
     """
+    import time
     global _pool
     with _pool_lock:
         if _pool is not None:
             return  # already initialized
+
+        # Wait for SQL Server to be reachable before opening the full pool.
+        # Backs off with 2s sleeps for up to 60s. After that, give up and let
+        # get_conn() use the per-request fallback path.
+        deadline = time.monotonic() + 60
+        while time.monotonic() < deadline:
+            try:
+                probe = pyodbc.connect(_CONN_STR, timeout=5)
+                probe.cursor().execute("SELECT 1")
+                probe.close()
+                break
+            except Exception as e:
+                _log.warning("db.pool_waiting_for_server", error=str(e))
+                time.sleep(2)
+        else:
+            _log.error("db.pool_server_unreachable_after_60s")
+            return  # leave _pool as None; get_conn() will fall back per-request
+
         _pool = queue.Queue(maxsize=size)
         for i in range(size):
             for attempt in range(3):
@@ -142,7 +164,7 @@ def init_pool(size: int = _POOL_SIZE) -> None:
                     if attempt == 2:
                         _log.warning("db.pool_conn_failed", index=i)
                     else:
-                        import time; time.sleep(1)
+                        time.sleep(1)
 
 
 def _new_raw_conn() -> pyodbc.Connection:
