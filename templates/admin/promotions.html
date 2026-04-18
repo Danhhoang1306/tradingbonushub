@@ -104,8 +104,13 @@
       <select id="f-broker-id"></select>
     </div>
     <div class="form-group" style="margin-bottom:12px;">
-      <label>Program Name</label>
+      <label>Program Name <span style="font-size:11px;color:#888;">(Vietnamese / default)</span></label>
       <input type="text" id="f-name" placeholder="Backcom Vantage 80%" />
+    </div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label>Program Name (English)</label>
+      <input type="text" id="f-name-en" placeholder="First-time sign up" />
+      <p class="hint" style="font-size:11px;color:#888;margin-top:4px;">Shown when the site is viewed in English. Leave blank to fall back to the default name.</p>
     </div>
     <div style="display:flex;gap:12px;margin-bottom:12px;">
       <div class="form-group" style="flex:1;">
@@ -233,6 +238,16 @@ function cardHtml(p) {
     </div>
 
     <div class="promo-detail" id="detail-${p.id}">
+      <!-- Localisation -->
+      <div class="section-title">Localisation</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Program Name (English)</label>
+          <input type="text" id="d-name-en-${p.id}" value="${esc(p.name_en || '')}" placeholder="e.g. First-time sign up" />
+          <p class="hint">Shown when the site is viewed in English. Leave blank to fall back to "${esc(p.name || '')}".</p>
+        </div>
+      </div>
+
       <!-- Rebate config -->
       <div class="section-title">Rebate Configuration</div>
       <div class="form-grid">
@@ -369,6 +384,7 @@ async function saveAll(pid) {
   // Save program
   const progBody = {
     name: p.name,
+    name_en: (document.getElementById('d-name-en-' + pid)?.value || '').trim() || null,
     type: p.type || 'backcom',
     rebate_pct: pct,
     rebate_usd_per_lot: lotVal !== '' ? parseFloat(lotVal) : null,
@@ -417,6 +433,7 @@ function openAddModal() {
   document.getElementById('edit-pid').value = '';
   document.getElementById('modal-title').textContent = 'Add Program';
   document.getElementById('f-name').value = '';
+  document.getElementById('f-name-en').value = '';
   document.getElementById('f-type').value = 'backcom';
   document.getElementById('f-card-template').value = 'default';
   document.getElementById('f-rebate-pct').value = '80';
@@ -434,6 +451,7 @@ async function savePromo() {
   const body = {
     broker_ids: [parseInt(document.getElementById('f-broker-id').value)],
     name: document.getElementById('f-name').value.trim(),
+    name_en: document.getElementById('f-name-en').value.trim() || null,
     type: document.getElementById('f-type').value,
     card_template: document.getElementById('f-card-template').value,
     rebate_pct: parseFloat(document.getElementById('f-rebate-pct').value) || 80,

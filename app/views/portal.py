@@ -260,7 +260,7 @@ def _build_enrollments(broker_accounts: list) -> list:
     return result
 
 
-def _load_promotions_for_portal() -> list:
+def _load_promotions_for_portal(lang: str = "en") -> list:
     """Load all active programs with broker info and tiers for the portal promotions tab.
 
     Uses separate queries instead of JOIN to avoid duplicating programs that
@@ -270,7 +270,7 @@ def _load_promotions_for_portal() -> list:
     with _gc() as conn:
         # Programs only — no JOIN, no duplicates
         rows = conn.execute(
-            """SELECT p.id, p.name, p.type, p.rebate_pct, p.display_order,
+            """SELECT p.id, p.name, p.name_en, p.type, p.rebate_pct, p.display_order,
                       p.rebate_usd_per_lot,
                       ISNULL(p.card_template, 'default') AS card_template,
                       ISNULL(p.is_recommended, 0)        AS is_recommended,
@@ -337,6 +337,9 @@ def _load_promotions_for_portal() -> list:
             prog["licenses"] = primary.get("broker_licenses")
         if not prog.get("leverage"):
             prog["leverage"] = primary.get("broker_leverage")
+        # Localise program name for the current viewer
+        if lang == "en" and (prog.get("name_en") or "").strip():
+            prog["name"] = prog["name_en"]
         result.append({
             **prog,
             # Primary broker (for display / filter)
@@ -374,7 +377,7 @@ async def portal_dashboard(request: Request):
         broker_accounts = get_accounts_for_customer(customer["id"])
 
     # Programs for promotions tab
-    promotions = await asyncio.to_thread(_load_promotions_for_portal)
+    promotions = await asyncio.to_thread(_load_promotions_for_portal, _lang(request))
 
     # Broker IDs where customer is enrolled (pending or active)
     enrolled_broker_ids: set = {

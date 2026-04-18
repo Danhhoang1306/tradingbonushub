@@ -78,6 +78,9 @@ async def landing(request: Request):
         p["details"] = {}
         p["tiers"]   = all_tiers.get(p["id"], [])
         p["rates"]   = []
+        # Localise program name for the current viewer
+        if lang == "en" and (p.get("name_en") or "").strip():
+            p["name"] = p["name_en"]
 
     backcom_promos = [p for p in promotions if "bonus" not in (p.get("type") or "").lower()]
     tier_promos    = [p for p in promotions if "bonus" in (p.get("type") or "").lower()]
@@ -217,6 +220,9 @@ async def public_promotions_index(request: Request):
                 p["licenses"] = b.get("licenses")
             if not p.get("leverage"):
                 p["leverage"] = b.get("leverage")
+            # Localise program name for the current viewer
+            if lang == "en" and (p.get("name_en") or "").strip():
+                p["name"] = p["name_en"]
         programs.extend(broker_programs)
 
     # FAQ for promotions page (generic only)

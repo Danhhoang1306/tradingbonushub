@@ -154,6 +154,7 @@ def create_program(
     ends_at: str | None = None,
     description: str | None = None,
     description_en: str | None = None,
+    name_en: str | None = None,
     geo_targets: str | None = None,
 ) -> int:
     if card_template not in CARD_TEMPLATES:
@@ -163,11 +164,11 @@ def create_program(
     with get_conn() as conn:
         cur = conn.execute(
             "INSERT INTO programs "
-            "(name, type, is_active, display_order, rebate_pct, rebate_usd_per_lot, "
+            "(name, name_en, type, is_active, display_order, rebate_pct, rebate_usd_per_lot, "
             " card_template, is_recommended, licenses, leverage, features, rebate_xau_label, "
             " rebate_frequency, starts_at, ends_at, description, description_en, geo_targets) "
-            "OUTPUT INSERTED.id VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-            (name, type_, int(is_active), display_order, rebate_pct, rebate_usd_per_lot,
+            "OUTPUT INSERTED.id VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (name, name_en, type_, int(is_active), display_order, rebate_pct, rebate_usd_per_lot,
              card_template, int(is_recommended), licenses, leverage, features, rebate_xau_label,
              rebate_frequency, starts_at, ends_at, description, description_en, geo_targets),
         )
@@ -194,6 +195,7 @@ def update_program(
     ends_at: str | None = None,
     description: str | None = None,
     description_en: str | None = None,
+    name_en: str | None = None,
     geo_targets: str | None = None,
 ) -> None:
     if card_template not in CARD_TEMPLATES:
@@ -202,11 +204,11 @@ def update_program(
         rebate_frequency = "daily"
     with get_conn() as conn:
         conn.execute(
-            "UPDATE programs SET name=?, type=?, is_active=?, display_order=?, rebate_pct=?, "
+            "UPDATE programs SET name=?, name_en=?, type=?, is_active=?, display_order=?, rebate_pct=?, "
             "rebate_usd_per_lot=?, card_template=?, is_recommended=?, licenses=?, leverage=?, "
             "features=?, rebate_xau_label=?, rebate_frequency=?, "
             "starts_at=?, ends_at=?, description=?, description_en=?, geo_targets=? WHERE id=?",
-            (name, type_, int(is_active), display_order, rebate_pct, rebate_usd_per_lot,
+            (name, name_en, type_, int(is_active), display_order, rebate_pct, rebate_usd_per_lot,
              card_template, int(is_recommended), licenses, leverage, features, rebate_xau_label,
              rebate_frequency, starts_at, ends_at, description, description_en, geo_targets,
              program_id),

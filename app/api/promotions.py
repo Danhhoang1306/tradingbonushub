@@ -61,6 +61,7 @@ async def api_create_promotion(request: Request):
     cf = _card_fields(data)
     pid = create_program(
         name=data["name"].strip(),
+        name_en=(data.get("name_en") or "").strip() or None,
         type_=data.get("type", "backcom").strip(),
         is_active=bool(data.get("is_active", True)),
         display_order=int(data.get("display_order", 0)),
@@ -89,6 +90,7 @@ async def api_update_promotion(pid: int, request: Request):
     update_program(
         program_id=pid,
         name=data.get("name", p["name"]).strip(),
+        name_en=(data.get("name_en") if "name_en" in data else p.get("name_en")) or None,
         type_=data.get("type", p.get("type", "backcom")).strip(),
         is_active=bool(data.get("is_active", p["is_active"])),
         display_order=int(data.get("display_order", p["display_order"])),

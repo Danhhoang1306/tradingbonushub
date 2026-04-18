@@ -788,6 +788,8 @@ def _run_migrations() -> None:
             conn.execute("ALTER TABLE programs ADD description NVARCHAR(MAX) NULL")
         if not _col_exists("programs", "description_en"):
             conn.execute("ALTER TABLE programs ADD description_en NVARCHAR(MAX) NULL")
+        if not _col_exists("programs", "name_en"):
+            conn.execute("ALTER TABLE programs ADD name_en NVARCHAR(255) NULL")
         if not _col_exists("programs", "geo_targets"):
             conn.execute(
                 "ALTER TABLE programs ADD geo_targets NVARCHAR(500) NULL"
