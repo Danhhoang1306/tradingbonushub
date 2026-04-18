@@ -632,6 +632,26 @@ def _run_migrations() -> None:
             if not _col_exists("brokers", col):
                 conn.execute(f"ALTER TABLE brokers ADD {col} {typedef}")
 
+        # One-time backfill: copy the most common non-empty program leverage
+        # into brokers.leverage so legacy data benefits from the card fallback
+        # without manual re-entry per broker.
+        conn.execute(
+            """UPDATE b
+               SET b.leverage = src.leverage
+               FROM brokers b
+               CROSS APPLY (
+                   SELECT TOP 1 p.leverage
+                   FROM programs p
+                   JOIN program_brokers pb ON pb.program_id = p.id
+                   WHERE pb.broker_id = b.id
+                     AND p.leverage IS NOT NULL
+                     AND LTRIM(RTRIM(p.leverage)) <> ''
+                   GROUP BY p.leverage
+                   ORDER BY COUNT(*) DESC
+               ) src
+               WHERE b.leverage IS NULL OR LTRIM(RTRIM(b.leverage)) = ''"""
+        )
+
         # Hide brokers without a profile from the public /brokers page.
         # Only the 12 profiled brokers should be visible; rest default to hidden.
         _profiled = (
