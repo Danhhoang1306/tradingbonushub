@@ -290,7 +290,7 @@
               {% else %}
                 {# Review article takes priority over visit URL #}
                 {% if b.review_article_slug %}
-                  <a href="/blog/{{ b.review_article_slug }}" class="btn-broker-visit">{{ t('brokers_read_review', lang) }}</a>
+                  <a href="/blog/{{ b.review_article_slug }}{% if lang == 'en' %}?lang=en{% endif %}" class="btn-broker-visit">{{ t('brokers_read_review', lang) }}</a>
                 {% elif b.visit_url %}
                   <a href="{{ b.visit_url }}" target="_blank" rel="nofollow noopener" class="btn-broker-visit">{{ t('brokers_visit', lang) }}</a>
                 {% endif %}

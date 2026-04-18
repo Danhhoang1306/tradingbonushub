@@ -49,9 +49,9 @@
 
     <!-- Language switcher -->
     <div class="lang-switch nav-desktop">
-      <a class="lang-btn{% if lang != 'en' %} lang-active{% endif %}" href="?lang=vi" title="Tiếng Việt">VI</a>
+      <a class="lang-btn{% if lang != 'en' %} lang-active{% endif %}" href="{{ switch_lang_url(request, 'vi') }}" title="Tiếng Việt">VI</a>
       <span class="lang-sep">|</span>
-      <a class="lang-btn{% if lang == 'en' %} lang-active{% endif %}" href="?lang=en" title="English">EN</a>
+      <a class="lang-btn{% if lang == 'en' %} lang-active{% endif %}" href="{{ switch_lang_url(request, 'en') }}" title="English">EN</a>
     </div>
 
     <a class="btn-auth" href="/portal/login">{{ t('nav_login', lang) }}</a>
@@ -71,8 +71,8 @@
   <a href="{{ lang_url('/blog', lang) }}" onclick="closeDrawer()">{{ t('nav_blog', lang) }}</a>
   <a href="{{ lang_url('/about', lang) }}" onclick="closeDrawer()">{{ t('nav_contact', lang) }}</a>
   <div class="lang-switch-mobile">
-    <a class="lang-btn{% if lang != 'en' %} lang-active{% endif %}" href="?lang=vi" onclick="closeDrawer()">🇻🇳 Tiếng Việt</a>
-    <a class="lang-btn{% if lang == 'en' %} lang-active{% endif %}" href="?lang=en" onclick="closeDrawer()">🇬🇧 English</a>
+    <a class="lang-btn{% if lang != 'en' %} lang-active{% endif %}" href="{{ switch_lang_url(request, 'vi') }}" onclick="closeDrawer()">🇻🇳 Tiếng Việt</a>
+    <a class="lang-btn{% if lang == 'en' %} lang-active{% endif %}" href="{{ switch_lang_url(request, 'en') }}" onclick="closeDrawer()">🇬🇧 English</a>
   </div>
   <a href="/portal/login" class="drawer-auth" onclick="closeDrawer()">{{ t('nav_login', lang) }}</a>
 </div>

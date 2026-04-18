@@ -195,7 +195,7 @@
     <a href="/{% if lang == 'en' %}?lang=en{% endif %}">{{ t('nav_home', lang) }}</a><span>/</span>
     <a href="/blog{% if lang == 'en' %}?lang=en{% endif %}">Blog</a><span>/</span>
     {% if article.category_name %}
-    <a href="/blog?category={{ article.category_slug or article.category_id }}">{{ article.category_name }}</a><span>/</span>
+    <a href="/blog?category={{ article.category_slug or article.category_id }}{% if lang == 'en' %}&lang=en{% endif %}">{{ article.category_name }}</a><span>/</span>
     {% endif %}
     <span style="color:rgba(255,255,255,.7);">{{ _title }}</span>
   </div>
@@ -232,7 +232,7 @@
     <a href="/portal/register" class="cta-btn">Sign up for free →</a>
   </div>
 
-  <a href="/blog" class="back-link">← Back to articles</a>
+  <a href="/blog{% if lang == 'en' %}?lang=en{% endif %}" class="back-link">← Back to articles</a>
 
 </div>
 
@@ -242,7 +242,7 @@
   <h3>Related Articles</h3>
   <div class="related-scroll">
     {% for art in related_articles %}
-    <a href="/blog/{{ art.slug }}" class="related-card">
+    <a href="/blog/{{ art.slug }}{% if lang == 'en' %}?lang=en{% endif %}" class="related-card">
       {% if art.cover_url %}
         <img class="related-card-img" src="{{ art.cover_url }}" alt="{{ art.title }}" loading="lazy" />
       {% else %}

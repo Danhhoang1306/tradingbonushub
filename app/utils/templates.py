@@ -1,6 +1,7 @@
 """Jinja2 template factory — supports shared template directory."""
 import hashlib
 import pathlib
+from urllib.parse import urlencode
 
 from markupsafe import Markup
 from jinja2 import ChoiceLoader, FileSystemLoader
@@ -62,6 +63,16 @@ def _lang_url(path: str, lang: str) -> str:
     return f"{path}{sep}lang=en"
 
 
+def _switch_lang_url(request, new_lang: str) -> str:
+    """Build URL for the language switcher — same path, other query params preserved."""
+    path = request.url.path
+    pairs = [(k, v) for k, v in request.query_params.multi_items() if k != "lang"]
+    if new_lang == "en":
+        pairs.append(("lang", "en"))
+    qs = urlencode(pairs)
+    return f"{path}?{qs}" if qs else path
+
+
 def make_templates(*dirs: str) -> Jinja2Templates:
     """Return a Jinja2Templates instance that searches `dirs` then `templates/shared`."""
     tpl = Jinja2Templates(directory=dirs[0])
@@ -74,5 +85,6 @@ def make_templates(*dirs: str) -> Jinja2Templates:
     tpl.env.globals["t"] = _t
     tpl.env.globals["static_url"] = _static_url
     tpl.env.globals["lang_url"] = _lang_url
+    tpl.env.globals["switch_lang_url"] = _switch_lang_url
     tpl.env.filters["sanitize"] = _sanitize_html
     return tpl
