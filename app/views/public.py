@@ -114,10 +114,15 @@ async def landing(request: Request):
         })
         top_programs.append({**p, "rank": rank})
 
-    # Enrich top_programs with broker learn_more_url
-    broker_urls = {b["slug"]: b.get("learn_more_url") or "" for b in brokers}
+    # Enrich top_programs with broker learn_more_url + licenses/leverage fallback
+    broker_by_slug = {b["slug"]: b for b in brokers}
     for p in top_programs:
-        p.setdefault("broker_learn_more_url", broker_urls.get(p.get("broker_slug"), ""))
+        b = broker_by_slug.get(p.get("broker_slug")) or {}
+        p.setdefault("broker_learn_more_url", b.get("learn_more_url") or "")
+        if not p.get("licenses"):
+            p["licenses"] = b.get("licenses")
+        if not p.get("leverage"):
+            p["leverage"] = b.get("leverage")
 
     # Load Gold Bonus tiers (for landing page calculator)
     with get_conn() as _c:
