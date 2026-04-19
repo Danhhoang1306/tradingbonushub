@@ -68,14 +68,15 @@ class LangMiddleware(BaseHTTPMiddleware):
         if lang is None and explicit_cookie and cookie_lang:
             lang = cookie_lang
 
-        # 3. Geo-detect via Cloudflare header — overrides stale auto-detected cookie
+        # 3. Geo-detect via Cloudflare header — overrides stale auto-detected cookie.
+        #    Only upgrade to Vietnamese for VN visitors; don't force English on
+        #    other countries (let them fall through to cookie / Accept-Language /
+        #    final fallback instead).
         if lang is None:
             country = request.headers.get("cf-ipcountry", "").upper()
-            if country and country != "XX":
-                geo_lang = "vi" if country in _VN_COUNTRIES else "en"
-                lang = geo_lang
-                # Refresh cookie only if it was missing or didn't match region
-                if cookie_lang != geo_lang:
+            if country in _VN_COUNTRIES:
+                lang = "vi"
+                if cookie_lang != "vi":
                     set_cookie = True
 
         # 4. Non-explicit cookie (no CF header available)
