@@ -53,16 +53,25 @@ async def notify_admin(text: str) -> bool:
     """
     token, support_chat_id = _cfg()
     if not token:
+        logger.warning("telegram.notify_admin_skipped", reason="no_bot_token")
         return False
     ps = get_portal_settings()
     notify_chat_id = (ps.get("admin_notify_chat_id") or "").strip() or support_chat_id
     if not notify_chat_id:
+        logger.warning("telegram.notify_admin_skipped", reason="no_chat_id")
+        return False
+    try:
+        chat_id_int = int(notify_chat_id)
+    except ValueError:
+        logger.warning("telegram.notify_admin_skipped", reason="invalid_chat_id", value=notify_chat_id)
         return False
     result = await _call(
         "sendMessage", token,
-        chat_id=int(notify_chat_id), text=text, parse_mode="HTML",
+        chat_id=chat_id_int, text=text, parse_mode="HTML",
         disable_web_page_preview=True,
     )
+    if result:
+        logger.info("telegram.notify_admin_sent", chat_id=chat_id_int)
     return result is not None
 
 

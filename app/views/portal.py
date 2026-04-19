@@ -133,6 +133,7 @@ async def portal_register_submit(
                 (new_id, email, new_id),
             )
 
+    logger.info("portal.register", email=email, name=name, customer_id=new_id)
     asyncio.create_task(_fire(
         notify_new_registration(name, email), label="notify_new_registration"
     ))
