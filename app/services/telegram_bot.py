@@ -43,6 +43,24 @@ async def send_message(chat_id: int, text: str) -> dict | None:
     return await _call("sendMessage", token, chat_id=chat_id, text=text, parse_mode="HTML")
 
 
+async def notify_admin(text: str) -> bool:
+    """Send a one-way notification to the configured admin chat.
+
+    Returns True if the message was dispatched, False if Telegram is not
+    configured (missing bot token or admin chat id) — callers can rely on
+    this as a silent no-op when the operator hasn't wired up Telegram yet.
+    """
+    token, admin_chat_id = _cfg()
+    if not token or not admin_chat_id:
+        return False
+    result = await _call(
+        "sendMessage", token,
+        chat_id=int(admin_chat_id), text=text, parse_mode="HTML",
+        disable_web_page_preview=True,
+    )
+    return result is not None
+
+
 async def set_webhook(site_url: str, secret_token: str = "") -> bool:
     """Register the webhook URL with Telegram. Call once after setup."""
     token, _ = _cfg()

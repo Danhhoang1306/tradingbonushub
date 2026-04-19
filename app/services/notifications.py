@@ -38,6 +38,37 @@ async def notify_new_registration(name: str, email: str) -> None:
         logger.error("notify.registration_failed", email=email, error=str(e))
 
 
+def _html_escape(value: str) -> str:
+    return (
+        str(value)
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+    )
+
+
+async def notify_new_registration_telegram(name: str, email: str) -> None:
+    """Notify admin via Telegram bot when a new customer registers."""
+    from app.services.telegram_bot import notify_admin
+
+    safe_name  = _html_escape(name)
+    safe_email = _html_escape(email)
+    site_url   = _site_url()
+    text = (
+        "🆕 <b>New customer registration</b>\n"
+        f"👤 Name: <b>{safe_name}</b>\n"
+        f"📧 Email: <code>{safe_email}</code>\n"
+        f"🕐 Time: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}\n\n"
+        f'🔗 <a href="{site_url}/admin/customers">Open admin → Customers</a>'
+    )
+    try:
+        sent = await notify_admin(text)
+        if sent:
+            logger.info("notify.registration_telegram_sent", email=email)
+    except Exception as e:
+        logger.error("notify.registration_telegram_failed", email=email, error=str(e))
+
+
 async def send_verification_email(cfg: dict, customer_email: str, verify_link: str) -> None:
     """Send email verification link to newly registered customer."""
     if not cfg.get("host") or cfg.get("host") == "localhost":

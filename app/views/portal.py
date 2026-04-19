@@ -28,7 +28,8 @@ from app.db.repositories.smtp import get_google_oauth_config, get_gmail_token, s
 from app.services.auth import hash_pw_async, needs_rehash, verify_pw_async
 from app.services.gmail import make_flow, _get_google_email_sync, send_transfer_email
 from app.services.notifications import (
-    notify_new_registration, send_reset_email, send_verification_email,
+    notify_new_registration, notify_new_registration_telegram,
+    send_reset_email, send_verification_email,
     send_broker_email_verify, send_enrollment_notification,
     notify_broker_email_linked,
 )
@@ -134,6 +135,10 @@ async def portal_register_submit(
 
     asyncio.create_task(_fire(
         notify_new_registration(name, email), label="notify_new_registration"
+    ))
+    asyncio.create_task(_fire(
+        notify_new_registration_telegram(name, email),
+        label="notify_new_registration_telegram",
     ))
 
     # Auto-login after registration — set session and go straight to dashboard
