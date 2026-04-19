@@ -4,7 +4,67 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{ t('about_title', lang) }} | TradingBonusHub</title>
+  <meta name="description" content="{{ t('about_meta_desc', lang) if t('about_meta_desc', lang) != 'about_meta_desc' else 'Learn about TradingBonusHub — a daily cashback & rebate program for Forex and Gold traders. Our mission, how we pay, and how to reach us.' }}" />
+  <meta name="keywords" content="about tradingbonushub, forex rebate company, cashback provider, forex partner, contact tradingbonushub" />
+  <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://tradingbonushub.com/about" />
+  <link rel="alternate" hreflang="en" href="https://tradingbonushub.com/about?lang=en" />
+  <link rel="alternate" hreflang="vi" href="https://tradingbonushub.com/about?lang=vi" />
+  <link rel="alternate" hreflang="x-default" href="https://tradingbonushub.com/about" />
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="TradingBonusHub" />
+  <meta property="og:url" content="https://tradingbonushub.com/about" />
+  <meta property="og:title" content="{{ t('about_title', lang) }} | TradingBonusHub" />
+  <meta property="og:description" content="Learn about TradingBonusHub — a daily cashback & rebate program for Forex and Gold traders." />
+  <meta property="og:image" content="https://tradingbonushub.com/static/og-image.png" />
+  <meta property="og:locale" content="{{ 'en_US' if lang == 'en' else 'vi_VN' }}" />
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@tradingbonushub" />
+  <meta name="twitter:title" content="{{ t('about_title', lang) }} | TradingBonusHub" />
+  <meta name="twitter:description" content="Learn about TradingBonusHub — a daily cashback & rebate program for Forex and Gold traders." />
+  <meta name="twitter:image" content="https://tradingbonushub.com/static/og-image.png" />
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "AboutPage",
+        "@id": "https://tradingbonushub.com/about#page",
+        "url": "https://tradingbonushub.com/about",
+        "name": "About TradingBonusHub",
+        "inLanguage": "{{ lang }}",
+        "isPartOf": {"@type":"WebSite","url":"https://tradingbonushub.com/","name":"TradingBonusHub"}
+      },
+      {
+        "@type": "Organization",
+        "name": "TradingBonusHub",
+        "url": "https://tradingbonushub.com/",
+        "logo": "https://tradingbonushub.com/static/logo-tb.png",
+        "sameAs": [
+          {% if ps.get('telegram_url') %}"{{ ps.get('telegram_url') }}",{% endif %}
+          {% if ps.get('facebook_url') %}"{{ ps.get('facebook_url') }}",{% endif %}
+          {% if ps.get('youtube_url') %}"{{ ps.get('youtube_url') }}"{% else %}"https://tradingbonushub.com/"{% endif %}
+        ],
+        "contactPoint": [{
+          "@type": "ContactPoint",
+          "contactType": "customer support",
+          "email": "{{ ps.get('support_email') or 'support@tradingbonushub.com' }}",
+          "availableLanguage": ["English","Vietnamese"]
+        }]
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {"@type":"ListItem","position":1,"name":"Home","item":"https://tradingbonushub.com/"},
+          {"@type":"ListItem","position":2,"name":"About","item":"https://tradingbonushub.com/about"}
+        ]
+      }
+    ]
+  }
+  </script>
   <link rel="icon" type="image/png" sizes="32x32" href="/static/logo-tb.png" />
   <link rel="apple-touch-icon" href="/static/logo-tb.png" />
   <style>

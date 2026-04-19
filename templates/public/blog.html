@@ -4,7 +4,63 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{ seo_title or (pc.get('site_title','TradingBonusHub') + ' — Blog') }}</title>
-  <meta name="description" content="{{ seo_desc or pc.get('site_description','') }}" />
+  <meta name="description" content="{{ seo_desc or pc.get('site_description','Insights, guides and news about forex rebates, cashback programs and trading bonuses from TradingBonusHub.') }}" />
+  <meta name="keywords" content="forex blog, trading bonus guide, rebate news, cashback tips, forex rebate programs, tradingbonushub" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <link rel="canonical" href="https://tradingbonushub.com/blog" />
+  <link rel="alternate" hreflang="en" href="https://tradingbonushub.com/blog?lang=en" />
+  <link rel="alternate" hreflang="vi" href="https://tradingbonushub.com/blog?lang=vi" />
+  <link rel="alternate" hreflang="x-default" href="https://tradingbonushub.com/blog" />
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="TradingBonusHub" />
+  <meta property="og:url" content="https://tradingbonushub.com/blog" />
+  <meta property="og:title" content="{{ seo_title or (pc.get('site_title','TradingBonusHub') + ' — Blog') }}" />
+  <meta property="og:description" content="{{ seo_desc or pc.get('site_description','Insights, guides and news about forex rebates, cashback and trading bonuses.') }}" />
+  <meta property="og:image" content="{{ ps.get('og_image_url') or 'https://tradingbonushub.com/static/og-image.png' }}" />
+  <meta property="og:locale" content="{{ 'en_US' if lang == 'en' else 'vi_VN' }}" />
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@tradingbonushub" />
+  <meta name="twitter:title" content="{{ seo_title or (pc.get('site_title','TradingBonusHub') + ' — Blog') }}" />
+  <meta name="twitter:description" content="{{ seo_desc or pc.get('site_description','Insights, guides and news about forex rebates, cashback and trading bonuses.') }}" />
+  <meta name="twitter:image" content="{{ ps.get('og_image_url') or 'https://tradingbonushub.com/static/og-image.png' }}" />
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Blog",
+        "@id": "https://tradingbonushub.com/blog#blog",
+        "name": "TradingBonusHub Blog",
+        "description": "Insights, guides and news about forex rebates, cashback programs and trading bonuses.",
+        "url": "https://tradingbonushub.com/blog",
+        "inLanguage": "{{ lang }}",
+        "publisher": {
+          "@type": "Organization",
+          "name": "TradingBonusHub",
+          "logo": {"@type":"ImageObject","url":"https://tradingbonushub.com/static/logo-tb.png"}
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {"@type":"ListItem","position":1,"name":"Home","item":"https://tradingbonushub.com/"},
+          {"@type":"ListItem","position":2,"name":"Blog","item":"https://tradingbonushub.com/blog"}
+        ]
+      }{% if articles %},
+      {
+        "@type": "ItemList",
+        "itemListElement": [
+          {% for art in articles %}
+          {"@type":"ListItem","position":{{ loop.index }},"url":"https://tradingbonushub.com/blog/{{ art.slug }}","name":"{{ (art.title_en if lang == 'en' and art.title_en else art.title) | e }}"}{% if not loop.last %},{% endif %}
+          {% endfor %}
+        ]
+      }{% endif %}
+    ]
+  }
+  </script>
   <link rel="icon" type="image/png" sizes="32x32" href="/static/logo-tb.png" />
   <link rel="apple-touch-icon" href="/static/logo-tb.png" />
   <style>

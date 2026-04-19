@@ -4,11 +4,62 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{ t('brokers_title', lang) }} — TradingBonusHub</title>
+  <meta name="description" content="{{ t('brokers_meta_desc', lang) }}" />
+  <meta name="keywords" content="forex brokers, best forex broker, regulated brokers, gold broker, forex broker comparison, trusted forex broker, tradingbonushub" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
   <link rel="canonical" href="https://tradingbonushub.com/brokers" />
+  <link rel="alternate" hreflang="en" href="https://tradingbonushub.com/brokers?lang=en" />
+  <link rel="alternate" hreflang="vi" href="https://tradingbonushub.com/brokers?lang=vi" />
+  <link rel="alternate" hreflang="x-default" href="https://tradingbonushub.com/brokers" />
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="TradingBonusHub" />
+  <meta property="og:url" content="https://tradingbonushub.com/brokers" />
+  <meta property="og:title" content="{{ t('brokers_title', lang) }} — TradingBonusHub" />
+  <meta property="og:description" content="{{ t('brokers_meta_desc', lang) }}" />
+  <meta property="og:image" content="https://tradingbonushub.com/static/og-image.png" />
+  <meta property="og:locale" content="{{ 'en_US' if lang == 'en' else 'vi_VN' }}" />
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@tradingbonushub" />
+  <meta name="twitter:title" content="{{ t('brokers_title', lang) }} — TradingBonusHub" />
+  <meta name="twitter:description" content="{{ t('brokers_meta_desc', lang) }}" />
+  <meta name="twitter:image" content="https://tradingbonushub.com/static/og-image.png" />
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "CollectionPage",
+        "@id": "https://tradingbonushub.com/brokers#page",
+        "url": "https://tradingbonushub.com/brokers",
+        "name": "{{ t('brokers_title', lang) | e }}",
+        "description": "{{ t('brokers_meta_desc', lang) | e }}",
+        "inLanguage": "{{ lang }}",
+        "isPartOf": {"@type":"WebSite","url":"https://tradingbonushub.com/","name":"TradingBonusHub"}
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {"@type":"ListItem","position":1,"name":"Home","item":"https://tradingbonushub.com/"},
+          {"@type":"ListItem","position":2,"name":"Brokers","item":"https://tradingbonushub.com/brokers"}
+        ]
+      }{% if brokers %},
+      {
+        "@type": "ItemList",
+        "name": "Forex & Gold Brokers",
+        "itemListElement": [
+          {% for b in brokers %}
+          {"@type":"ListItem","position":{{ loop.index }},"name":"{{ b.name | e }}"{% if b.website %},"url":"{{ b.website | e }}"{% endif %}}{% if not loop.last %},{% endif %}
+          {% endfor %}
+        ]
+      }{% endif %}
+    ]
+  }
+  </script>
   <link rel="icon" type="image/png" sizes="32x32" href="/static/logo-tb.png" />
   <link rel="apple-touch-icon" href="/static/logo-tb.png" />
-  <meta name="description" content="{{ t('brokers_meta_desc', lang) }}" />
-  <meta name="robots" content="index, follow" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }

@@ -5,13 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>{{ pc.get('site_title', 'Trading Bonus Hub | Daily Cashback & Forex Bonus for Traders') }}</title>
   <link rel="canonical" href="https://tradingbonushub.com/" />
-  <link rel="alternate" hreflang="en" href="https://tradingbonushub.com/" />
   <link rel="alternate" hreflang="en" href="https://tradingbonushub.com/?lang=en" />
+  <link rel="alternate" hreflang="vi" href="https://tradingbonushub.com/?lang=vi" />
+  <link rel="alternate" hreflang="x-default" href="https://tradingbonushub.com/" />
   <link rel="icon" type="image/png" sizes="32x32" href="/static/logo-tb.png" />
   <link rel="apple-touch-icon" href="/static/logo-tb.png" />
   <meta name="description" content="{{ pc.get('site_description', '') }}" />
   <meta name="keywords" content="trading bonus, trading reward, forex bonus, cashback forex, rebate forex, gold cashback, daily cashback, tradingbonushub" />
-  <meta name="robots" content="index, follow" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+  <meta name="author" content="TradingBonusHub" />
+  <meta name="theme-color" content="#050d1e" />
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://tradingbonushub.com/" />
@@ -23,9 +26,12 @@
   <meta property="og:image:height" content="630" />
   <meta property="og:locale" content="{{ 'en_US' if lang == 'en' else 'vi_VN' }}" />
   <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@tradingbonushub" />
   <meta name="twitter:title" content="Trading Bonus Hub | Daily Cashback &amp; Forex Bonus for Traders" />
   <meta name="twitter:description" content="The best trading bonus program — earn cashback &amp; forex bonus up to $2,000/month from Forex &amp; Gold trading." />
+  <meta name="twitter:image" content="{{ ps.get('og_image_url') or 'https://tradingbonushub.com/static/og-image.png' }}" />
+  <meta name="twitter:image:alt" content="TradingBonusHub — Daily Cashback &amp; Forex Bonus" />
   <!-- Structured Data -->
   <script type="application/ld+json">
   {

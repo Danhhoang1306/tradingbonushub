@@ -4,10 +4,31 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{ t('privacy_title', lang) }} | TradingBonusHub</title>
-  <link rel="canonical" href="https://tradingbonushub.com/privacy" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/static/logo-tb.png" />
   <meta name="description" content="TradingBonusHub Privacy Policy — how we collect, use, and protect your personal data." />
   <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://tradingbonushub.com/privacy" />
+  <link rel="alternate" hreflang="en" href="https://tradingbonushub.com/privacy?lang=en" />
+  <link rel="alternate" hreflang="vi" href="https://tradingbonushub.com/privacy?lang=vi" />
+  <link rel="alternate" hreflang="x-default" href="https://tradingbonushub.com/privacy" />
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="TradingBonusHub" />
+  <meta property="og:url" content="https://tradingbonushub.com/privacy" />
+  <meta property="og:title" content="{{ t('privacy_title', lang) }} | TradingBonusHub" />
+  <meta property="og:description" content="TradingBonusHub Privacy Policy — how we collect, use, and protect your personal data." />
+  <meta property="og:locale" content="{{ 'en_US' if lang == 'en' else 'vi_VN' }}" />
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {"@type":"ListItem","position":1,"name":"Home","item":"https://tradingbonushub.com/"},
+      {"@type":"ListItem","position":2,"name":"Privacy","item":"https://tradingbonushub.com/privacy"}
+    ]
+  }
+  </script>
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/logo-tb.png" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root { --gold: #f0c040; --gold2: #c8972a; --navy: #050d1e; --glass: rgba(255,255,255,0.08); --glass-border: rgba(255,255,255,0.18); }

@@ -273,16 +273,16 @@ async def sitemap_xml():
     today = datetime.utcnow().strftime("%Y-%m-%d")
 
     urls = [
-        (f"{base}/", "daily", "1.0"),
-        (f"{base}/promotions", "daily", "0.9"),
-        (f"{base}/brokers", "weekly", "0.8"),
-        (f"{base}/about", "monthly", "0.6"),
-        (f"{base}/blog", "daily", "0.8"),
-        (f"{base}/privacy", "monthly", "0.3"),
-        (f"{base}/terms", "monthly", "0.3"),
+        (f"{base}/", today, "daily", "1.0"),
+        (f"{base}/promotions", today, "daily", "0.9"),
+        (f"{base}/brokers", today, "weekly", "0.8"),
+        (f"{base}/about", today, "monthly", "0.6"),
+        (f"{base}/blog", today, "daily", "0.8"),
+        (f"{base}/privacy", today, "monthly", "0.3"),
+        (f"{base}/terms", today, "monthly", "0.3"),
     ]
 
-    # Add blog articles
+    # Add blog articles with per-article lastmod
     try:
         articles = list_articles(status="published", limit=500, offset=0).get("items", [])
         for art in articles:
@@ -291,16 +291,16 @@ async def sitemap_xml():
                 lastmod = lastmod.strftime("%Y-%m-%d")
             else:
                 lastmod = str(lastmod)[:10]
-            urls.append((f"{base}/blog/{art['slug']}", "weekly", "0.7"))
+            urls.append((f"{base}/blog/{art['slug']}", lastmod, "weekly", "0.7"))
     except Exception:
         pass
 
     xml_parts = ['<?xml version="1.0" encoding="UTF-8"?>']
-    xml_parts.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
-    for loc, freq, priority in urls:
+    xml_parts.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">')
+    for loc, lastmod, freq, priority in urls:
         xml_parts.append(
             f"  <url><loc>{loc}</loc>"
-            f"<lastmod>{today}</lastmod>"
+            f"<lastmod>{lastmod}</lastmod>"
             f"<changefreq>{freq}</changefreq>"
             f"<priority>{priority}</priority></url>"
         )
