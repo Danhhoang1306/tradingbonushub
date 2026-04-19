@@ -196,8 +196,12 @@
         <input type="text" id="sd-telegram_bot_name" placeholder="my_support_bot" value="{{ settings.get('telegram_bot_name','') }}" oninput="sdChange('telegram_bot_name',this.value)" />
       </div>
       <div class="sd-field">
-        <label>Admin Chat ID (receiving group)</label>
+        <label>Support Relay Chat ID (customer chat group)</label>
         <input type="text" id="sd-telegram_admin_chat_id" placeholder="-100123456789" value="{{ settings.get('telegram_admin_chat_id','') }}" oninput="sdChange('telegram_admin_chat_id',this.value)" />
+      </div>
+      <div class="sd-field">
+        <label>Admin Notify Chat ID (registration & system alerts)</label>
+        <input type="text" id="sd-admin_notify_chat_id" placeholder="123456789" value="{{ settings.get('admin_notify_chat_id','') }}" oninput="sdChange('admin_notify_chat_id',this.value)" />
       </div>
       <div class="sd-field">
         <button type="button" onclick="setTgWebhook()" style="width:100%;padding:8px;background:#1a73e8;color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:13px;">

@@ -12,6 +12,7 @@ _ALLOWED_KEYS = {
     "welcome_subtitle", "login_notice", "portal_notice",
     "telegram_url", "chatbox_url",
     "telegram_bot_token", "telegram_bot_name", "telegram_admin_chat_id",
+    "admin_notify_chat_id",
     # Marketing & tracking
     "gtm_id", "ga4_id", "fb_pixel_id", "ms_clarity_id",
     "search_console_meta", "og_image_url",

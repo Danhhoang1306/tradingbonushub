@@ -282,10 +282,17 @@
       </div>
 
       <div class="field">
-        <label>Admin Group Chat ID <small>Group receiving customer messages</small></label>
+        <label>Support Relay Chat ID <small>Group receiving customer chat messages</small></label>
         <input type="text" id="f-telegram_admin_chat_id" placeholder="-100123456789"
                value="{{ settings.get('telegram_admin_chat_id','') }}" />
-        <div class="hint">Add bot to group → use @userinfobot to get ID</div>
+        <div class="hint">Customers chat here via the portal Telegram button. Add bot to group → use @userinfobot to get ID</div>
+      </div>
+
+      <div class="field">
+        <label>Admin Notify Chat ID <small>Where registration & system alerts are sent</small></label>
+        <input type="text" id="f-admin_notify_chat_id" placeholder="123456789"
+               value="{{ settings.get('admin_notify_chat_id','') }}" />
+        <div class="hint">Your personal chat with the bot, or a private admin-only group. Leave empty to reuse the support relay chat above. DM bot @userinfobot for your own user ID.</div>
       </div>
 
       <hr class="divider">
@@ -349,7 +356,7 @@ function updateStickyPreview() {
 const FIELDS = [
   'telegram_url','chatbox_url','support_email','footer_text',
   'login_notice','portal_notice',
-  'telegram_bot_token','telegram_bot_name','telegram_admin_chat_id',
+  'telegram_bot_token','telegram_bot_name','telegram_admin_chat_id','admin_notify_chat_id',
   'gtm_id','ga4_id','fb_pixel_id','ms_clarity_id',
   'search_console_meta','og_image_url',
   'facebook_url','youtube_url',

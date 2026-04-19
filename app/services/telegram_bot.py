@@ -44,18 +44,23 @@ async def send_message(chat_id: int, text: str) -> dict | None:
 
 
 async def notify_admin(text: str) -> bool:
-    """Send a one-way notification to the configured admin chat.
+    """Send a one-way notification to the admin notification chat.
 
-    Returns True if the message was dispatched, False if Telegram is not
-    configured (missing bot token or admin chat id) — callers can rely on
-    this as a silent no-op when the operator hasn't wired up Telegram yet.
+    Reads `admin_notify_chat_id` from portal settings; falls back to
+    `telegram_admin_chat_id` (the customer-support relay group) if the
+    dedicated notify chat is not configured, so upgrades don't silently
+    stop delivering notifications.
     """
-    token, admin_chat_id = _cfg()
-    if not token or not admin_chat_id:
+    token, support_chat_id = _cfg()
+    if not token:
+        return False
+    ps = get_portal_settings()
+    notify_chat_id = (ps.get("admin_notify_chat_id") or "").strip() or support_chat_id
+    if not notify_chat_id:
         return False
     result = await _call(
         "sendMessage", token,
-        chat_id=int(admin_chat_id), text=text, parse_mode="HTML",
+        chat_id=int(notify_chat_id), text=text, parse_mode="HTML",
         disable_web_page_preview=True,
     )
     return result is not None
