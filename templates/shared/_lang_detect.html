@@ -5,16 +5,16 @@
   // Skip if ?lang= is in the URL (explicit choice)
   if (location.search.match(/[?&]lang=/)) return;
 
-  // Fallback: call free GeoIP API (only when CF-IPCountry header is absent)
+  // Fallback: call free GeoIP API (only when CF-IPCountry header is absent).
+  // Site default is Vietnamese — only run the reload flow for VN visitors so
+  // the cookie is persisted; non-VN visitors keep the server-rendered default.
   fetch('https://ip-api.com/json/?fields=countryCode', {mode:'cors'})
     .then(function(r){ return r.json(); })
     .then(function(d){
-      if (!d || !d.countryCode) return;
-      var lang = d.countryCode === 'VN' ? 'vi' : 'en';
-      document.cookie = 'lang=' + lang + ';path=/;max-age=31536000;samesite=lax';
-      // Reload with detected language so server re-renders in the correct locale
+      if (!d || d.countryCode !== 'VN') return;
+      document.cookie = 'lang=vi;path=/;max-age=31536000;samesite=lax';
       var sep = location.search ? '&' : '?';
-      location.replace(location.href + sep + 'lang=' + lang);
+      location.replace(location.href + sep + 'lang=vi');
     })
     .catch(function(){});
 })();

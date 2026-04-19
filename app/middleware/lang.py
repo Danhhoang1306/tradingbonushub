@@ -6,7 +6,7 @@ Priority order:
   3. Cloudflare CF-IPCountry header (auto-detect by IP) — overrides stale auto-detected cookie
   4. `lang` cookie without explicit flag (last resort if no geo signal)
   5. Accept-Language header (dev / non-CF environments)
-  6. Default to English ("en")
+  6. Default to Vietnamese ("vi")
 
 Two cookies are used:
   - `lang`         — the active language value ("vi" / "en")
@@ -69,14 +69,16 @@ class LangMiddleware(BaseHTTPMiddleware):
             lang = cookie_lang
 
         # 3. Geo-detect via Cloudflare header — overrides stale auto-detected cookie
+        #    Only force English for countries clearly outside the Vietnamese audience;
+        #    otherwise fall through so the site default (Vietnamese) wins.
         if lang is None:
             country = request.headers.get("cf-ipcountry", "").upper()
             if country and country != "XX":
-                geo_lang = "vi" if country in _VN_COUNTRIES else "en"
-                lang = geo_lang
-                # Refresh cookie only if it was missing or didn't match region
-                if cookie_lang != geo_lang:
-                    set_cookie = True
+                if country in _VN_COUNTRIES:
+                    geo_lang = "vi"
+                    lang = geo_lang
+                    if cookie_lang != geo_lang:
+                        set_cookie = True
 
         # 4. Non-explicit cookie (no CF header available)
         if lang is None and cookie_lang:
@@ -90,9 +92,9 @@ class LangMiddleware(BaseHTTPMiddleware):
             if lang:
                 set_cookie = True
 
-        # 6. Fallback — default to English for international users
+        # 6. Fallback — default to Vietnamese (primary audience of the site)
         if lang is None:
-            lang = "en"
+            lang = "vi"
 
         # Store on request.state so routes/templates can access it
         request.state.lang = lang
