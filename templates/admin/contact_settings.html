@@ -258,13 +258,13 @@
       </div>
     </div>
 
-    <!-- ── TELEGRAM BOT ── -->
+    <!-- ── TELEGRAM BOT — enrollment notifications ── -->
     <div class="card" style="margin-top:20px;">
-      <div class="section-title">🤖 Telegram Bot — Private Chat per Customer</div>
+      <div class="section-title">🤖 Telegram Enrollment Notifications</div>
 
       <p style="font-size:13px;color:#666;margin-bottom:16px;line-height:1.6;">
-        When customers click the <b>Telegram</b> button on the portal, the bot creates a private conversation.
-        Customer messages are forwarded to the admin group. Admin replies → bot sends back to customer.
+        Sends a Telegram message to the chat below each time a customer enrolls in a program.
+        One-way: no customer chat, no webhook — just a simple alert.
       </p>
 
       <div class="field">
@@ -275,45 +275,17 @@
       </div>
 
       <div class="field">
-        <label>Bot Username <small>Without @</small></label>
-        <input type="text" id="f-telegram_bot_name" placeholder="my_support_bot"
-               value="{{ settings.get('telegram_bot_name','') }}" />
-        <div class="hint">VD: tradingbonushub_bot</div>
-      </div>
-
-      <div class="field">
-        <label>Support Relay Chat ID <small>Group receiving customer chat messages</small></label>
-        <input type="text" id="f-telegram_admin_chat_id" placeholder="-100123456789"
-               value="{{ settings.get('telegram_admin_chat_id','') }}" />
-        <div class="hint">Customers chat here via the portal Telegram button. Add bot to group → use @userinfobot to get ID</div>
-      </div>
-
-      <div class="field">
-        <label>Admin Notify Chat ID <small>Where registration & system alerts are sent</small></label>
-        <input type="text" id="f-admin_notify_chat_id" placeholder="123456789"
-               value="{{ settings.get('admin_notify_chat_id','') }}" />
-        <div class="hint">Your personal chat with the bot, or a private admin-only group. Leave empty to reuse the support relay chat above. DM bot @userinfobot for your own user ID.</div>
+        <label>Chat ID <small>Where enrollment alerts are sent</small></label>
+        <input type="text" id="f-telegram_chat_id" placeholder="123456789"
+               value="{{ settings.get('telegram_chat_id','') }}" />
+        <div class="hint">Your personal chat (DM @userinfobot for your user ID) or a group (starts with <code>-100</code>). Remember to /start the bot first so it can DM you.</div>
       </div>
 
       <hr class="divider">
-      <div class="section-title">⚡ Register Webhook</div>
-
-      <p style="font-size:13px;color:#666;margin-bottom:12px;line-height:1.6;">
-        After entering the Bot Token, click the button below so Telegram knows to send messages to this server.
-        Only needs to be done <b>once</b> after initial setup.
-      </p>
-
-      <button class="btn btn-primary" onclick="doSetWebhook()" id="btn-webhook">
-        ⚡ Register Webhook ngay
+      <button class="btn btn-primary" onclick="doTestTelegram()" id="btn-tg-test">
+        📨 Save &amp; send test message
       </button>
-      <div id="webhook-status" class="bot-status-box" style="display:none;"></div>
-
-      <hr class="divider">
-      <div class="section-title">🔍 Test Bot Connection</div>
-      <button class="btn btn-secondary" onclick="doTestBot()" id="btn-test">
-        📡 Test Bot Token
-      </button>
-      <div id="test-status" class="bot-status-box" style="display:none;"></div>
+      <div id="tg-test-status" class="bot-status-box" style="display:none;"></div>
     </div>
   </div>
 
@@ -356,7 +328,7 @@ function updateStickyPreview() {
 const FIELDS = [
   'telegram_url','chatbox_url','support_email','footer_text',
   'login_notice','portal_notice',
-  'telegram_bot_token','telegram_bot_name','telegram_admin_chat_id','admin_notify_chat_id',
+  'telegram_bot_token','telegram_chat_id',
   'gtm_id','ga4_id','fb_pixel_id','ms_clarity_id',
   'search_console_meta','og_image_url',
   'facebook_url','youtube_url',
@@ -395,50 +367,36 @@ async function saveAll() {
   setTimeout(() => { status.textContent = ''; }, 4000);
 }
 
-// ── Set Webhook ───────────────────────────────────────────────────
-async function doSetWebhook() {
-  await saveAll();  // save token first
-  const box = document.getElementById('webhook-status');
+// ── Test Telegram (save then send test message via server) ────────
+async function doTestTelegram() {
+  const token   = document.getElementById('f-telegram_bot_token').value.trim();
+  const chat_id = document.getElementById('f-telegram_chat_id').value.trim();
+  const box     = document.getElementById('tg-test-status');
   box.style.display = 'block'; box.className = 'bot-status-box';
-  box.textContent = '⏳ Registering...';
-  try {
-    const r = await fetch('/api/telegram/set-webhook', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ site_url: 'https://tradingbonushub.com' }),
-    });
-    const d = await r.json();
-    box.className = 'bot-status-box ' + (d.ok ? 'ok' : 'err');
-    box.textContent = d.ok
-      ? '✅ Registration successful! Telegram will send messages to this server.'
-      : '❌ Failed — check Bot Token and try again.';
-  } catch(e) {
-    box.className = 'bot-status-box err'; box.textContent = '❌ Server connection error';
-  }
-}
-
-// ── Test Bot Token ─────────────────────────────────────────────────
-async function doTestBot() {
-  const token = document.getElementById('f-telegram_bot_token').value.trim();
-  const box   = document.getElementById('test-status');
-  box.style.display = 'block'; box.className = 'bot-status-box';
-  box.textContent = '⏳ Checking...';
-  if (!token) {
-    box.className = 'bot-status-box err'; box.textContent = '❌ Bot Token not entered';
+  if (!token || !chat_id) {
+    box.className = 'bot-status-box err';
+    box.textContent = '❌ Enter both Bot Token and Chat ID first';
     return;
   }
+  box.textContent = '⏳ Saving and sending test message...';
+  await saveAll();
   try {
-    const r = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+    const r = await fetch('/api/telegram/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, chat_id }),
+    });
     const d = await r.json();
     if (d.ok) {
       box.className = 'bot-status-box ok';
-      box.textContent = `✅ Valid bot: @${d.result.username} (${d.result.first_name})`;
+      box.textContent = '✅ Sent — check your Telegram.';
     } else {
       box.className = 'bot-status-box err';
-      box.textContent = '❌ Invalid token: ' + (d.description || 'Unknown error');
+      box.textContent = '❌ ' + (d.detail || 'Send failed');
     }
   } catch(e) {
-    box.className = 'bot-status-box err'; box.textContent = '❌ Cannot connect to Telegram API';
+    box.className = 'bot-status-box err';
+    box.textContent = '❌ Server connection error';
   }
 }
 </script>

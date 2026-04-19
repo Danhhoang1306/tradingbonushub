@@ -88,11 +88,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         # API routes — require admin session
         if path.startswith("/api/"):
-            # Telegram webhook — called by Telegram servers (no session)
-            if path == "/api/telegram/webhook":
-                return await call_next(request)
             # These endpoints are called by the customer portal (not admin)
-            _portal_api_exempt = {"/api/enrollments/check-promo", "/api/telegram/link"}
+            _portal_api_exempt = {"/api/enrollments/check-promo"}
             if path in _portal_api_exempt or path.startswith("/api/wallet/me"):
                 if not request.session.get("customer_email"):
                     return JSONResponse({"detail": "Unauthorized"}, status_code=401)

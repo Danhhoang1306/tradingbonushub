@@ -28,10 +28,10 @@ from app.db.repositories.smtp import get_google_oauth_config, get_gmail_token, s
 from app.services.auth import hash_pw_async, needs_rehash, verify_pw_async
 from app.services.gmail import make_flow, _get_google_email_sync, send_transfer_email
 from app.services.notifications import (
-    notify_new_registration, notify_new_registration_telegram,
+    notify_new_registration,
     send_reset_email, send_verification_email,
     send_broker_email_verify, send_enrollment_notification,
-    notify_broker_email_linked,
+    notify_enrollment_telegram, notify_broker_email_linked,
 )
 from app.utils.lockout import check_lockout, record_attempt, clear_attempts
 from app.utils.templates import make_templates
@@ -136,10 +136,6 @@ async def portal_register_submit(
     logger.info("portal.register", email=email, name=name, customer_id=new_id)
     asyncio.create_task(_fire(
         notify_new_registration(name, email), label="notify_new_registration"
-    ))
-    asyncio.create_task(_fire(
-        notify_new_registration_telegram(name, email),
-        label="notify_new_registration_telegram",
     ))
 
     # Auto-login after registration — set session and go straight to dashboard
@@ -1265,6 +1261,10 @@ async def portal_enroll(
     asyncio.create_task(_fire(
         send_enrollment_notification(customer_email, promo_name, mt5_account or ""),
         label="send_enrollment_notification",
+    ))
+    asyncio.create_task(_fire(
+        notify_enrollment_telegram(customer_email, promo_name, mt5_account or ""),
+        label="notify_enrollment_telegram",
     ))
 
     return JSONResponse({"ok": True, "promo_name": promo_name})

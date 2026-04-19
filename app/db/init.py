@@ -214,40 +214,11 @@ def _run_migrations() -> None:
                 "ALTER TABLE customer_accounts ADD promo_original_program_id INT NULL"
             )
 
-        # telegram: link tokens, sessions, message routing
         def _tbl(name: str) -> bool:
             return conn.execute(
                 "SELECT 1 FROM sys.tables WHERE name=? AND schema_id=SCHEMA_ID('dbo')",
                 (name,),
             ).fetchone() is not None
-
-        if not _tbl("telegram_link_tokens"):
-            conn.execute("""
-                CREATE TABLE telegram_link_tokens (
-                    token       NVARCHAR(32)  NOT NULL,
-                    login_email NVARCHAR(255) NOT NULL,
-                    expires_at  DATETIME2     NOT NULL,
-                    CONSTRAINT PK_tg_link_tokens PRIMARY KEY (token)
-                )
-            """)
-        if not _tbl("telegram_sessions"):
-            conn.execute("""
-                CREATE TABLE telegram_sessions (
-                    login_email NVARCHAR(255) NOT NULL,
-                    chat_id     BIGINT        NOT NULL,
-                    created_at  DATETIME2     NOT NULL DEFAULT GETDATE(),
-                    CONSTRAINT PK_tg_sessions PRIMARY KEY (login_email)
-                )
-            """)
-        if not _tbl("telegram_message_map"):
-            conn.execute("""
-                CREATE TABLE telegram_message_map (
-                    admin_message_id  INT    NOT NULL,
-                    customer_chat_id  BIGINT NOT NULL,
-                    created_at        DATETIME2 NOT NULL DEFAULT GETDATE(),
-                    CONSTRAINT PK_tg_msg_map PRIMARY KEY (admin_message_id)
-                )
-            """)
 
         # ── CMS: users.role ────────────────────────────────────────────────────
         if not _col_exists("users", "role"):

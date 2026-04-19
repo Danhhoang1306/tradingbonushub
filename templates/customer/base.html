@@ -178,21 +178,6 @@
 </footer>
 
 <script>
-async function openTgSupport() {
-  const btn = document.getElementById('btnTgSupport');
-  if (btn) { btn.disabled = true; btn.style.opacity = '.7'; }
-  try {
-    const r = await fetch('/api/telegram/link');
-    const d = await r.json();
-    if (d.ok && d.url) {
-      window.open(d.url, '_blank', 'noopener');
-    }
-  } catch(e) {}
-  if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
-}
-</script>
-
-<script>
 (function() {
   var btn = document.getElementById('portalHamburger');
   var drawer = document.getElementById('portalDrawer');

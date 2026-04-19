@@ -185,29 +185,21 @@
         <input type="url" id="sd-chatbox_url" placeholder="https://..." value="{{ settings.get('chatbox_url','') }}" oninput="sdChange('chatbox_url',this.value)" />
       </div>
       <div class="sd-field" style="border-top:1px solid rgba(0,0,0,.08);padding-top:12px;margin-top:4px;">
-        <label style="font-weight:800;color:#1a73e8;">🤖 Telegram Bot (private chat per customer)</label>
+        <label style="font-weight:800;color:#1a73e8;">🤖 Telegram Enrollment Alerts</label>
       </div>
       <div class="sd-field">
         <label>Bot Token (from @BotFather)</label>
         <input type="password" id="sd-telegram_bot_token" placeholder="123456:ABC-..." value="{{ settings.get('telegram_bot_token','') }}" oninput="sdChange('telegram_bot_token',this.value)" />
       </div>
       <div class="sd-field">
-        <label>Bot Username (không có @)</label>
-        <input type="text" id="sd-telegram_bot_name" placeholder="my_support_bot" value="{{ settings.get('telegram_bot_name','') }}" oninput="sdChange('telegram_bot_name',this.value)" />
+        <label>Chat ID (personal user ID or group starting with -100)</label>
+        <input type="text" id="sd-telegram_chat_id" placeholder="123456789" value="{{ settings.get('telegram_chat_id','') }}" oninput="sdChange('telegram_chat_id',this.value)" />
       </div>
       <div class="sd-field">
-        <label>Support Relay Chat ID (customer chat group)</label>
-        <input type="text" id="sd-telegram_admin_chat_id" placeholder="-100123456789" value="{{ settings.get('telegram_admin_chat_id','') }}" oninput="sdChange('telegram_admin_chat_id',this.value)" />
-      </div>
-      <div class="sd-field">
-        <label>Admin Notify Chat ID (registration & system alerts)</label>
-        <input type="text" id="sd-admin_notify_chat_id" placeholder="123456789" value="{{ settings.get('admin_notify_chat_id','') }}" oninput="sdChange('admin_notify_chat_id',this.value)" />
-      </div>
-      <div class="sd-field">
-        <button type="button" onclick="setTgWebhook()" style="width:100%;padding:8px;background:#1a73e8;color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:13px;">
-          ⚡ Register Webhook with Telegram
+        <button type="button" onclick="testTgNotify()" style="width:100%;padding:8px;background:#1a73e8;color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:13px;">
+          📨 Save &amp; send test message
         </button>
-        <div id="tg-webhook-status" style="font-size:12px;margin-top:4px;color:#666;"></div>
+        <div id="tg-test-status" style="font-size:12px;margin-top:4px;color:#666;"></div>
       </div>
     </div>
   </div>
@@ -234,20 +226,27 @@ document.addEventListener('click', () => {
   document.getElementById('settings-dropdown').classList.remove('open');
 });
 
-async function setTgWebhook() {
-  const status = document.getElementById('tg-webhook-status');
-  status.textContent = 'Đang đăng ký...';
-  // Save current pending settings first
+async function testTgNotify() {
+  const status  = document.getElementById('tg-test-status');
+  const token   = document.getElementById('sd-telegram_bot_token').value.trim();
+  const chat_id = document.getElementById('sd-telegram_chat_id').value.trim();
+  if (!token || !chat_id) {
+    status.style.color = '#c0392b';
+    status.textContent = '❌ Enter both Bot Token and Chat ID first';
+    return;
+  }
+  status.style.color = '#555';
+  status.textContent = 'Saving and sending test message...';
   await sdSave();
   try {
-    const r = await fetch('/api/telegram/set-webhook', {
+    const r = await fetch('/api/telegram/test', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ site_url: 'https://tradingbonushub.com' }),
+      body: JSON.stringify({ token, chat_id }),
     });
     const d = await r.json();
     status.style.color = d.ok ? '#1e7e34' : '#c0392b';
-    status.textContent = d.ok ? '✅ Registration successful!' : '❌ Failed — check Bot Token';
+    status.textContent = d.ok ? '✅ Sent — check your Telegram.' : ('❌ ' + (d.detail || 'Send failed'));
   } catch(e) {
     status.style.color = '#c0392b';
     status.textContent = '❌ Connection error';

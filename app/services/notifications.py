@@ -47,26 +47,32 @@ def _html_escape(value: str) -> str:
     )
 
 
-async def notify_new_registration_telegram(name: str, email: str) -> None:
-    """Notify admin via Telegram bot when a new customer registers."""
-    from app.services.telegram_bot import notify_admin
+async def notify_enrollment_telegram(
+    customer_email: str, promo_name: str, mt5_account: str = ""
+) -> None:
+    """Notify admin via Telegram when a customer enrolls in a program."""
+    from app.services.telegram_bot import notify
 
-    safe_name  = _html_escape(name)
-    safe_email = _html_escape(email)
+    safe_email = _html_escape(customer_email)
+    safe_promo = _html_escape(promo_name)
+    safe_mt5   = _html_escape(mt5_account) if mt5_account else ""
     site_url   = _site_url()
-    text = (
-        "🆕 <b>New customer registration</b>\n"
-        f"👤 Name: <b>{safe_name}</b>\n"
-        f"📧 Email: <code>{safe_email}</code>\n"
-        f"🕐 Time: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}\n\n"
-        f'🔗 <a href="{site_url}/admin/customers">Open admin → Customers</a>'
-    )
+
+    lines = [
+        "🎯 <b>New enrollment</b>",
+        f"📧 Customer: <code>{safe_email}</code>",
+        f"📦 Program: <b>{safe_promo}</b>",
+    ]
+    if safe_mt5:
+        lines.append(f"💳 MT5: <code>{safe_mt5}</code>")
+    lines.append(f"🕐 {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+    lines.append(f'\n🔗 <a href="{site_url}/admin/enrollments">Review &amp; approve</a>')
+
     try:
-        sent = await notify_admin(text)
-        if sent:
-            logger.info("notify.registration_telegram_sent", email=email)
+        await notify("\n".join(lines))
     except Exception as e:
-        logger.error("notify.registration_telegram_failed", email=email, error=str(e))
+        logger.error("notify.enrollment_telegram_failed",
+                     email=customer_email, error=str(e))
 
 
 async def send_verification_email(cfg: dict, customer_email: str, verify_link: str) -> None:
