@@ -187,13 +187,52 @@ async def public_brokers(request: Request):
     lang = _lang(request)
     ps = get_portal_settings()
     all_brokers = get_all_brokers(active_only=False)
-    # Show brokers flagged for public page: active ones normal, coming_soon dimmed
-    brokers = [b for b in all_brokers if b.get("show_on_brokers_page") and b.get("logo_color")]
+    # Show brokers flagged for public page (need at least a logo_url or logo_color to render)
+    brokers = [
+        b for b in all_brokers
+        if b.get("show_on_brokers_page") and (b.get("logo_url") or b.get("logo_color"))
+    ]
+
+    # Left-column content: broker review articles — all published posts whose
+    # slug is referenced by a broker via review_article_slug, plus any article
+    # in a "broker review" category. Falls back to latest posts if empty.
+    review_slugs = {b.get("review_article_slug") for b in all_brokers if b.get("review_article_slug")}
+    articles: list[dict] = []
+    seen_ids: set[int] = set()
+
+    # 1) Pull review articles linked from the brokers table
+    if review_slugs:
+        from app.db.repositories.cms_articles import get_article_by_slug
+        for slug in review_slugs:
+            art = get_article_by_slug(slug, status="published")
+            if art and art["id"] not in seen_ids:
+                articles.append(art)
+                seen_ids.add(art["id"])
+
+    # 2) Pull articles in a "broker review" category (slug: danh-gia-san or broker-reviews)
+    from app.db.repositories.cms_articles import get_all_categories, list_articles
+    review_cat_id = None
+    for c in get_all_categories():
+        if c["slug"] in ("danh-gia-san", "broker-reviews", "reviews", "san-uy-tin"):
+            review_cat_id = c["id"]
+            break
+    if review_cat_id:
+        for a in list_articles(status="published", category_id=review_cat_id, limit=30).get("items", []):
+            if a["id"] not in seen_ids:
+                articles.append(a)
+                seen_ids.add(a["id"])
+
+    # 3) Fallback — if still empty, show most recent posts so the column is not blank
+    if not articles:
+        articles = list_articles(status="published", type_="post", limit=10).get("items", [])
+
     return public_tpl.TemplateResponse("brokers.html", {
         "request": request,
         "ps": ps,
         "lang": lang,
         "brokers": brokers,
+        "articles": articles,
+        "now": datetime.utcnow(),
     })
 
 

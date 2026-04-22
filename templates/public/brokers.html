@@ -63,139 +63,208 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif; color: rgba(255,255,255,0.95);
-      background: #050d1e url('/static/bg-hero.svg') fixed center/cover no-repeat;
-    }
     :root {
       --navy: #0d1b3e; --gold: #f0c040; --gold2: #c8972a;
       --glass: rgba(255,255,255,0.08); --glass-border: rgba(255,255,255,0.18);
     }
-    /* Content */
-    .content { max-width: 1100px; margin: 0 auto; padding: 40px 24px 60px; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif; color: rgba(255,255,255,0.95);
+      background: #050d1e url('/static/bg-hero.svg') fixed center/cover no-repeat;
+    }
 
-    /* Hero */
-    .page-hero { text-align: center; padding: 40px 0 36px; }
-    .page-hero h1 { font-size: 32px; font-weight: 900; color: #fff; margin-bottom: 12px; }
+    /* ── Page wrap ── */
+    .content { max-width: 1280px; margin: 0 auto; padding: 28px 24px 48px; }
+
+    /* ── Hero (compact) ── */
+    .page-hero { text-align: center; padding: 28px 0 24px; }
+    .page-hero h1 { font-size: 30px; font-weight: 900; color: #fff; margin-bottom: 10px; }
     .page-hero h1 span { color: var(--gold); }
-    .page-hero p { font-size: 15px; color: rgba(255,255,255,.55); max-width: 560px; margin: 0 auto; line-height: 1.6; }
+    .page-hero p { font-size: 14px; color: rgba(255,255,255,.55); max-width: 620px; margin: 0 auto; line-height: 1.6; }
 
-    /* Card wrapper */
-    .bct-card {
-      background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
-      border-radius: 16px; overflow: hidden;
+    /* ── Two-column news layout ── */
+    .news-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 28px;
+      align-items: start;
     }
-    .bct-wrap { overflow-x: auto; }
-    .bct { width: 100%; border-collapse: collapse; }
-    .bct thead th {
-      padding: 12px 20px; font-size: 11px; text-transform: uppercase;
-      letter-spacing: .7px; color: rgba(255,255,255,.3); font-weight: 700;
-      border-bottom: 1px solid rgba(255,255,255,.08); text-align: left;
-      background: rgba(255,255,255,.02);
-    }
-    .bct tbody tr { border-bottom: 1px solid rgba(255,255,255,.06); transition: background .15s; }
-    .bct tbody tr:last-child { border-bottom: none; }
-    .bct tbody tr:hover { background: rgba(255,255,255,.03); }
-    .bct tbody tr.bct-dimmed { opacity: .45; }
-    .bct tbody tr.bct-dimmed:hover { opacity: .6; }
-    .bct td { padding: 24px 20px; vertical-align: top; }
+    @media (max-width: 960px) { .news-layout { grid-template-columns: 1fr; } }
 
-    /* Logo cell */
-    .bct-logo-cell { width: 160px; min-width: 145px; }
-    .bct-rank {
-      width: 26px; height: 26px; border-radius: 50%;
-      background: rgba(240,192,64,.12); border: 1.5px solid rgba(240,192,64,.3);
-      color: var(--gold); font-weight: 800; font-size: 12px;
-      display: flex; align-items: center; justify-content: center; margin-bottom: 8px;
+    /* ── Left: article stream ── */
+    .article-stream {
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+      overflow: hidden;
     }
-    .bct-trusted-badge {
-      display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .5px; background: rgba(240,192,64,.12); color: var(--gold);
-      border: 1px solid rgba(240,192,64,.25); border-radius: 4px;
-      padding: 3px 8px; margin-bottom: 9px;
+    .stream-row {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 20px;
+      padding: 22px 22px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      text-decoration: none;
+      color: inherit;
+      transition: background .15s;
     }
-    .bct-logo-box {
-      display: flex; align-items: center; justify-content: center;
-      width: 120px; height: 50px; border-radius: 8px;
-      background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.11);
-      font-weight: 900; font-size: 17px; letter-spacing: -.5px; margin-bottom: 9px;
+    .stream-row:last-child { border-bottom: none; }
+    .stream-row:hover { background: rgba(255,255,255,.025); }
+    .stream-label {
+      font-size: 11px; font-weight: 800; letter-spacing: .8px;
+      text-transform: uppercase; color: rgba(255,255,255,.35);
+      padding-top: 2px;
     }
-    .bct-stars { display: flex; align-items: center; gap: 2px; }
-    .bct-star { color: var(--gold); font-size: 13px; line-height: 1; }
-    .bct-star-empty { color: rgba(255,255,255,.2); font-size: 13px; line-height: 1; }
-    .bct-star-num { font-size: 12px; font-weight: 700; color: rgba(255,255,255,.65); margin-left: 5px; }
-    .bct-license-pills { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
-    .bct-license-pill {
-      font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 3px;
-      background: rgba(255,255,255,.08); color: rgba(255,255,255,.5);
-      border: 1px solid rgba(255,255,255,.1);
+    .stream-label .bracket { color: rgba(240,192,64,.55); margin: 0 3px; }
+    .stream-body { min-width: 0; }
+    .stream-meta {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      font-size: 12px; color: rgba(255,255,255,.5); margin-bottom: 8px;
     }
-
-    /* Features cell */
-    .bct-features-cell { min-width: 220px; }
-    .bct-features-cell ul { margin: 0; padding: 0 0 0 18px; }
-    .bct-features-cell li { font-size: 13px; color: rgba(255,255,255,.8); margin-bottom: 7px; line-height: 1.45; }
-    .bct-features-cell li::marker { color: var(--gold); }
-
-    /* Stats cell */
-    .bct-stats-cell { min-width: 185px; }
-    .bct-stat { display: flex; align-items: flex-start; gap: 9px; font-size: 13px; margin-bottom: 10px; }
-    .bct-stat-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
-    .bct-stat-label { color: rgba(255,255,255,.4); font-size: 11px; display: block; margin-bottom: 1px; }
-    .bct-stat-value { font-weight: 600; color: rgba(255,255,255,.85); }
-
-    /* CTA cell */
-    .bct-cta-cell { min-width: 145px; text-align: center; }
-    .btn-broker-visit {
-      display: block; padding: 11px 18px;
-      background: var(--gold); color: #0d1b3e;
-      font-weight: 800; font-size: 13px; text-decoration: none;
-      border-radius: 8px; margin-bottom: 9px; text-align: center;
-      transition: filter .15s; white-space: nowrap;
+    .stream-meta .meta-sep { color: rgba(255,255,255,.25); }
+    .stream-meta .featured-tag {
+      display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: .5px;
+      padding: 2px 8px; border-radius: 3px;
+      background: rgba(220,38,38,.18); color: #ff6b6b;
+      border: 1px solid rgba(220,38,38,.3);
     }
-    .btn-broker-visit:hover { filter: brightness(1.08); }
-    .btn-broker-review {
-      display: block; font-size: 12px; color: rgba(255,255,255,.4);
-      text-decoration: none; text-align: center; padding: 3px;
+    .stream-title {
+      font-size: 20px; font-weight: 800; color: #4aa9ff;
+      line-height: 1.35; margin-bottom: 10px;
       transition: color .15s;
     }
-    .btn-broker-review:hover { color: rgba(255,255,255,.8); }
-    .bct-coming-soon {
-      display: block; padding: 11px 18px; border-radius: 8px;
-      background: rgba(255,255,255,.06); color: rgba(255,255,255,.3);
-      font-weight: 700; font-size: 13px; text-align: center; margin-bottom: 9px;
+    .stream-row:hover .stream-title { color: #79c0ff; }
+    .stream-excerpt {
+      font-size: 14px; line-height: 1.65;
+      color: rgba(255,255,255,.6); margin-bottom: 10px;
+    }
+    .stream-footer {
+      font-size: 12px; color: rgba(255,255,255,.4);
+    }
+    .stream-footer .author { color: rgba(255,255,255,.65); font-weight: 600; }
+    .stream-empty {
+      padding: 60px 24px; text-align: center;
+      color: rgba(255,255,255,.4); font-size: 14px;
     }
 
-    /* Disclaimer */
-    .disclaimer {
-      padding: 14px 20px; border-top: 1px solid rgba(255,255,255,.06);
-      font-size: 11px; color: rgba(255,255,255,.3); line-height: 1.6;
+    @media (max-width: 700px) {
+      .stream-row { grid-template-columns: 1fr; gap: 8px; padding: 18px; }
+      .stream-title { font-size: 17px; }
     }
 
-    /* CTA block */
+    /* ── Right: broker ranking sidebar ── */
+    .sidebar { display: flex; flex-direction: column; gap: 20px; position: sticky; top: 20px; }
+    .rank-card {
+      background: #ffffff;
+      color: #1f2937;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.3);
+      overflow: hidden;
+    }
+    .rank-card-head {
+      display: flex; align-items: baseline; justify-content: space-between;
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .rank-card-title { font-size: 14px; font-weight: 900; letter-spacing: .6px; color: #0d1b3e; }
+    .rank-card-update { font-size: 11px; color: #6b7280; }
+
+    .rank-list { padding: 4px 0; }
+    .rank-item {
+      display: grid;
+      grid-template-columns: 28px 40px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 11px 18px;
+      text-decoration: none;
+      color: inherit;
+      transition: background .15s;
+    }
+    .rank-item:hover { background: #f9fafb; }
+    .rank-item + .rank-item { border-top: 1px solid #f3f4f6; }
+    .rank-num { font-size: 15px; font-weight: 800; color: #9ca3af; text-align: center; }
+    .rank-logo {
+      width: 40px; height: 40px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 12px; color: #fff;
+      letter-spacing: -.3px; overflow: hidden;
+    }
+    .rank-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .rank-info { min-width: 0; }
+    .rank-name { font-size: 14px; font-weight: 700; color: #0d1b3e; line-height: 1.2; margin-bottom: 2px; }
+    .rank-stars { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #6b7280; }
+    .rank-star { color: var(--gold2); font-size: 10px; line-height: 1; }
+    .rank-star-empty { color: #d1d5db; font-size: 10px; line-height: 1; }
+    .rank-licenses { font-size: 10px; color: #6b7280; margin-left: 4px; letter-spacing: .3px; text-transform: uppercase; }
+    .rank-score {
+      font-size: 15px; font-weight: 800; color: #0d1b3e;
+      min-width: 34px; text-align: right;
+    }
+    .rank-item-coming { opacity: .45; }
+    .rank-item-coming .rank-score { font-size: 9px; font-weight: 700; letter-spacing: .3px; }
+
+    .rank-card-foot {
+      padding: 12px 20px 14px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 12px; font-weight: 700;
+    }
+    .rank-card-foot a { color: #1a73e8; text-decoration: none; }
+    .rank-card-foot a:hover { text-decoration: underline; }
+
+    /* Most read card */
+    .mostread-card {
+      background: #ffffff;
+      color: #1f2937;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.3);
+      overflow: hidden;
+    }
+    .mostread-head {
+      padding: 16px 20px 10px;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 14px; font-weight: 900; letter-spacing: .6px; color: #0d1b3e;
+    }
+    .mostread-list { padding: 4px 0; }
+    .mostread-item {
+      display: grid; grid-template-columns: 28px 1fr; gap: 12px;
+      padding: 12px 18px; text-decoration: none; color: inherit;
+      transition: background .15s;
+      align-items: start;
+    }
+    .mostread-item:hover { background: #f9fafb; }
+    .mostread-item + .mostread-item { border-top: 1px solid #f3f4f6; }
+    .mostread-num { font-size: 15px; font-weight: 800; color: #9ca3af; text-align: center; }
+    .mostread-title { font-size: 13px; font-weight: 600; color: #0d1b3e; line-height: 1.4; margin-bottom: 4px; }
+    .mostread-meta  { font-size: 11px; color: #6b7280; }
+
+    /* ── Disclaimer + CTA ── */
+    .disclaimer-bar {
+      margin-top: 28px; padding: 14px 20px;
+      background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+      border-radius: 10px;
+      font-size: 12px; color: rgba(255,255,255,.45); line-height: 1.6;
+    }
     .cta-block {
-      margin-top: 36px; text-align: center;
+      margin-top: 24px; text-align: center;
       background: rgba(240,192,64,.06); border: 1px solid rgba(240,192,64,.15);
-      border-radius: 14px; padding: 32px 24px;
+      border-radius: 14px; padding: 28px 24px;
     }
     .cta-block h2 { font-size: 20px; color: #fff; margin-bottom: 8px; }
-    .cta-block p { font-size: 14px; color: rgba(255,255,255,.55); margin-bottom: 20px; line-height: 1.6; }
+    .cta-block p { font-size: 14px; color: rgba(255,255,255,.55); margin-bottom: 18px; line-height: 1.6; }
     .btn-cta-main {
-      display: inline-block; padding: 14px 36px;
+      display: inline-block; padding: 13px 32px;
       background: linear-gradient(135deg, var(--gold2), var(--gold));
-      color: #0d1b3e; font-weight: 800; font-size: 15px;
+      color: #0d1b3e; font-weight: 800; font-size: 14px;
       border-radius: 10px; text-decoration: none; transition: filter .15s;
     }
     .btn-cta-main:hover { filter: brightness(1.08); }
 
-    /* ── FOOTER LICENSE STRIP ── */
+    /* ── Footer (unchanged) ── */
     .footer-license { background: rgba(240,192,64,.04); border-top: 1px solid rgba(240,192,64,.12); border-bottom: 1px solid rgba(255,255,255,.05); }
     .footer-license-inner { max-width: 1160px; margin: 0 auto; padding: 32px 40px; display: flex; align-items: flex-start; gap: 24px; }
     .footer-license-icon { flex-shrink: 0; width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, rgba(240,192,64,.2), rgba(240,192,64,.08)); border: 1px solid rgba(240,192,64,.3); display: flex; align-items: center; justify-content: center; color: var(--gold); margin-top: 2px; }
     .footer-license-title { font-size: 13px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; opacity: .9; }
     .footer-license-text { font-size: 13px; color: rgba(255,255,255,.42); line-height: 1.7; max-width: 820px; }
     .footer-license-text + .footer-license-text { margin-top: 6px; }
-    /* ── FOOTER ── */
     .footer { background: #03070f; border-top: 1px solid rgba(240,192,64,.12); padding: 0; }
     .footer-main { max-width: 1160px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1.4fr; gap: 48px; padding: 60px 40px 48px; }
     .footer-logo { font-size: 20px; font-weight: 800; color: #fff; text-decoration: none; display: inline-block; margin-bottom: 14px; }
@@ -223,19 +292,13 @@
     @media (max-width: 900px) { .footer-main { grid-template-columns: 1fr 1fr; gap: 36px; } .footer-brand-col { grid-column: 1 / -1; } .footer-license-inner { padding: 24px 20px; gap: 16px; } }
     @media (max-width: 560px) { .footer-main { grid-template-columns: 1fr; padding: 40px 20px 32px; } .footer-divider { margin: 0 20px; } .footer-bottom { padding: 16px 20px 24px; flex-direction: column; align-items: flex-start; gap: 10px; } .footer-license-icon { width: 40px; height: 40px; } }
 
-    /* Mobile */
     @media (max-width: 900px) {
       .header { padding: 0 20px; }
       .header-nav .nav-link { display: none; }
+      .sidebar { position: static; }
     }
     @media (max-width: 640px) {
       .page-hero h1 { font-size: 24px; }
-      .bct thead { display: none; }
-      .bct tbody tr { display: block; padding: 20px; border-bottom: 1px solid rgba(255,255,255,.08); }
-      .bct td { display: block; padding: 6px 0; width: 100% !important; min-width: 0; }
-      .bct-cta-cell { text-align: left; padding-top: 12px !important; }
-      .bct-logo-cell { width: 100%; }
-
     }
   </style>
   {% include "_tracking_head.html" %}
@@ -253,125 +316,119 @@
     <p>{{ t('brokers_hero_p', lang) }}</p>
   </div>
 
-  <!-- Broker table -->
-  <div class="bct-card">
-    <div class="bct-wrap">
-      <table class="bct">
-        <thead>
-          <tr>
-            <th style="padding-left:24px;">{{ t('brokers_th_broker', lang) }}</th>
-            <th>{{ t('brokers_th_features', lang) }}</th>
-            <th>{{ t('brokers_th_stats', lang) }}</th>
-            <th style="text-align:center; padding-right:24px;"></th>
-          </tr>
-        </thead>
-        <tbody>
+  <!-- News-style two-column layout -->
+  <div class="news-layout">
+
+    <!-- LEFT: broker review blog articles -->
+    <div class="article-stream">
+      {% if articles %}
+        {% for art in articles %}
+          {% set _title = art.title_en if lang == 'en' and art.title_en else art.title %}
+          {% set _excerpt = art.excerpt_en if lang == 'en' and art.excerpt_en else (art.excerpt or '') %}
+          {% set _cat = (art.category_name or t('brokers_category_label', lang)) | upper %}
+          {% set _pub = art.published_at or art.created_at %}
+          {# Time-ago calculator — handled in template using published_at ISO string #}
+          <a class="stream-row" href="/blog/{{ art.slug }}{% if lang == 'en' %}?lang=en{% endif %}">
+            <div class="stream-label">
+              [ <span class="bracket"></span>{{ _cat }}<span class="bracket"></span> ]
+            </div>
+            <div class="stream-body">
+              <div class="stream-meta">
+                <span>{{ _cat | lower | capitalize }}</span>
+                {% if _pub %}<span data-ago="{{ _pub }}" data-lang="{{ lang }}">{{ _pub[:10] if _pub is string else _pub.strftime('%Y-%m-%d') }}</span>{% endif %}
+                {% if loop.index == 1 %}
+                  <span class="featured-tag">{{ t('brokers_featured', lang) }}</span>
+                {% endif %}
+              </div>
+              <h2 class="stream-title">{{ _title }}</h2>
+              {% if _excerpt %}
+              <p class="stream-excerpt">{{ _excerpt[:180] }}{% if _excerpt|length > 180 %}…{% endif %}</p>
+              {% endif %}
+              <div class="stream-footer">
+                {% if art.author %}<span class="author">{{ art.author }}</span>{% endif %}
+              </div>
+            </div>
+          </a>
+        {% endfor %}
+      {% else %}
+        <div class="stream-empty">{{ t('brokers_no_articles', lang) }}</div>
+      {% endif %}
+    </div>
+
+    <!-- RIGHT: sticky broker ranking sidebar -->
+    <aside class="sidebar">
+      <div class="rank-card">
+        <div class="rank-card-head">
+          <div class="rank-card-title">{{ t('brokers_sidebar_title', lang) }}</div>
+          <div class="rank-card-update">{{ t('brokers_sidebar_updated', lang) }} {{ now.strftime('%m/%Y') if now else '' }}</div>
+        </div>
+        <div class="rank-list">
           {% for b in brokers %}
-          {% set rating_int = (b.rating or 0)|int %}
-          {% set features_text = (b.features_en if lang == 'en' and b.features_en else b.features) or '' %}
-          {% set assets_display = (b.assets_count or '').replace('.', ',') if lang == 'en' else (b.assets_count or '') %}
-          {% set min_dep_display = (b.min_deposit or '').replace('.', ',') if lang == 'en' else (b.min_deposit or '') %}
-          {% set badge_key = (b.badge_text or '').strip().lower() %}
-          {% if badge_key == 'cashback' %}
-            {% set badge_display = t('brokers_badge_cashback', lang) %}
-          {% elif badge_key == 'trusted' %}
-            {% set badge_display = t('brokers_badge_trusted', lang) %}
-          {% else %}
-            {% set badge_display = b.badge_text %}
-          {% endif %}
-          <tr{% if b.status == 'coming_soon' %} class="bct-dimmed"{% endif %}>
-            <!-- Logo cell -->
-            <td class="bct-logo-cell" style="padding-left:24px;">
-              <div class="bct-rank">{{ loop.index }}</div>
-              {% if b.badge_text %}
-              <div class="bct-trusted-badge">&#10003; {{ badge_display }}</div>
-              {% endif %}
-              {% if b.logo_url %}
-              <div class="bct-logo-box">
-                <img src="{{ b.logo_url }}" alt="{{ b.name }}" style="max-height:36px; max-width:100px;">
+            {% set rating_num = (b.rating or 0) | float %}
+            {% set rating_int = rating_num | int %}
+            {% set score10 = '%.1f' % (rating_num * 2) if rating_num else '—' %}
+            {% set is_coming = b.status == 'coming_soon' %}
+            {% set target_url = ('/blog/' ~ b.review_article_slug ~ ('?lang=en' if lang == 'en' else '')) if b.review_article_slug else (b.visit_url or '#') %}
+            {% set is_external = (not b.review_article_slug) and b.visit_url %}
+            <a class="rank-item {% if is_coming %}rank-item-coming{% endif %}"
+               href="{{ target_url }}"
+               {% if is_external %}target="_blank" rel="nofollow noopener"{% endif %}>
+              <div class="rank-num">{{ loop.index }}</div>
+              <div class="rank-logo" style="background: {{ b.logo_color or '#0d1b3e' }};">
+                {% if b.logo_url %}
+                  <img src="{{ b.logo_url if b.logo_url.startswith('/') or b.logo_url.startswith('http') else '/' ~ b.logo_url }}" alt="{{ b.name }}">
+                {% else %}
+                  {{ b.name[:2] | upper }}
+                {% endif %}
               </div>
-              {% else %}
-              <div class="bct-logo-box" style="color:{{ b.logo_color or '#666' }}; font-size:{{ b.logo_font_size or 14 }}px;">{{ b.name }}</div>
-              {% endif %}
-              <div class="bct-stars">
-                {% for i in range(5) %}
-                  {% if i < rating_int %}
-                  <span class="bct-star">&#9733;</span>
-                  {% else %}
-                  <span class="bct-star-empty">&#9733;</span>
-                  {% endif %}
-                {% endfor %}
-                {% if b.rating %}<span class="bct-star-num">{{ b.rating }}</span>{% endif %}
-              </div>
-              {% if b.licenses %}
-              <div class="bct-license-pills">
-                {% for lic in b.licenses.split(',') %}
-                <span class="bct-license-pill">{{ lic.strip() }}</span>
-                {% endfor %}
-              </div>
-              {% endif %}
-            </td>
-
-            <!-- Features cell -->
-            <td class="bct-features-cell">
-              {% if features_text %}
-              <ul>
-                {% for line in features_text.split('\n') %}
-                  {% if line.strip() %}<li>{{ line.strip() }}</li>{% endif %}
-                {% endfor %}
-              </ul>
-              {% endif %}
-            </td>
-
-            <!-- Stats cell -->
-            <td class="bct-stats-cell">
-              {% if b.assets_count %}
-              <div class="bct-stat"><span class="bct-stat-icon">&#128202;</span><div><span class="bct-stat-label">{{ t('brokers_stat_assets', lang) }}</span><span class="bct-stat-value">{{ assets_display }}</span></div></div>
-              {% endif %}
-              {% if b.min_deposit %}
-              <div class="bct-stat"><span class="bct-stat-icon">&#128176;</span><div><span class="bct-stat-label">{{ t('brokers_stat_min_dep', lang) }}</span><span class="bct-stat-value">{{ min_dep_display }}</span></div></div>
-              {% endif %}
-              <div class="bct-stat"><span class="bct-stat-icon">&#128241;</span><div><span class="bct-stat-label">{{ t('brokers_stat_mobile', lang) }}</span><span class="bct-stat-value">{{ t('brokers_stat_yes', lang) }}</span></div></div>
-              {% if b.extra_stat_label and b.extra_stat_value %}
-              <div class="bct-stat">
-                <span class="bct-stat-icon">{% if b.extra_stat_label == 'speed' %}&#9889;{% elif b.extra_stat_label == 'neg_bal' %}&#128274;{% else %}&#128222;{% endif %}</span>
-                <div>
-                  <span class="bct-stat-label">{% if b.extra_stat_label == 'speed' %}{{ t('brokers_stat_speed', lang) }}{% elif b.extra_stat_label == 'neg_bal' %}{{ t('brokers_stat_neg_bal', lang) }}{% else %}{{ t('brokers_stat_support', lang) }}{% endif %}</span>
-                  <span class="bct-stat-value">{{ b.extra_stat_value }}</span>
+              <div class="rank-info">
+                <div class="rank-name">{{ b.name }}</div>
+                <div class="rank-stars">
+                  {% for i in range(5) %}
+                    {% if i < rating_int %}
+                      <span class="rank-star">&#9733;</span>
+                    {% else %}
+                      <span class="rank-star-empty">&#9733;</span>
+                    {% endif %}
+                  {% endfor %}
+                  {% if b.licenses %}<span class="rank-licenses">{{ b.licenses.split(',') | map('trim') | join(' · ') }}</span>{% endif %}
                 </div>
               </div>
-              {% endif %}
-            </td>
-
-            <!-- CTA cell -->
-            <td class="bct-cta-cell" style="padding-right:24px;">
-              {% if b.status == 'coming_soon' %}
-                <span class="bct-coming-soon">{{ t('brokers_coming_soon', lang) }}</span>
-                <span class="btn-broker-review" style="color:rgba(255,255,255,.3); cursor:default;">{{ t('brokers_preparing', lang) }}</span>
-              {% else %}
-                {# Review article takes priority over visit URL #}
-                {% if b.review_article_slug %}
-                  <a href="/blog/{{ b.review_article_slug }}{% if lang == 'en' %}?lang=en{% endif %}" class="btn-broker-visit">{{ t('brokers_read_review', lang) }}</a>
-                {% elif b.visit_url %}
-                  <a href="{{ b.visit_url }}" target="_blank" rel="nofollow noopener" class="btn-broker-visit">{{ t('brokers_visit', lang) }}</a>
-                {% endif %}
-                {% if b.review_article_slug %}
-                  <a href="/portal/login" class="btn-broker-review">{{ t('brokers_signup_cb', lang) }}</a>
-                {% elif b.review_url %}
-                  <a href="{{ b.review_url }}" target="_blank" rel="nofollow noopener" class="btn-broker-review">{{ t('brokers_review_of', lang) }} {{ b.name }}</a>
-                {% else %}
-                  <a href="/portal/login" class="btn-broker-review">{{ t('brokers_signup_cb', lang) }}</a>
-                {% endif %}
-              {% endif %}
-            </td>
-          </tr>
+              <div class="rank-score">{% if is_coming %}{{ t('brokers_coming_soon', lang) }}{% else %}{{ score10 }}{% endif %}</div>
+            </a>
           {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    <div class="disclaimer">
-      ⚠ {{ t('brokers_disclaimer', lang) }}
-    </div>
+        </div>
+        <div class="rank-card-foot">
+          <a href="#article-stream" onclick="document.querySelector('.article-stream').scrollIntoView({behavior:'smooth'}); return false;">
+            {{ t('brokers_sidebar_viewall', lang) }}
+          </a>
+        </div>
+      </div>
+
+      {% if articles and articles|length > 1 %}
+      <div class="mostread-card">
+        <div class="mostread-head">{{ t('brokers_mostread_title', lang) }}</div>
+        <div class="mostread-list">
+          {% for art in articles[:5] %}
+            {% set _title = art.title_en if lang == 'en' and art.title_en else art.title %}
+            <a class="mostread-item" href="/blog/{{ art.slug }}{% if lang == 'en' %}?lang=en{% endif %}">
+              <div class="mostread-num">{{ '%02d' % loop.index }}</div>
+              <div>
+                <div class="mostread-title">{{ _title }}</div>
+                <div class="mostread-meta">{% if art.author %}{{ art.author }}{% endif %}</div>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </aside>
+
+  </div>
+
+  <!-- Disclaimer -->
+  <div class="disclaimer-bar">
+    ⚠ {{ t('brokers_disclaimer', lang) }}
   </div>
 
   <!-- CTA -->
@@ -382,6 +439,30 @@
   </div>
 
 </div>
+
+<!-- Relative-time upgrade for article dates -->
+<script>
+(function(){
+  var lang = document.documentElement.lang || 'vi';
+  var labels = lang === 'en'
+    ? { m: 'min ago', h: 'hr ago', d: 'd ago', now: 'just now' }
+    : { m: 'phút trước', h: 'giờ trước', d: 'ngày trước', now: 'vừa xong' };
+  document.querySelectorAll('[data-ago]').forEach(function(el){
+    var iso = el.dataset.ago;
+    if (!iso) return;
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return;
+    var diff = (Date.now() - d.getTime()) / 1000;
+    var txt;
+    if (diff < 60) txt = labels.now;
+    else if (diff < 3600) txt = Math.floor(diff/60) + ' ' + labels.m;
+    else if (diff < 86400) txt = Math.floor(diff/3600) + ' ' + labels.h;
+    else if (diff < 30 * 86400) txt = Math.floor(diff/86400) + ' ' + labels.d;
+    else txt = d.toLocaleDateString(lang === 'en' ? 'en-US' : 'vi-VN');
+    el.textContent = txt;
+  });
+})();
+</script>
 
 <!-- ── FOOTER LICENSE STRIP ── -->
 <div class="footer-license">

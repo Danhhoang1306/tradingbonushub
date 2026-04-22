@@ -198,6 +198,22 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
     "brokers_footer_desc":   {"vi": "Hệ thống hoàn tiền (cashback & rebate) dành cho trader Forex & Gold — thanh toán tự động mỗi ngày, hoàn toàn miễn phí.",
                               "en": "Cashback & rebate system for Forex & Gold traders — automatic daily payouts, completely free."},
 
+    # ── Brokers page — news-style layout ──
+    "brokers_sidebar_title":   {"vi": "TOP SÀN UY TÍN",       "en": "TOP TRUSTED BROKERS"},
+    "brokers_sidebar_updated": {"vi": "Cập nhật",              "en": "Updated"},
+    "brokers_sidebar_viewall": {"vi": "Xem toàn bộ đánh giá sàn →", "en": "View all broker reviews →"},
+    "brokers_mostread_title":  {"vi": "ĐỌC NHIỀU NHẤT",        "en": "MOST READ"},
+    "brokers_category_label":  {"vi": "ĐÁNH GIÁ SÀN",          "en": "BROKER REVIEW"},
+    "brokers_minutes_ago":     {"vi": "phút trước",            "en": "min ago"},
+    "brokers_hours_ago":       {"vi": "giờ trước",             "en": "hr ago"},
+    "brokers_days_ago":        {"vi": "ngày trước",            "en": "d ago"},
+    "brokers_just_now":        {"vi": "vừa xong",              "en": "just now"},
+    "brokers_featured":        {"vi": "NỔI BẬT",               "en": "FEATURED"},
+    "brokers_views":           {"vi": "lượt đọc",              "en": "reads"},
+    "brokers_comments":        {"vi": "bình luận",             "en": "comments"},
+    "brokers_no_articles":     {"vi": "Chưa có bài đánh giá nào. Hãy quay lại sau.",
+                                "en": "No reviews yet. Please check back later."},
+
     # ── Blog page ──
     "blog_page_title":       {"vi": "Blog & Tin tức",         "en": "Blog & News"},
     "blog_hero_p":           {"vi": "Kiến thức giao dịch, phân tích thị trường và hướng dẫn",

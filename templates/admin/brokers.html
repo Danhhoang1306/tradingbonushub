@@ -178,7 +178,7 @@
 <div class="bm-grid" id="brokerGrid">
 {% for b in brokers %}
 <div class="bm-card{% if not b.is_active %} inactive{% endif %}{% if not b.show_on_brokers_page %} hidden-page{% endif %}"
-     data-id="{{ b.id }}" data-name="{{ b.name|lower }}" data-visible="{{ b.show_on_brokers_page|default(1) }}">
+     data-id="{{ b.id }}" data-name="{{ b.name|lower }}" data-visible="{{ 1 if b.show_on_brokers_page else 0 }}">
 
   <!-- Header (always visible) -->
   <div class="bm-header">
@@ -379,15 +379,13 @@ function toggleDetail(id) {
 
 function filterBrokers() {
   const q = document.getElementById('brokerSearch').value.toLowerCase();
+  const currentFilter = document.querySelector('.bm-filter-btn.active')?.dataset.filter || 'all';
   document.querySelectorAll('.bm-card').forEach(c => {
-    const name = c.dataset.name;
-    const matchSearch = !q || name.includes(q);
-    const currentFilter = document.querySelector('.bm-filter-btn.active')?.dataset.filter || 'all';
-    const vis = c.dataset.visible;
+    const matchSearch = !q || c.dataset.name.includes(q);
+    const isVisible = c.dataset.visible === '1';
     const matchFilter = currentFilter === 'all'
-      || (currentFilter === 'visible' && vis === '1' && vis !== 'True')
-      || (currentFilter === 'visible' && vis === 'True')
-      || (currentFilter === 'hidden' && (vis === '0' || vis === 'False'));
+      || (currentFilter === 'visible' && isVisible)
+      || (currentFilter === 'hidden' && !isVisible);
     c.style.display = (matchSearch && matchFilter) ? '' : 'none';
   });
 }
@@ -406,15 +404,20 @@ async function saveBroker(id) {
     return el.value.trim();
   };
 
+  const _num = (s, parser) => {
+    if (s === '' || s == null) return null;
+    const n = parser(s);
+    return isNaN(n) ? null : n;
+  };
   const data = {
-    display_order:        parseInt(g('order')) || 0,
+    display_order:        _num(g('order'), parseInt) ?? 0,
     status:               g('status'),
     badge_text:           g('badge') || null,
-    rating:               parseFloat(g('rating')) || null,
+    rating:               _num(g('rating'), parseFloat),
     show_on_brokers_page: g('show'),
     is_active:            g('active'),
     logo_color:           g('color') || null,
-    logo_font_size:       parseInt(g('fontsize')) || null,
+    logo_font_size:       _num(g('fontsize'), parseInt),
     logo_url:             g('logourl') || null,
     licenses:             g('licenses') || null,
     leverage:             g('leverage') || null,
