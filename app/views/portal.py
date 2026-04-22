@@ -51,7 +51,7 @@ async def _fire(coro, *, label: str) -> None:
 
 
 def _lang(request: Request) -> str:
-    return getattr(getattr(request, "state", None), "lang", None) or "en"
+    return getattr(getattr(request, "state", None), "lang", None) or "vi"
 
 
 def _cctx(request: Request, **kwargs):
@@ -262,7 +262,7 @@ def _build_enrollments(broker_accounts: list) -> list:
     return result
 
 
-def _load_promotions_for_portal(lang: str = "en") -> list:
+def _load_promotions_for_portal(lang: str = "vi") -> list:
     """Load all active programs with broker info and tiers for the portal promotions tab.
 
     Uses separate queries instead of JOIN to avoid duplicating programs that

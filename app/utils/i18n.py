@@ -568,8 +568,8 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
 }
 
 
-def t(key: str, lang: str = "en") -> str:
-    """Look up a translation. Falls back to English, then to the key itself.
+def t(key: str, lang: str = "vi") -> str:
+    """Look up a translation. Falls back to Vietnamese, then to the key itself.
 
     Treats an empty string as a valid explicit translation (e.g. a suffix that
     intentionally disappears in one language), not as a missing value.
@@ -579,12 +579,12 @@ def t(key: str, lang: str = "en") -> str:
         return key
     if lang in entry:
         return entry[lang]
-    if "en" in entry:
-        return entry["en"]
+    if "vi" in entry:
+        return entry["vi"]
     return key
 
 
-def freq_label(value: str | None, lang: str = "en") -> str:
+def freq_label(value: str | None, lang: str = "vi") -> str:
     """Map rebate_frequency DB value to localised display label."""
     key = f"freq_{value or 'daily'}"
     return t(key, lang)

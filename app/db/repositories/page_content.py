@@ -2,24 +2,24 @@
 from app.db.connection import get_conn
 
 
-def get_all_content(lang: str = "en") -> dict[str, str]:
-    """Return all key→value for the given language, fallback to 'en'."""
+def get_all_content(lang: str = "vi") -> dict[str, str]:
+    """Return all key→value for the given language, fallback to 'vi'."""
     with get_conn() as conn:
         rows = conn.execute(
             "SELECT [key], value FROM page_content WHERE lang=?", (lang,)
         ).fetchall()
         result = {r["key"]: r["value"] for r in rows}
-        if lang != "en":
-            # fill missing keys with English fallback
-            en_rows = conn.execute(
-                "SELECT [key], value FROM page_content WHERE lang='en'"
+        if lang != "vi":
+            # fill missing keys with Vietnamese fallback (primary language)
+            vi_rows = conn.execute(
+                "SELECT [key], value FROM page_content WHERE lang='vi'"
             ).fetchall()
-            for r in en_rows:
+            for r in vi_rows:
                 result.setdefault(r["key"], r["value"])
         return result
 
 
-def get_content(key: str, lang: str = "en", default: str = "") -> str:
+def get_content(key: str, lang: str = "vi", default: str = "") -> str:
     with get_conn() as conn:
         row = conn.execute(
             "SELECT value FROM page_content WHERE [key]=? AND lang=?", (key, lang)

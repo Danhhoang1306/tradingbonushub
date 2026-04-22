@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ lang|default('en') }}">
+<html lang="{{ lang|default('vi') }}">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -34,16 +34,16 @@
     {% else %}Trading<span>Bonus</span>{% endif %}
   </a>
   <div class="header-right">
-    <a href="/" class="nav-link nav-desktop">{{ t('nav_home', lang|default('en')) }}</a>
-    <a href="/promotions" class="nav-link nav-desktop">{{ t('nav_promotions', lang|default('en')) }}</a>
-    <a href="/#how" class="nav-link nav-desktop">{{ t('nav_guide', lang|default('en')) }}</a>
-    <a href="/brokers" class="nav-link nav-desktop">{{ t('nav_brokers', lang|default('en')) }}</a>
-    <a href="/about" class="nav-link nav-desktop">{{ t('nav_contact', lang|default('en')) }}</a>
+    <a href="/" class="nav-link nav-desktop">{{ t('nav_home', lang|default('vi')) }}</a>
+    <a href="/promotions" class="nav-link nav-desktop">{{ t('nav_promotions', lang|default('vi')) }}</a>
+    <a href="/#how" class="nav-link nav-desktop">{{ t('nav_guide', lang|default('vi')) }}</a>
+    <a href="/brokers" class="nav-link nav-desktop">{{ t('nav_brokers', lang|default('vi')) }}</a>
+    <a href="/about" class="nav-link nav-desktop">{{ t('nav_contact', lang|default('vi')) }}</a>
     {% if customer_email %}
     <span class="header-user nav-desktop">👤 {{ customer_email }}</span>
-    <a href="/portal/logout" class="btn-logout nav-desktop">{{ t('portal_logout', lang|default('en')) }}</a>
+    <a href="/portal/logout" class="btn-logout nav-desktop">{{ t('portal_logout', lang|default('vi')) }}</a>
     {% else %}
-    <a href="/portal/login" class="btn-logout nav-desktop">{{ t('portal_login', lang|default('en')) }}</a>
+    <a href="/portal/login" class="btn-logout nav-desktop">{{ t('portal_login', lang|default('vi')) }}</a>
     {% endif %}
   </div>
   <!-- Mobile hamburger -->
@@ -54,16 +54,16 @@
 
 <!-- Mobile drawer -->
 <div class="portal-drawer" id="portalDrawer">
-  <a href="/">{{ t('nav_home', lang|default('en')) }}</a>
-  <a href="/promotions">{{ t('nav_promotions', lang|default('en')) }}</a>
-  <a href="/#how">{{ t('nav_guide', lang|default('en')) }}</a>
-  <a href="/brokers">{{ t('nav_brokers', lang|default('en')) }}</a>
-  <a href="/about">{{ t('nav_contact', lang|default('en')) }}</a>
+  <a href="/">{{ t('nav_home', lang|default('vi')) }}</a>
+  <a href="/promotions">{{ t('nav_promotions', lang|default('vi')) }}</a>
+  <a href="/#how">{{ t('nav_guide', lang|default('vi')) }}</a>
+  <a href="/brokers">{{ t('nav_brokers', lang|default('vi')) }}</a>
+  <a href="/about">{{ t('nav_contact', lang|default('vi')) }}</a>
   {% if customer_email %}
   <div class="drawer-user">👤 {{ customer_email }}</div>
-  <a href="/portal/logout" class="drawer-logout">{{ t('portal_logout', lang|default('en')) }}</a>
+  <a href="/portal/logout" class="drawer-logout">{{ t('portal_logout', lang|default('vi')) }}</a>
   {% else %}
-  <a href="/portal/login" class="drawer-logout">{{ t('portal_login', lang|default('en')) }}</a>
+  <a href="/portal/login" class="drawer-logout">{{ t('portal_login', lang|default('vi')) }}</a>
   {% endif %}
 </div>
 <div class="portal-overlay" id="portalOverlay"></div>

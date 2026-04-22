@@ -616,7 +616,7 @@ async def admin_public_edit_mode(request: Request, page: str = "home"):
             "offset":           0,
             "categories":       get_all_categories(),
             "current_category": None,
-            "pc":               get_all_content("en"),
+            "pc":               get_all_content("vi"),
             "ps":               ps,
             "banners":          get_active_banners("blog"),
             "nav_items":        nav_items,
@@ -640,7 +640,7 @@ async def admin_public_edit_mode(request: Request, page: str = "home"):
             return float(d)
         return d
 
-    pc        = get_all_content("en")
+    pc        = get_all_content("vi")
     brokers   = get_all_brokers()
     promotions = get_all_programs(active_only=True)
     all_tiers  = get_all_program_tiers()

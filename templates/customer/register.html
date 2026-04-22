@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="{{ lang|default('en') }}">
+<html lang="{{ lang|default('vi') }}">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{{ t('portal_register', lang|default('en')) }} — {{ ps.site_name or 'TradingBonusHub' }}</title>
+  <title>{{ t('portal_register', lang|default('vi')) }} — {{ ps.site_name or 'TradingBonusHub' }}</title>
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -90,7 +90,7 @@
       <input type="hidden" name="registration_type" value="new_account" />
 
       <div class="form-group">
-        <label>{{ t('portal_full_name', lang|default('en')) }}</label>
+        <label>{{ t('portal_full_name', lang|default('vi')) }}</label>
         <input type="text" name="name" placeholder="John Doe" autocomplete="name" required autofocus
                value="{{ form_name or '' }}" />
       </div>
@@ -100,17 +100,17 @@
                value="{{ form_email or '' }}" />
       </div>
       <div class="form-group">
-        <label>{{ t('portal_password', lang|default('en')) }}</label>
+        <label>{{ t('portal_password', lang|default('vi')) }}</label>
         <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="new-password" required minlength="8" />
         <div class="password-hint">Minimum 8 characters</div>
       </div>
       <div class="form-group">
-        <label>{{ t('portal_confirm_pw', lang|default('en')) }}</label>
+        <label>{{ t('portal_confirm_pw', lang|default('vi')) }}</label>
         <input type="password" id="confirm_password" name="confirm_password" placeholder="••••••••" autocomplete="new-password" required minlength="8" />
         <div id="pw-mismatch" style="display:none; font-size:12px; color:#f87171; margin-top:4px;">Passwords do not match.</div>
       </div>
 
-      <button type="submit" class="btn-register">{{ t('portal_register', lang|default('en')) }}</button>
+      <button type="submit" class="btn-register">{{ t('portal_register', lang|default('vi')) }}</button>
     </form>
     <script>
       document.querySelector('form').addEventListener('submit', function(e) {
@@ -132,7 +132,7 @@
       });
     </script>
 
-    <div class="hint">{{ t('portal_has_account', lang|default('en')) }} <a href="/portal/login">{{ t('portal_login', lang|default('en')) }}</a></div>
+    <div class="hint">{{ t('portal_has_account', lang|default('vi')) }} <a href="/portal/login">{{ t('portal_login', lang|default('vi')) }}</a></div>
   </div>
 </div>
 </body>

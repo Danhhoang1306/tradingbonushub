@@ -116,7 +116,7 @@ async def api_create_article(request: Request):
     slug = unique_slug(d.get("slug") or title)
     type_ = d.get("type") or "post"
     status = d.get("status") or "draft"
-    lang = d.get("lang") or "en"
+    lang = d.get("lang") or "vi"
 
     _auto_seo(d, title, (d.get("excerpt") or "").strip())
 

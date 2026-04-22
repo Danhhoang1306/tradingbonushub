@@ -18,7 +18,7 @@ LIMIT = 12
 
 
 def _lang(request: Request) -> str:
-    return getattr(getattr(request, "state", None), "lang", None) or "en"
+    return getattr(getattr(request, "state", None), "lang", None) or "vi"
 
 
 @router.get("/blog", response_class=HTMLResponse)

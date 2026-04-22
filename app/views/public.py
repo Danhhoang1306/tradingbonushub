@@ -29,8 +29,8 @@ public_tpl = make_templates("templates/public")
 
 
 def _lang(request: Request) -> str:
-    """Get language from middleware (auto-detected) or query string fallback."""
-    return getattr(getattr(request, "state", None), "lang", None) or "en"
+    """Get language from middleware; default to Vietnamese."""
+    return getattr(getattr(request, "state", None), "lang", None) or "vi"
 
 
 def _get_trader_count() -> int:

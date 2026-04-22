@@ -21,7 +21,7 @@ def _require_admin(request: Request) -> None:
 
 
 @router.get("/api/page-content")
-def api_get_page_content(lang: str = "en"):
+def api_get_page_content(lang: str = "vi"):
     """Return all page content for the given language."""
     data = get_all_content(lang)
     return {"lang": lang, "content": data}
