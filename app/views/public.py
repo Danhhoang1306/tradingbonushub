@@ -187,10 +187,13 @@ async def public_brokers(request: Request):
     lang = _lang(request)
     ps = get_portal_settings()
     all_brokers = get_all_brokers(active_only=False)
-    # Show brokers flagged for public page (need at least a logo_url or logo_color to render)
+    # Show brokers flagged for public page — must also be active, plus have
+    # something renderable in the logo cell (image or color)
     brokers = [
         b for b in all_brokers
-        if b.get("show_on_brokers_page") and (b.get("logo_url") or b.get("logo_color"))
+        if b.get("show_on_brokers_page")
+        and b.get("is_active")
+        and (b.get("logo_url") or b.get("logo_color"))
     ]
 
     # Left-column content: broker review articles — all published posts whose
