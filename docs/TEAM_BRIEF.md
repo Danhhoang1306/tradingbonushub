@@ -117,6 +117,30 @@ Không có /docs của FastAPI ở production.
 quét toàn bộ HTML + JS + CSS không còn dữ liệu mock. Báo cáo cuối của agent: làm gì, kiểm tra gì và kết quả
 thực tế, cái gì chưa xong. Không báo "xong" nếu chưa tự chạy thử.
 
+## 12. Admin quản lý được TOÀN BỘ nội dung public (yêu cầu của user, ưu tiên trên mục 5)
+Thiết kế Admin.dc.html chưa phủ hết. Mọi chữ, ảnh, link nhìn thấy trên site public phải sửa được từ admin,
+trừ khung giao diện (nhãn cột, nút, tab). Mục 5 "GIỮ" nghĩa là: dùng chữ thiết kế làm GIÁ TRỊ MẶC ĐỊNH
+lưu trong Setting, không hardcode trong template. Bổ sung khóa Setting:
+- pages: {bonus|san|tin|gioithieu|lienhe: {title, desc, meta_title, meta_desc}}
+- home_about {eyebrow, title, text, images[3]}, home_why {title, reasons[{title,text}], images[2]},
+  home_types {title, image}, home_contact {title, text, image}, home_blog {title}, home_compare {title}
+- bonus_types: [{id, label, desc, points[]}] (5 loại cố định id, sửa chữ được)
+- about_blocks: {about|method|affiliate: [{title,text}], image theo từng tab}
+- contact_page {intro, topics[], response_note}
+- footer {about_text, columns[{title, links[{label,url}]}], risk_note, copyright}
+- legal: {terms_md, privacy_md}; social links; favicon/logo; og_image; analytics_head (script GA, chỉ admin role)
+Thêm bảng MediaFile (path, alt, width, height, size) + màn "Thư viện ảnh": upload một lần, chọn ảnh ở mọi form.
+
+Màn admin mới (Admin FE thiết kế theo đúng phong cách Admin.dc.html: sidebar navy, pill xanh, bảng trắng,
+drawer phải 480px cho form, công tắc tròn):
+- "Nội dung trang chủ" mở rộng tab: Section | Hero | Về chúng tôi | Tại sao chọn | Loại bonus | Liên hệ | Menu & chân trang
+- "Trang" (mới): tab Bonus | Sàn | Tin tức | Giới thiệu | Liên hệ | Điều khoản | Bảo mật — sửa tiêu đề, mô tả, SEO, khối nội dung
+- "Thư viện ảnh" (mới): lưới ảnh, upload, alt, copy link, xóa (chặn xóa khi đang dùng)
+- "Tin nhắn" (mới), "Cài đặt" thêm tab Mạng xã hội, Tracking
+Bố cục: mỗi form có cột trái là trường nhập, cột phải là xem trước nhỏ khi màn đủ rộng; nút "Xem trên site ↗"
+mở đúng trang public; lưu bằng một nút cố định đáy form; báo "Đã lưu" ngắn. Nhóm sidebar thành
+Dữ liệu (Bonus, Sàn, Bài viết, Quảng cáo) | Nội dung (Trang chủ, Trang, Thư viện ảnh) | Khách (Người đăng ký, Tin nhắn) | Hệ thống (Cài đặt).
+
 ## 11. Cách làm việc (vibe coding có kỷ luật)
 - Trước khi code: đọc đúng phần cần, nêu kế hoạch ngắn trong đầu; không đoán, xem file thật.
 - Chia nhỏ theo lát dọc: làm một việc, chạy thử, rồi mới sang việc tiếp theo. Không viết nhiều rồi mới test.
