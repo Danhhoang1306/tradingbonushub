@@ -41,3 +41,11 @@ static/uploads/
 # Cloudflare
 cloudflared.exe
 cloudflared.yml
+
+# Design source (contains mock data, never served)
+design/
+*.zip
+
+# Private working files
+mail to/
+.venv/
