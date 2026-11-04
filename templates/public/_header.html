@@ -17,7 +17,7 @@
       <a href="{{ m.url }}" class="site-nav__link{% if active %} is-active{% endif %}"{% if active %} aria-current="page"{% endif %}>{{ m.label }}</a>
       {% endfor %}
     </nav>
-    {% if is_hero %}{{ arrow_btn("/bonus", "Xem bonus", "blue", "header") }}{% else %}{{ arrow_btn("/lien-he", "Nhận tư vấn", "blue", "header-sm") }}{% endif %}
+    {% if is_hero %}{{ arrow_btn("/bonus", site.system_text.header_cta_home, "blue", "header") }}{% else %}{{ arrow_btn("/lien-he", site.system_text.header_cta_page, "blue", "header-sm") }}{% endif %}
   </div>
 </header>
 {%- endmacro %}

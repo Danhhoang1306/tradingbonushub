@@ -29,6 +29,17 @@
       <div class="empty empty-inline"><p>Không có bonus nào hết hạn trong 14 ngày tới.</p></div>
       {% endfor %}
     </div>
+    {% if banners %}
+    <div class="card">
+      <div class="card-title">Banner quảng cáo <a href="/admin/ads?tab=stats">Thống kê</a></div>
+      {% for b in banners %}
+      <div class="card-list-row">
+        <span><a class="row-link-inline" href="{{ b.edit_url }}"><strong>{{ b.name }}</strong></a> · {{ b.placement|placement_label }}<span class="cell-sub">{{ b.state|banner_state_label }}</span></span>
+        <span class="end">{{ b.clicks|num }} click · CTR {{ ctr(b.clicks, b.views) }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
     <div class="card">
       <div class="card-title">Sàn nhiều click nhất <a href="/admin/brokers?tab=links">Link affiliate</a></div>
       {% for k in top_brokers %}
@@ -40,11 +51,11 @@
       <div class="empty empty-inline"><p>Chưa có click affiliate nào.</p></div>
       {% endfor %}
     </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">Click theo ngày (30 ngày){% if click_total %}<span class="cell-muted">{{ click_total|num }} click</span>{% endif %}</div>
-    {{ ui.bars(click_days, click_total) }}
+    {# Có thẻ Banner thì biểu đồ nằm cạnh thẻ sàn, không thì chiếm cả hàng. #}
+    <div class="card{% if not banners %} grid-full{% endif %}">
+      <div class="card-title">Click theo ngày (30 ngày){% if click_total %}<span class="cell-muted">{{ click_total|num }} click</span>{% endif %}</div>
+      {{ ui.bars(click_days, click_total) }}
+    </div>
   </div>
 </div>
 {% endblock %}

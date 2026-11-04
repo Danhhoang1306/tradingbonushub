@@ -39,7 +39,7 @@ h1, h2, h3, p { margin: 0; }
 .sidebar-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .brand { display: flex; align-items: center; gap: 10px; padding: 0 8px; color: var(--c-on-dark); }
 .brand:hover { color: var(--c-on-dark); }
-.brand img { width: 36px; height: 36px; border-radius: 8px; background: var(--c-glass); display: block; }
+.brand img { width: 36px; height: 36px; border-radius: 8px; background: var(--c-glass); display: block; object-fit: contain; }
 .brand-name { display: block; font-weight: 700; font-size: 15px; line-height: 1.35; }
 .brand-sub { display: block; font-size: 12px; color: var(--c-on-dark-3); line-height: 1.35; }
 .nav-burger { display: none; }
@@ -97,6 +97,7 @@ h1, h2, h3, p { margin: 0; }
 }
 .btn-primary { border: 1px solid var(--c-blue); background: var(--c-blue); color: #fff; }
 .btn-primary:hover { background: var(--c-navy); border-color: var(--c-navy); color: #fff; }
+.btn-primary:disabled { opacity: 0.45; cursor: not-allowed; background: var(--c-blue); border-color: var(--c-blue); }
 .btn-secondary { border: 1px solid var(--a-line-btn); background: var(--c-surface); color: var(--c-navy); }
 .btn-secondary:hover { border-color: var(--c-navy); color: var(--c-navy); }
 .btn-danger { border: 1px solid var(--a-danger); background: var(--c-surface); color: var(--a-danger); }
@@ -234,7 +235,10 @@ h1, h2, h3, p { margin: 0; }
 .card-list-row { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-top: 1px solid var(--a-line-row); font-size: 14px; }
 .card-list-row .end { color: var(--c-text-2); flex-shrink: 0; }
 .card-list-row .end-danger { color: var(--a-danger); flex-shrink: 0; }
-.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.grid-full { grid-column: 1 / -1; }
+.row-link-inline { color: inherit; }
+.row-link-inline:hover { color: var(--c-blue); }
 
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1px; background: var(--c-line); }
 .stat { background: var(--c-surface); padding: 24px; }

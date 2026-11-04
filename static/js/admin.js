@@ -116,7 +116,10 @@
     var target = $('.drawer-body .has-error :is(input, select, textarea)', wrap) ||
       $('.drawer-body :is(input:not([type=hidden]):not([type=file]), select, textarea)', wrap);
     if (target) target.focus();
-    var dirty = false;
+    var dirty = !!$('.drawer-body .alert-error', wrap);  // lỗi 400: form đang giữ chữ chưa lưu
+    wrap.addEventListener('click', function (e) {
+      if (e.target.closest('[data-act], [data-row-add], .btn-add')) dirty = true;
+    });
     function canLeave() { return !dirty || window.confirm('Bỏ các thay đổi chưa lưu?'); }
     ['input', 'change'].forEach(function (t) { wrap.addEventListener(t, function () { dirty = true; }); });
     $$('[data-drawer-close]', wrap).forEach(function (a) {
@@ -203,6 +206,7 @@
     if (path !== undefined) pathInput.value = path;
     putImg($('[data-img-thumb]', field), src);
     if (note) $('[data-img-name]', field).textContent = note;
+    fire(pathInput);  // báo cho drawer biết form đã đổi (hộp chọn ảnh nằm ngoài drawer)
     var key = pathInput.getAttribute('data-bind-img');
     if (!key) return;
     $$('[data-pv-img="' + key + '"]').forEach(function (el) {
@@ -312,13 +316,13 @@
     if (!form) return;
     var out = $('[data-audience-count]', form), send = out.closest('button');
     var pending = null;
-    form.addEventListener('change', function (e) {
-      if (e.target.name !== 'audience') return;
+    function recount() {
       var params = new URLSearchParams();
       $$('input[name=audience]:checked', form).forEach(function (c) { params.append('aud', c.value); });
       if (pending) pending.abort();  // chỉ lấy kết quả của lần chọn cuối
       out.textContent = '…';  // số cũ không còn đúng, kể cả khi yêu cầu dưới đây lỗi
       send.setAttribute('data-confirm', 'Gửi email này tới các nhóm đã chọn?');
+      send.disabled = true;
       pending = new AbortController();
       fetch(form.getAttribute('data-audience-url') + '?' + params.toString(), { credentials: 'same-origin', signal: pending.signal })
         .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
@@ -326,7 +330,17 @@
           var n = d.count.toLocaleString('vi-VN');
           out.textContent = n;
           send.setAttribute('data-confirm', 'Gửi email này tới ' + n + ' người đăng ký?');
-        }).catch(function () {});  // lỗi: giữ "…" và câu xác nhận chung, không hiện số sai
+          send.disabled = d.count === 0;  // gửi 0 người: server trả lỗi và mất nội dung đang soạn
+        }).catch(function (err) {  // lỗi: giữ "…" và câu xác nhận chung, không hiện số sai
+          if (err.name !== 'AbortError') send.disabled = false;
+        });
+    }
+    form.addEventListener('change', function (e) { if (e.target.name === 'audience') recount(); });
+    // Trình duyệt có thể khôi phục ô đã tick khi tải lại/quay lại: số do server in khi đó không còn đúng.
+    window.addEventListener('pageshow', function () {
+      var restored = $$('input[name=audience]', form).some(function (c) { return c.checked !== c.defaultChecked; });
+      if (restored) recount();
+      else send.disabled = out.textContent === '0';
     });
   }
 
@@ -338,7 +352,9 @@
 
   // Sau lỗi 400, ô nhập mang giá trị vừa gửi: đồng bộ khối xem trước với ô nhập.
   function syncPreview() {
-    if ($('.page-form-layout') && $('.alert-error')) $$('[data-bind]').forEach(fire);
+    if (!$('.page-form-layout') || !$('.alert-error')) return;
+    $$('[data-bind]').forEach(fire);
+    $$('[data-bind-img]').forEach(function (i) { setImage(i.closest('[data-image-field]'), i.value.trim()); });
   }
 
   document.addEventListener('DOMContentLoaded', function () {

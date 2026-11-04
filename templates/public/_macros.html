@@ -59,7 +59,7 @@
 {%- endmacro %}
 
 {# Banner quảng cáo ngang (vị trí after-bonus / before-blog). #}
-{% macro ad_block(ad) -%}
+{% macro ad_block(ad, note="") -%}
 <aside class="ad" aria-label="Tài trợ">
   <div class="ad__label"><span>Tài trợ</span>{% if ad.broker %}<span>{{ ad.broker.name }}</span>{% endif %}</div>
   {% if ad.image_path %}
@@ -81,14 +81,15 @@
     <div class="ad__offer"><div class="ad__title">{{ ad.name }}</div></div>
     {% endif %}
     <a href="{{ ad.url }}" class="btn btn--blue ad__cta" rel="sponsored nofollow noopener" target="_blank">Mở tài khoản</a>
+    {% if note %}<p class="ad__note">{{ note }}</p>{% endif %}
   </div>
   {% endif %}
 </aside>
 {%- endmacro %}
 
 {# Quảng cáo dọc hai bên hero (rail). tone: navy | blue #}
-{% macro rail(ad, side) -%}
-<div class="rail rail--{{ side }}">
+{% macro rail(ad, side, note="") -%}
+<div class="rail rail--{{ side }}"{% if ad.view_url %} data-view-url="{{ ad.view_url }}"{% endif %}>
   <aside class="rail__inner" aria-label="Tài trợ">
     <div class="ad__label"><span>Tài trợ</span>{% if ad.broker %}<span>{{ ad.broker.name }}</span>{% endif %}</div>
     {% if ad.image_path %}
@@ -109,6 +110,7 @@
       <div class="rail__title">{{ ad.name }}</div>
       {% endif %}
       <a href="{{ ad.url }}" class="rail__cta" rel="sponsored nofollow noopener" target="_blank">Mở tài khoản</a>
+      {% if note %}<p class="rail__note">{{ note }}</p>{% endif %}
     </div>
     {% endif %}
   </aside>

@@ -40,8 +40,9 @@
       </div>
     </div>
   </div>
+  {% if site.cta_note and compare_brokers|selectattr("go_url")|list %}<p class="compare-note">{{ site.cta_note }}</p>{% endif %}
   {% elif compare_pick %}
-  {{ empty("Chọn sàn để so sánh.") }}
+  {{ empty("Chưa chọn sàn nào. Chọn sàn ở trên để so sánh.") }}
   {% else %}
   {{ empty("Chưa có sàn nào.") }}
   {% endif %}

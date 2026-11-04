@@ -71,7 +71,7 @@
     <p class="broker-aside__text">{% if broker.bonus_count %}{{ broker.bonus_count }} ưu đãi đang hoạt động.{% endif %}{% if broker.bonus_count and broker.min_deposit %} {% endif %}{% if broker.min_deposit %}Nạp tối thiểu {{ broker.min_deposit }}.{% endif %}</p>
     {% endif %}
     {% if broker.go_url %}<a href="{{ broker.go_url }}" class="broker-aside__cta" rel="sponsored nofollow noopener" target="_blank">Mở tài khoản {{ broker.name }}</a>{% endif %}
-    {% if site.footer.risk_note %}<p class="broker-aside__note">{{ site.footer.risk_note }}</p>{% endif %}
+    {% if broker.go_url and site.cta_note %}<p class="broker-aside__note">{{ site.cta_note }}</p>{% endif %}
   </aside>
 </div>
 {% endblock %}

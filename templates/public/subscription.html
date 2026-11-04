@@ -1,11 +1,7 @@
 {% extends "base_public.html" %}
 {% block content %}
 <div class="status-box">
-  <p class="status-box__text">
-    {%- if status == "confirmed" %}Email của bạn đã được xác nhận. Bạn sẽ nhận thông báo khi có bonus mới.
-    {%- elif status == "unsubscribed" %}Bạn sẽ không nhận thêm email thông báo bonus.
-    {%- else %}Liên kết đã hết hạn hoặc không đúng.{% endif -%}
-  </p>
+  <p class="status-box__text">{{ site.system_text["sub_" ~ status ~ "_text"] }}</p>
   <div class="status-box__actions">
     <a href="/" class="btn btn--navy">Về trang chủ</a>
     <a href="/bonus" class="btn btn--outline">Xem bonus</a>

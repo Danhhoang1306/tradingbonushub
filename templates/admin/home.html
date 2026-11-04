@@ -55,6 +55,7 @@
       {{ ui.field('headline', 'Tiêu đề', fd.get('headline', h.headline), e, rows=2, preview='headline') }}
       {{ ui.field('sub', 'Mô tả', fd.get('sub', h.sub), e, rows=3, preview='sub') }}
       {{ ui.field('cta', 'Chữ trên nút', fd.get('cta', h.cta), e, preview='cta') }}
+      {{ ui.field('card_label', 'Nhãn thẻ bonus nổi bật', fd.get('card_label', h.card_label), e, hint='Hiện trên thẻ bonus của sàn nổi bật ở hero.', attrs='maxlength="120"') }}
     </div>
     <div class="form-block">
       <div class="form-block-title">Ảnh nền hero</div>
@@ -157,6 +158,13 @@
       {{ ui.field('about_text', 'Giới thiệu ngắn', fd.get('about_text', f.about_text), e, rows=3) }}
       {{ ui.field('risk_note', 'Cảnh báo rủi ro ở chân trang', fd.get('risk_note', f.risk_note), e, rows=3, preview='risk_note') }}
       {{ ui.field('copyright', 'Dòng bản quyền', fd.get('copyright', f.copyright), e) }}
+      {{ ui.field('affiliate_note', 'Ghi chú affiliate cạnh bản quyền', fd.get('affiliate_note', f.affiliate_note), e, hint='Hiện ở chân trang các trang con. Để trống = ẩn.', attrs='maxlength="500"') }}
+    </div>
+    <div class="form-block">
+      <div class="form-block-title">Ghi chú dưới nút</div>
+      <p class="form-block-desc">Để trống = ẩn dòng tương ứng trên site.</p>
+      {{ ui.field('cta_note', 'Dưới nút "Mở tài khoản"', fd.get('cta_note', s.cta_note), e, rows=2, hint='Công bố affiliate và cảnh báo rủi ro. Tối đa 500 ký tự.', attrs='maxlength="500"') }}
+      {{ ui.field('ads_note', 'Dưới nút trong quảng cáo dọc', fd.get('ads_note', s.ads_note), e, rows=2, attrs='maxlength="500"') }}
     </div>
     <div class="form-block">
       <div class="form-block-title">Cột link chân trang</div>

@@ -13,6 +13,13 @@
     });
   });
 
+  // Đếm view quảng cáo dọc: chỉ khi rail thật sự hiển thị (cùng ngưỡng 1572px với .rail trong site.css)
+  if (navigator.sendBeacon && window.matchMedia('(min-width: 1572px)').matches) {
+    document.querySelectorAll('[data-view-url]').forEach(function (el) {
+      navigator.sendBeacon(el.dataset.viewUrl);
+    });
+  }
+
   // Lọc "Bonus mới nhất" theo loại (trang chủ)
   var filterGroup = document.querySelector('[data-filter-group]');
   function applyFilter(type) {

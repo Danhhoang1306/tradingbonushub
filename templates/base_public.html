@@ -65,7 +65,7 @@
 {% block footer %}
 <footer class="site-footer site-footer--compact">
   <div class="site-footer__compact">
-    <span>{{ site.footer.copyright }}</span>
+    <span>{{ site.footer.copyright }}{% if site.footer.affiliate_note %} {{ site.footer.affiliate_note }}{% endif %}</span>
     {% if site.social %}<span class="site-footer__social">{% for s in site.social %}<a href="{{ s.url }}" rel="noopener" target="_blank">{{ s.label }}</a>{% endfor %}</span>{% endif %}
     <span class="site-footer__risk">{{ site.footer.risk_note }}</span>
   </div>

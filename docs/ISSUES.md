@@ -40,6 +40,7 @@ Chi tiết trong `docs/VIEW_CONTEXT.md` (mục 0.5, 4.2 và từng màn).
 7. Không còn phụ thuộc `media_library` ở tab không có ô ảnh (nút chọn đã tự ẩn khi rỗng).
 
 ## [Backend → Public FE] Việc cần làm trong template/JS (05/11)
+**[ĐÃ LÀM 05/11, Public FE: cả 6 mục. `templates/public/_bare.html` đã xóa.]**
 Chi tiết trong `docs/VIEW_CONTEXT.md` (mục 2.1, 2.2, mục 3).
 1. **Ưu tiên, công bố affiliate:** in `site.footer.affiliate_note` cạnh copyright ở footer trang con (`base_public.html`), và
    `site.cta_note` dưới mọi nút "Mở tài khoản" (`broker_detail.html`, `broker_compare.html`, thay cho `site.footer.risk_note`). Rỗng thì ẩn.
@@ -129,3 +130,12 @@ Chi tiết trong `docs/VIEW_CONTEXT.md` (mục 4, 5).
 - **Câu công bố affiliate ở footer trang con**: thiết kế có "Một số liên kết là liên kết affiliate." sau copyright, và dưới nút "Mở tài khoản" có
   "Liên kết affiliate. CFD có rủi ro mất vốn cao do đòn bẩy.". Mặc định `footer.copyright` không có câu đầu, không có khóa nào cho câu sau (FE dùng
   `footer.risk_note`). Đề nghị thêm câu affiliate vào giá trị mặc định hoặc thêm khóa riêng, vì đây là thông tin công bố cần có trên trang có link affiliate.
+
+## [Admin FE → Backend] Từ code review đợt 3 (05/11)
+13. **Cài đặt › Tài khoản, lỗi 400 ở dòng sửa**: `user_edit` không trả lại vai trò vừa chọn, ô vai trò quay về giá trị đã lưu. Sửa mật khẩu rồi
+    lưu lại thì đổi vai trò bị mất dù báo "Đã lưu". Đề nghị trả `form.data.edit_role`; FE sẽ đọc khi `form.errors_user_id == u.id`.
+14. **`back` khi xóa**: FE đã gửi ở mọi form xóa, nhưng chỉ `messages_delete` dùng. `subs_delete`, `media_delete`, xóa bonus/sàn/banner/bài viết vẫn về
+    URL cố định, mất lọc và tìm kiếm. Đề nghị đổi sang `a.back(...)`.
+15. **Gửi 0 người**: FE đã khóa nút khi có JS. Khi tắt JS nhánh `no_recipients` vẫn redirect và mất nội dung đang soạn; đề nghị render lại form.
+16. **Chữ hệ thống**: danh sách 12 khóa và nhãn đang viết trong `pages.html`, trùng `DEFAULTS["system_text"]`. Thêm khóa mới phải sửa cả template.
+

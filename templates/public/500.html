@@ -1,9 +1,8 @@
-{# Chịu được trường hợp không có `site` (DB lỗi): dùng khung tối giản _bare.html. #}
-{% extends "base_public.html" if site else "public/_bare.html" %}
+{% extends "base_public.html" %}
 {% block content %}
 <div class="status-box">
   <div class="status-box__code" aria-hidden="true">500</div>
-  <p class="status-box__text">Hệ thống đang gặp sự cố. Vui lòng thử lại sau ít phút.</p>
+  <p class="status-box__text">{{ site.system_text.error_text }}</p>
   <div class="status-box__actions">
     <a href="/" class="btn btn--navy">Về trang chủ</a>
   </div>

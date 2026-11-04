@@ -15,7 +15,7 @@
   <div class="contact__form">
     {% if flash and flash.code == "contact_ok" %}
     <div class="notice" role="status">
-      <div class="notice__title">Đã gửi</div>
+      <div class="notice__title">{{ contact.success_title }}</div>
       <div class="notice__text">{{ contact.success_text or flash.text }}</div>
     </div>
     {% else %}

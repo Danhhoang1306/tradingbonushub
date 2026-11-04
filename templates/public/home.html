@@ -18,7 +18,7 @@
       </div>
       {% if hero_bonus %}
       <div class="hero-card">
-        <div class="hero-card__label">Nổi bật tuần này</div>
+        {% if hero.card_label %}<div class="hero-card__label">{{ hero.card_label }}</div>{% endif %}
         <div class="hero-card__head">
           {{ avatar(hero_bonus.broker, "avatar--52") }}
           <div>
@@ -43,8 +43,8 @@
 
 {% block main %}
 <main id="main" class="home-main">
-  {% if rail_left %}{{ rail(rail_left, "left") }}{% endif %}
-  {% if rail_right %}{{ rail(rail_right, "right") }}{% endif %}
+  {% if rail_left %}{{ rail(rail_left, "left", site.ads_note) }}{% endif %}
+  {% if rail_right %}{{ rail(rail_right, "right", site.ads_note) }}{% endif %}
 
   {% for sid in home_sections %}
 
@@ -133,10 +133,10 @@
   </section>
 
   {% elif sid == "ad1" %}
-  <div class="ad-sec"><div class="container">{{ ad_block(ad1) }}</div></div>
+  <div class="ad-sec"><div class="container">{{ ad_block(ad1, site.cta_note) }}</div></div>
 
   {% elif sid == "ad2" %}
-  <div class="ad-sec"><div class="container">{{ ad_block(ad2) }}</div></div>
+  <div class="ad-sec"><div class="container">{{ ad_block(ad2, site.cta_note) }}</div></div>
 
   {% elif sid == "why" %}{% set w = site.home_why %}
   <section class="home-sec" aria-labelledby="h-why">
@@ -193,7 +193,7 @@
             {% for p in t.points %}<li><span class="checks__icon" aria-hidden="true">✓</span><span>{{ p }}</span></li>{% endfor %}
           </ul>
           {% endif %}
-          <a href="/bonus?type={{ t.id }}" class="btn-arrow btn-arrow--navy btn-arrow--sm type-card__cta" data-filter-go="{{ t.id }}">Xem bonus loại này<span class="btn-arrow__icon" aria-hidden="true">→</span></a>
+          <a href="{{ t.url }}" class="btn-arrow btn-arrow--navy btn-arrow--sm type-card__cta" data-filter-go="{{ t.id }}">Xem bonus loại này<span class="btn-arrow__icon" aria-hidden="true">→</span></a>
         </div>
         {% endfor %}
       </div>
