@@ -1,14 +1,104 @@
-<!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><title>{{ title }} – Quản trị</title></head>
-<body data-stub="BACKEND STUB – đội FE ghi đè file này">
-<nav>{% for g in nav %}{% for i in g.links %}<a href="{{ i.url }}">{{ i.label }}{% if i.count %} ({{ i.count }}){% endif %}</a>{% endfor %}{% endfor %}</nav>
-<form method="post" action="/admin/logout"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button>Đăng xuất</button></form>
-{% if flash %}<div class="flash flash-{{ flash.kind }}">{{ flash.text }}</div>{% endif %}
-<h1>{{ title }}</h1>
-{% for t in subtabs %}<a href="{{ t.url }}">{{ t.label }}</a>{% endfor %}
-{% if drawer %}<aside class="drawer"><h2>{{ drawer.title }}</h2><form method="post" action="{{ drawer.action }}" enctype="multipart/form-data">
-<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-{% for k, v in drawer.errors.items() %}<p class="error" data-field="{{ k }}">{{ v }}</p>{% endfor %}</form></aside>{% endif %}
-{% if form and form.errors %}{% for k, v in form.errors.items() %}<p class="error" data-field="{{ k }}">{{ v }}</p>{% endfor %}{% endif %}
-{% for k in brokers %}<div class="row">{{ k.name }}{% if k.in_compare %} [so sánh]{% endif %}{% if k.featured %} [nổi bật]{% endif %}</div>{% else %}<p>Chưa có sàn nào.</p>{% endfor %}
-</body></html>
+{% extends "admin/_base.html" %}
+{% import "admin/_macros.html" as ui with context %}
+{% set close_url = '/admin/brokers' %}
+{% set drawer_inline = ['name','slug','mono','kind','tagline','summary','license','min_deposit','leverage','platforms','spread','withdrawal','founded','affiliate_url','logo_path','pros','cons','in_compare','featured'] %}
+{% block content %}
+{% if current_tab == 'links' %}
+{% set cols = '160px minmax(0,1fr) 90px 90px' %}
+<div class="stack">
+  <p class="note">Nút "Mở tài khoản" trên site đi qua <code>/go/broker/…</code> để đếm click. Để trống link = ẩn nút.</p>
+  <div class="table-wrap">
+    <div class="table" style="--min: 760px; --cols: {{ cols }}">
+      <div class="t-head"><span>Sàn</span><span>Link affiliate</span><span>Click</span><span>30 ngày</span></div>
+      {% for k in brokers %}
+      <div class="t-row">
+        <span class="cell-strong cell-ellipsis">{{ k.name }}</span>
+        <form method="post" action="{{ k.link_url }}" class="inline-row">
+          {{ ui.csrf() }}
+          <input type="url" name="affiliate_url" value="{{ k.affiliate_url }}" placeholder="https://…" aria-label="Link affiliate {{ k.name }}">
+          <button type="submit" class="btn-sm">Lưu</button>
+        </form>
+        <span>{{ k.clicks|num }}</span>
+        <span class="cell-muted">{{ k.clicks_30d|num }}</span>
+      </div>
+      {% else %}
+      {{ ui.empty('Chưa có sàn nào.', add_url, '+ Thêm sàn') }}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% else %}
+{% set cols = '170px minmax(0,1fr) 110px 120px 80px 80px 80px 80px' %}
+<div class="stack">
+  <p class="note">Bật "So sánh" cho tối đa {{ max_compare }} sàn để hiện ở mục So sánh trên trang chủ{% if brokers %} (<strong>{{ compare_count }}/{{ max_compare }}</strong> đang bật){% endif %}. Sàn "Nổi bật" có nền tối.</p>
+  <div class="table-wrap">
+    <div class="table" style="--min: 920px; --cols: {{ cols }}">
+      <div class="t-head"><span>Sàn</span><span>Giấy phép</span><span>Nạp tối thiểu</span><span>Đòn bẩy</span><span>So sánh</span><span>Nổi bật</span><span>Hiển thị</span><span></span></div>
+      {% for k in brokers %}
+      <div class="t-row{% if not k.is_active %} is-muted{% endif %}">
+        <span class="name-cell">
+          <span class="mono-badge">{% if k.logo_path %}<img src="{{ k.logo_path }}" alt="">{% else %}{{ k.mono }}{% endif %}</span>
+          <span class="cell-ellipsis"><a class="row-link cell-strong cell-ellipsis" href="{{ k.edit_url }}">{{ k.name }}</a>
+            <span class="cell-sub">{{ k.kind|kind_label }}{% if k.bonus_count %} · {{ k.bonus_count }} bonus{% endif %}</span></span>
+        </span>
+        <span class="cell-ellipsis" title="{{ k.license }}">{{ k.license or '—' }}</span>
+        <span>{{ k.min_deposit or '—' }}</span>
+        <span class="cell-ellipsis">{{ k.leverage or '—' }}</span>
+        {{ ui.toggle(k.toggle_url, k.in_compare, 'So sánh ' ~ k.name, 'in_compare') }}
+        {{ ui.toggle(k.toggle_url, k.featured, 'Nổi bật ' ~ k.name, 'featured') }}
+        {{ ui.toggle(k.toggle_url, k.is_active, 'Hiển thị ' ~ k.name, 'is_active') }}
+        <span class="t-actions"><a class="btn-sm" href="{{ k.edit_url }}">Sửa</a></span>
+      </div>
+      {% else %}
+      {{ ui.empty('Chưa có sàn nào.', add_url, '+ Thêm sàn') }}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block drawer_fields %}
+{% set d = drawer.data %}{% set e = drawer.errors %}
+<div class="drawer-section">Thông tin chung</div>
+{{ ui.field('name', 'Tên sàn', d.name, e, required=true) }}
+<div class="fields-2">
+  {{ ui.field('slug', 'Slug (đường dẫn)', d.slug, e, hint='Trống = tự tạo từ tên.') }}
+  {{ ui.field('mono', 'Chữ viết tắt', d.mono, e, hint='2 ký tự, hiện khi chưa có logo.', attrs='maxlength="2"') }}
+</div>
+{{ ui.pills('kind', 'Loại sàn', kind_options, d.kind, e) }}
+{{ ui.field('tagline', 'Mô tả ngắn', d.tagline, e) }}
+{{ ui.field('summary', 'Giới thiệu', d.summary, e, rows=4) }}
+{{ ui.image_field('logo_path', 'Logo', d.logo_path, e, ratio='1/1') }}
+
+<div class="drawer-section">Thông số</div>
+{{ ui.field('license', 'Giấy phép', d.license, e) }}
+<div class="fields-2">
+  {{ ui.field('min_deposit', 'Nạp tối thiểu', d.min_deposit, e) }}
+  {{ ui.field('leverage', 'Đòn bẩy tối đa', d.leverage, e) }}
+</div>
+{{ ui.field('platforms', 'Nền tảng', d.platforms, e) }}
+<div class="fields-2">
+  {{ ui.field('spread', 'Spread / phí', d.spread, e) }}
+  {{ ui.field('withdrawal', 'Rút tiền', d.withdrawal, e) }}
+</div>
+{{ ui.field('founded', 'Năm thành lập', d.founded, e) }}
+
+<div class="drawer-section">Link affiliate</div>
+{{ ui.field('affiliate_url', 'Link affiliate', d.affiliate_url, e, type='url', placeholder='https://…', hint='Trống = ẩn nút "Mở tài khoản".') }}
+
+<div class="drawer-section">Ưu / nhược điểm</div>
+{{ ui.lines_field('pros', 'Ưu điểm', d.pros, e, hint='Mỗi dòng một ý.', add_label='+ Thêm ưu điểm') }}
+{{ ui.lines_field('cons', 'Nhược điểm', d.cons, e, hint='Mỗi dòng một ý.', add_label='+ Thêm nhược điểm') }}
+
+<div class="drawer-section">Tài khoản</div>
+{{ ui.rows_editor('account', [('name','Tên tài khoản','text'),('min_deposit','Nạp tối thiểu','text'),('spread','Spread','text'),('commission','Phí hoa hồng','text')], d.accounts, add_label='+ Thêm tài khoản') }}
+
+<div class="drawer-section">Nạp &amp; rút</div>
+{{ ui.rows_editor('payment', [('method','Phương thức','text'),('deposit','Nạp','text'),('withdraw','Rút','text'),('time','Thời gian','text')], d.payment_methods, add_label='+ Thêm phương thức') }}
+
+<div class="drawer-section">Hiển thị</div>
+{{ ui.switch_input('in_compare', 'Đưa vào So sánh (tối đa 3 sàn)', d.in_compare, errors=e) }}
+{{ ui.switch_input('featured', 'Nổi bật (chỉ 1 sàn, tự tắt sàn khác)', d.featured) }}
+{{ ui.switch_input('is_active', 'Hiển thị trên site', d.is_active) }}
+{% endblock %}

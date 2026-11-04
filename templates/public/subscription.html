@@ -1,8 +1,14 @@
-<!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><title>{{ meta.title }}</title>
-{% if meta.noindex %}<meta name="robots" content="noindex">{% endif %}</head>
-<body data-stub="BACKEND STUB – đội FE ghi đè file này">
-{% if flash %}<div class="flash flash-{{ flash.kind }}">{{ flash.text }}</div>{% endif %}
-<h1>{{ page.title }}</h1>
-<p>{{ status }}</p>
-</body></html>
+{% extends "base_public.html" %}
+{% block content %}
+<div class="status-box">
+  <p class="status-box__text">
+    {%- if status == "confirmed" %}Email của bạn đã được xác nhận. Bạn sẽ nhận thông báo khi có bonus mới.
+    {%- elif status == "unsubscribed" %}Bạn sẽ không nhận thêm email thông báo bonus.
+    {%- else %}Liên kết đã hết hạn hoặc không đúng.{% endif -%}
+  </p>
+  <div class="status-box__actions">
+    <a href="/" class="btn btn--navy">Về trang chủ</a>
+    <a href="/bonus" class="btn btn--outline">Xem bonus</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+/* Design tokens TradingBonusHub v2 – dùng chung cho site public (site.css) và admin (admin.css).
+   Giá trị lấy từ design/*.dc.html. Không đổi tên biến: admin.css phụ thuộc. */
+:root {
+  /* Màu */
+  --c-bg: #F5F5F5;            /* nền trang */
+  --c-surface: #FFFFFF;       /* thẻ, bảng */
+  --c-surface-alt: #F9FAFB;   /* dòng xen kẽ bảng so sánh */
+  --c-navy: #021623;          /* chữ chính, nền tối */
+  --c-blue: #1944DF;          /* màu nhấn, nút chính */
+  --c-blue-soft: #DCE3FB;     /* chữ phụ trên nền xanh */
+  --c-text: #021623;
+  --c-text-2: #4B5B66;        /* chữ phụ */
+  --c-text-3: #6B7A84;        /* chú thích nhỏ */
+  --c-muted: #8E9AA3;         /* nhãn "Tài trợ", chữ mờ trên nền tối */
+  --c-on-dark: #FFFFFF;
+  --c-on-dark-2: #E4E9EE;     /* chữ phụ trên nền navy */
+  --c-on-dark-3: #A9B6C1;     /* breadcrumb, tab chưa chọn */
+  --c-on-dark-4: #C2CBD1;     /* chữ footer */
+  --c-line: rgba(2, 22, 35, 0.1);
+  --c-line-soft: rgba(2, 22, 35, 0.06);
+  --c-line-strong: rgba(2, 22, 35, 0.15);
+  --c-line-dark: rgba(255, 255, 255, 0.15);
+  --c-glass: rgba(255, 255, 255, 0.12);
+  --c-media-empty: rgba(127, 127, 127, 0.12); /* khối ảnh trống */
+  --c-success: #0F7B4A;
+  --c-success-bg: #E6F4EC;
+  --c-danger: #C62828;
+  --c-danger-bg: #FDECEC;
+
+  /* Chữ */
+  --font: 'Be Vietnam Pro', sans-serif;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 14px;
+  --fs-base: 15px;
+  --fs-lg: 17px;
+  --tracking-tight: -0.03em;
+
+  /* Bo góc */
+  --radius-0: 0;
+  --radius-sm: 10px;          /* logo */
+  --radius-md: 20px;          /* thẻ so sánh trang chủ */
+  --radius-pill: 999px;
+
+  /* Bóng */
+  --shadow-sm: 0 1px 3px rgba(2, 22, 35, 0.08);
+  --shadow-md: 0 8px 24px rgba(2, 22, 35, 0.12);
+  --shadow-lg: 0 24px 64px rgba(2, 22, 35, 0.24);
+
+  /* Khoảng cách / bố cục */
+  --container: 1300px;
+  --gutter: 24px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --section-pad: 110px;
+
+  --transition: 0.15s ease;
+}

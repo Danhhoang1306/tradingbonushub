@@ -1,11 +1,46 @@
-<!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><title>{{ meta.title }}</title>
-{% if meta.noindex %}<meta name="robots" content="noindex">{% endif %}</head>
-<body data-stub="BACKEND STUB – đội FE ghi đè file này">
-{% if flash %}<div class="flash flash-{{ flash.kind }}">{{ flash.text }}</div>{% endif %}
-<h1>{{ page.title }}</h1>
-<form method="post" action="{{ form.action }}">
-<input name="name" value="{{ form.data.name }}"><input name="email" value="{{ form.data.email }}">
-<textarea name="body">{{ form.data.body }}</textarea><input name="website" value="" hidden>
-{% for k, v in form.errors.items() %}<p class="error">{{ v }}</p>{% endfor %}</form>
-</body></html>
+{% extends "base_public.html" %}
+{% block content %}
+{%- set errs = form.errors -%}
+<div class="contact">
+  <div class="contact__info">
+    {% if site.contact_email or site.partner_email or site.telegram %}
+    <dl>
+      {% if site.contact_email %}<div><dt>Email</dt><dd><a href="mailto:{{ site.contact_email }}">{{ site.contact_email }}</a></dd></div>{% endif %}
+      {% if site.partner_email %}<div><dt>Hợp tác với sàn</dt><dd><a href="mailto:{{ site.partner_email }}">{{ site.partner_email }}</a></dd></div>{% endif %}
+      {% if site.telegram %}<div><dt>Telegram</dt><dd>{% if site.telegram.startswith("https://") %}<a href="{{ site.telegram }}" rel="noopener" target="_blank">{{ site.telegram }}</a>{% else %}{{ site.telegram }}{% endif %}</dd></div>{% endif %}
+    </dl>
+    {% endif %}
+    {% if contact.response_note %}<p class="contact__note">{{ contact.response_note }}</p>{% endif %}
+  </div>
+  <div class="contact__form">
+    {% if flash and flash.code == "contact_ok" %}
+    <div class="notice" role="status">
+      <div class="notice__title">Đã gửi</div>
+      <div class="notice__text">{{ contact.success_text or flash.text }}</div>
+    </div>
+    {% else %}
+    {% if contact.intro %}<p class="contact__intro">{{ contact.intro }}</p>{% endif %}
+    <form method="post" action="{{ form.action }}" class="form-stack" novalidate>
+      {% for key, msg in errs.items() if key not in ("email", "body") %}<p class="form-error" role="alert">{{ msg }}</p>{% endfor %}
+      {% if contact.topics %}
+      <fieldset class="chips chips--outline">
+        <legend class="sr-only">Chủ đề</legend>
+        {% for t in contact.topics %}
+        <label class="chip"><input type="radio" name="topic" value="{{ t }}"{% if t == form.data.topic or (not form.data.topic and loop.first) %} checked{% endif %}><span>{{ t }}</span></label>
+        {% endfor %}
+      </fieldset>
+      {% endif %}
+      <div class="field-pair">
+        <label><span class="sr-only">Họ tên</span><input type="text" name="name" value="{{ form.data.name }}" placeholder="Họ tên" autocomplete="name" maxlength="120" class="input"></label>
+        <label><span class="sr-only">Email</span><input type="email" name="email" value="{{ form.data.email }}" placeholder="Email" autocomplete="email" required maxlength="255" class="input"{% if errs.email %} aria-invalid="true" aria-describedby="err-email"{% endif %}>
+          {% if errs.email %}<span class="field-error" id="err-email">{{ errs.email }}</span>{% endif %}</label>
+      </div>
+      <label><span class="sr-only">Nội dung</span><textarea name="body" rows="6" placeholder="Nội dung" required maxlength="5000" class="input"{% if errs.body %} aria-invalid="true" aria-describedby="err-body"{% endif %}>{{ form.data.body }}</textarea>
+        {% if errs.body %}<span class="field-error" id="err-body">{{ errs.body }}</span>{% endif %}</label>
+      <input type="text" name="website" value="" tabindex="-1" autocomplete="off" hidden>
+      <button type="submit" class="btn-submit">Gửi tin nhắn</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

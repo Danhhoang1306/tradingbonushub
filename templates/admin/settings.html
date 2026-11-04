@@ -1,14 +1,129 @@
-<!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><title>{{ title }} – Quản trị</title></head>
-<body data-stub="BACKEND STUB – đội FE ghi đè file này">
-<nav>{% for g in nav %}{% for i in g.links %}<a href="{{ i.url }}">{{ i.label }}{% if i.count %} ({{ i.count }}){% endif %}</a>{% endfor %}{% endfor %}</nav>
-<form method="post" action="/admin/logout"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button>Đăng xuất</button></form>
-{% if flash %}<div class="flash flash-{{ flash.kind }}">{{ flash.text }}</div>{% endif %}
-<h1>{{ title }}</h1>
-{% for t in subtabs %}<a href="{{ t.url }}">{{ t.label }}</a>{% endfor %}
-{% if drawer %}<aside class="drawer"><h2>{{ drawer.title }}</h2><form method="post" action="{{ drawer.action }}" enctype="multipart/form-data">
-<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-{% for k, v in drawer.errors.items() %}<p class="error" data-field="{{ k }}">{{ v }}</p>{% endfor %}</form></aside>{% endif %}
-{% if form and form.errors %}{% for k, v in form.errors.items() %}<p class="error" data-field="{{ k }}">{{ v }}</p>{% endfor %}{% endif %}
-<p>{{ settings.site_name }}</p>{% for u in users %}<div class="row">{{ u.email }} {{ u.role|role_label }}</div>{% endfor %}
-</body></html>
+{% extends "admin/_base.html" %}
+{% import "admin/_macros.html" as ui with context %}
+{% if current_tab != 'users' %}{% set page_form = 'page-form' %}{% endif %}
+{% set e = form.errors %}
+{% set fd = form.data or {} %}
+{% block content %}
+{% set s = settings %}
+
+{% if current_tab == 'users' %}
+{{ ui.form_errors(e, ['email', 'password', 'role', 'edit_role', 'edit_password']) }}
+{% set cols = 'minmax(180px,1fr) 340px 100px 140px 90px 70px' %}
+<div class="stack-lg">
+  <div class="table-wrap">
+    <div class="table" style="--min: 940px; --cols: {{ cols }}">
+      <div class="t-head"><span>Email</span><span>Vai trò / mật khẩu mới</span><span>Trạng thái</span><span>Đăng nhập</span><span>Hoạt động</span><span></span></div>
+      {% for u in users %}
+      <div class="t-row{% if not u.is_active %} is-muted{% endif %}">
+        <span class="cell-medium cell-ellipsis">{{ u.email }}{% if u.is_self %}<span class="cell-sub">Bạn</span>{% endif %}</span>
+        {% set row_err = e if form.errors_user_id == u.id else {} %}
+        <div class="field user-cell{% if row_err %} has-error{% endif %}">
+        <form method="post" action="{{ u.edit_url }}" class="user-edit">
+          {{ ui.csrf() }}
+          <select name="role" aria-label="Vai trò của {{ u.email }}"{% if u.is_self %} disabled{% endif %}>
+            {% for r in role_options %}<option value="{{ r.id }}"{% if r.id == u.role %} selected{% endif %}>{{ r.label }}</option>{% endfor %}
+          </select>
+          {% if u.is_self %}<input type="hidden" name="role" value="{{ u.role }}">{% endif %}
+          <input type="password" name="password" placeholder="Mật khẩu mới" autocomplete="new-password" aria-label="Mật khẩu mới cho {{ u.email }}">
+          <button type="submit" class="btn-sm">Lưu</button>
+        </form>
+        {{ ui.err(row_err, 'edit_role') }}{{ ui.err(row_err, 'edit_password') }}
+        </div>
+        <span class="{{ 'status-ok' if u.is_active else 'status-bad' }}">{{ 'Hoạt động' if u.is_active else 'Đã khóa' }}</span>
+        <span class="cell-muted">{{ u.last_login_at|datetime_vn or 'Chưa đăng nhập' }}</span>
+        {% if u.is_self %}<span></span><span></span>{% else %}
+        {{ ui.toggle(u.toggle_url, u.is_active, 'Cho phép ' ~ u.email ~ ' đăng nhập') }}
+        <span class="t-actions">{{ ui.delete_form(u.delete_url, 'Xóa tài khoản ' ~ u.email ~ '?') }}</span>
+        {% endif %}
+      </div>
+      {% else %}
+      {{ ui.empty('Chưa có tài khoản nào.') }}
+      {% endfor %}
+    </div>
+  </div>
+  <p class="note">Mật khẩu để trống = giữ nguyên. Đổi mật khẩu sẽ đăng xuất các phiên cũ của tài khoản đó. Biên tập viên không vào được mục Cài đặt.</p>
+
+  <form class="form-block narrow" method="post" action="{{ user_create_action }}">
+    {{ ui.csrf() }}
+    <div class="form-block-title">Thêm tài khoản quản trị</div>
+    <div class="fields-3">
+      {{ ui.field('email', 'Email', fd.get('email', ''), e, type='email', required=true, attrs='autocomplete="off"') }}
+      {{ ui.field('password', 'Mật khẩu', '', e, type='password', required=true, hint='Tối thiểu 10 ký tự.', attrs='autocomplete="new-password" minlength="10"') }}
+      {{ ui.select('role', 'Vai trò', role_options, fd.get('role', 'editor'), e) }}
+    </div>
+    <div><button type="submit" class="btn-primary">+ Thêm tài khoản</button></div>
+  </form>
+</div>
+
+{% else %}
+{{ ui.form_errors(e, ['site_name', 'contact_email', 'partner_email', 'telegram', 'logo_path', 'favicon_path', 'meta_title', 'meta_desc', 'meta_keywords', 'og_image', 'social', 'analytics_head']) }}
+<div class="page-form-layout{% if current_tab == 'seo' %} has-preview{% endif %}">
+  <form id="page-form" method="post" action="{{ form.action }}" enctype="multipart/form-data">
+    {{ ui.csrf() }}
+    {% if current_tab == 'general' %}
+    <div class="form-block">
+      <div class="form-block-title">Thông tin website</div>
+      {{ ui.field('site_name', 'Tên website', fd.get('site_name', s.site_name), e, required=true) }}
+    </div>
+    <div class="form-block">
+      <div class="form-block-title">Liên hệ</div>
+      <p class="form-block-desc">Hiện ở trang Liên hệ và chân trang. Để trống = ẩn dòng đó.</p>
+      <div class="fields-2">
+        {{ ui.field('contact_email', 'Email liên hệ', fd.get('contact_email', s.contact_email), e, type='email') }}
+        {{ ui.field('partner_email', 'Email hợp tác với sàn', fd.get('partner_email', s.partner_email), e, type='email') }}
+      </div>
+      {{ ui.field('telegram', 'Telegram', fd.get('telegram', s.telegram), e, placeholder='@kenh hoặc https://t.me/…') }}
+    </div>
+    <div class="form-block">
+      <div class="form-block-title">Logo &amp; biểu tượng</div>
+      {{ ui.image_field('logo_path', 'Logo', fd.get('logo_path', s.branding.logo_path), e, ratio='1/1') }}
+      {{ ui.image_field('favicon_path', 'Favicon', fd.get('favicon_path', s.branding.favicon_path), e, ratio='1/1', hint='Ảnh vuông, PNG 64×64 trở lên.') }}
+    </div>
+
+    {% elif current_tab == 'seo' %}
+    <div class="form-block">
+      <div class="form-block-title">SEO trang chủ</div>
+      {{ ui.field('meta_title', 'Meta title', fd.get('meta_title', s.meta_title), e, preview='meta_title', hint='Nên dưới 60 ký tự.') }}
+      {{ ui.field('meta_desc', 'Meta description', fd.get('meta_desc', s.meta_desc), e, rows=3, preview='meta_desc', hint='Nên 120–160 ký tự.') }}
+      {{ ui.field('meta_keywords', 'Từ khoá', fd.get('meta_keywords', s.meta_keywords), e, hint='Cách nhau bởi dấu phẩy.') }}
+    </div>
+    <div class="form-block">
+      <div class="form-block-title">Ảnh chia sẻ mạng xã hội</div>
+      {{ ui.image_field('og_image', 'Ảnh chia sẻ (1200×630)', fd.get('og_image', s.branding.og_image), e, ratio='1200/630', preview='og') }}
+    </div>
+
+    {% elif current_tab == 'social' %}
+    <div class="form-block">
+      <div class="form-block-title">Mạng xã hội</div>
+      <p class="form-block-desc">Hiện ở chân trang. Link phải bắt đầu bằng http:// hoặc https://.</p>
+      {{ ui.rows_editor('social', [('label','Tên (Facebook, YouTube…)','text'),('url','Link','text')], fd.get('social', s.social), add_label='+ Thêm mạng xã hội', errors=e, error_key='social') }}
+    </div>
+
+    {% elif current_tab == 'tracking' %}
+    <div class="form-block">
+      <div class="form-block-title">Mã theo dõi (Google Analytics…)</div>
+      <p class="form-block-desc">Đoạn HTML chèn cuối thẻ &lt;head&gt; của mọi trang public. Chỉ dán mã từ nguồn tin cậy: mã này chạy trên trình duyệt của mọi khách truy cập.</p>
+      {{ ui.field('analytics_head', 'Mã chèn vào <head>', fd.get('analytics_head', s.analytics_head), e, rows=12, mono=true, placeholder='<script async src="https://www.googletagmanager.com/gtag/js?id=…"></script>') }}
+    </div>
+    {% endif %}
+
+    <div class="form-actions">
+      <button type="submit" class="btn-primary">Lưu thay đổi</button>
+    </div>
+  </form>
+
+  {% if current_tab == 'seo' %}
+  <aside class="preview" aria-label="Xem trước">
+    <div class="preview-label"><span>Kết quả tìm kiếm Google</span><a href="/" target="_blank" rel="noopener">Mở trang ↗</a></div>
+    <div class="pv pv-serp">
+      <div class="pv-serp-url">{{ s.site_name }}</div>
+      <div class="pv-serp-title" data-pv="meta_title">{{ s.meta_title }}</div>
+      <div class="pv-serp-desc" data-pv="meta_desc">{{ s.meta_desc }}</div>
+    </div>
+    <div class="preview-label"><span>Ảnh chia sẻ</span></div>
+    <div class="pv-img pv-og" data-pv-img="og">{% if s.branding.og_image %}<img src="{{ s.branding.og_image }}" alt="">{% endif %}</div>
+  </aside>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

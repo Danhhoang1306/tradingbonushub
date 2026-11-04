@@ -1,0 +1,23 @@
+{%- from "public/_macros.html" import arrow_btn -%}
+{# Header site: variant "hero" (trang chủ, nằm trên ảnh nền) hoặc "page" (trang con, nền navy). #}
+{% macro site_header(variant="page") -%}
+{%- set is_hero = variant == "hero" -%}
+<header class="site-header site-header--{{ variant }}" data-header>
+  <div class="site-header__inner">
+    <a href="/" class="brand">
+      {% if site.branding.logo_path %}<img src="{{ site.branding.logo_path }}" alt="{{ site.site_name }}" class="brand__logo" width="42" height="42">{% endif %}
+      <span class="brand__name">{{ site.site_name }}</span>
+    </a>
+    <button type="button" class="nav-toggle js-only" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Mở menu">
+      <span aria-hidden="true"></span>
+    </button>
+    <nav class="site-nav" id="site-nav" aria-label="Menu chính">
+      {% for m in site.menu %}
+      {%- set active = m.url == current_path or (m.url != "/" and current_path.startswith(m.url ~ "/")) -%}
+      <a href="{{ m.url }}" class="site-nav__link{% if active %} is-active{% endif %}"{% if active %} aria-current="page"{% endif %}>{{ m.label }}</a>
+      {% endfor %}
+    </nav>
+    {% if is_hero %}{{ arrow_btn("/bonus", "Xem bonus", "blue", "header") }}{% else %}{{ arrow_btn("/lien-he", "Nhận tư vấn", "blue", "header-sm") }}{% endif %}
+  </div>
+</header>
+{%- endmacro %}

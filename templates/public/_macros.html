@@ -1,0 +1,120 @@
+{# Macro dùng chung cho site public. Chỉ nhãn giao diện được viết cứng ở đây. #}
+
+{% macro media(path, alt="", cls="", eager=false) -%}
+<div class="media {{ cls }}">{% if path %}<img src="{{ path }}" alt="{{ alt }}"{% if eager %} fetchpriority="high"{% else %} loading="lazy"{% endif %} decoding="async">{% endif %}</div>
+{%- endmacro %}
+
+{% macro eyebrow(text, tone="") -%}
+{% if text %}<span class="eyebrow{% if tone %} eyebrow--{{ tone }}{% endif %}"><span class="eyebrow__dot" aria-hidden="true"></span>{{ text }}</span>{% endif %}
+{%- endmacro %}
+
+{% macro arrow_btn(url, label, tone="blue", size="") -%}
+<a href="{{ url }}" class="btn-arrow btn-arrow--{{ tone }}{% if size %} btn-arrow--{{ size }}{% endif %}">{{ label }}<span class="btn-arrow__icon" aria-hidden="true">→</span></a>
+{%- endmacro %}
+
+{# Vòng tròn logo sàn: ảnh logo nếu có, không thì 2 ký tự mono. #}
+{% macro avatar(k, cls="") -%}
+<div class="avatar {{ cls }}"{% if k.logo_path %} data-has-logo{% endif %}>{% if k.logo_path %}<img src="{{ k.logo_path }}" alt="{{ k.name }}" loading="lazy" decoding="async">{% else %}<span aria-hidden="true">{{ k.mono }}</span>{% endif %}</div>
+{%- endmacro %}
+
+{% macro post_card(p, tone="white", index=none, heading="h2") -%}
+<a href="{{ p.url }}" class="post-card post-card--{{ tone }}">
+  {{ media(p.cover_path, p.title, "post-card__img") }}
+  <div class="post-card__body">
+    <div class="post-card__meta">
+      {% if index %}<span class="post-card__n">{{ "%02d" % index }}.</span><span>{{ p.category }} · {{ p.read_minutes }} phút đọc</span>
+      {% else %}<span class="post-card__cat">{{ p.category }}</span><span>{% if p.published_at %}{{ p.published_at|short_date }} · {% endif %}{{ p.read_minutes }} phút đọc</span>{% endif %}
+    </div>
+    <{{ heading }} class="post-card__title">{{ p.title }}</{{ heading }}>
+  </div>
+</a>
+{%- endmacro %}
+
+{# Thẻ bonus ở trang /bonus. #}
+{% macro bonus_card(b) -%}
+<article class="bcard">
+  <div class="bcard__top">
+    <div class="bcard__row">
+      {{ avatar(b.broker, "avatar--48") }}
+      <span class="bcard__tag">{{ b.type_label }}</span>
+    </div>
+    <div>
+      {% if b.amount %}<div class="bcard__amount">{{ b.amount }}</div>{% endif %}
+      <div class="bcard__broker">{{ b.broker.name }}{% if b.broker.license %} · {{ b.broker.license }}{% endif %}</div>
+    </div>
+  </div>
+  <div class="bcard__body">
+    <h2 class="bcard__title">{{ b.title }}</h2>
+    <dl class="bcard__stats">
+      <div><dt>Nạp tối thiểu</dt><dd>{{ b.min_deposit or "—" }}</dd></div>
+      <div><dt>Rút được</dt><dd>{{ b.withdrawable or "—" }}</dd></div>
+      <div><dt>Hết hạn</dt><dd>{{ b.expiry_date|expiry_label }}</dd></div>
+    </dl>
+    <div class="bcard__actions">
+      {% if b.go_url %}<a href="{{ b.go_url }}" class="btn btn--blue btn--grow" rel="sponsored nofollow noopener" target="_blank">Nhận bonus</a>{% endif %}
+      <a href="{{ b.broker.url }}" class="btn btn--outline{% if not b.go_url %} btn--grow{% endif %}">Về sàn</a>
+    </div>
+  </div>
+</article>
+{%- endmacro %}
+
+{# Banner quảng cáo ngang (vị trí after-bonus / before-blog). #}
+{% macro ad_block(ad) -%}
+<aside class="ad" aria-label="Tài trợ">
+  <div class="ad__label"><span>Tài trợ</span>{% if ad.broker %}<span>{{ ad.broker.name }}</span>{% endif %}</div>
+  {% if ad.image_path %}
+  <a href="{{ ad.url }}" class="ad__image" rel="sponsored nofollow noopener" target="_blank"><img src="{{ ad.image_path }}" alt="{{ ad.name }}" loading="lazy" decoding="async"></a>
+  {% else %}
+  <div class="ad__native">
+    {% if ad.broker %}<div class="ad__brand">{{ avatar(ad.broker, "avatar--48") }}<span>{{ ad.broker.name }}</span></div>{% endif %}
+    {% if ad.bonus %}
+    <div class="ad__offer">
+      {% if ad.bonus.amount %}<div class="ad__amount">{{ ad.bonus.amount }}</div>{% endif %}
+      <div class="ad__title">{{ ad.bonus.title }}</div>
+    </div>
+    <ul class="ad__facts">
+      {% if ad.bonus.min_deposit %}<li>Nạp từ {{ ad.bonus.min_deposit }}</li>{% endif %}
+      <li>Hạn: {{ ad.bonus.expiry_date|expiry_label }}</li>
+      {% if ad.broker and ad.broker.license %}<li>{{ ad.broker.license }}</li>{% endif %}
+    </ul>
+    {% else %}
+    <div class="ad__offer"><div class="ad__title">{{ ad.name }}</div></div>
+    {% endif %}
+    <a href="{{ ad.url }}" class="btn btn--blue ad__cta" rel="sponsored nofollow noopener" target="_blank">Mở tài khoản</a>
+  </div>
+  {% endif %}
+</aside>
+{%- endmacro %}
+
+{# Quảng cáo dọc hai bên hero (rail). tone: navy | blue #}
+{% macro rail(ad, side) -%}
+<div class="rail rail--{{ side }}">
+  <aside class="rail__inner" aria-label="Tài trợ">
+    <div class="ad__label"><span>Tài trợ</span>{% if ad.broker %}<span>{{ ad.broker.name }}</span>{% endif %}</div>
+    {% if ad.image_path %}
+    <a href="{{ ad.url }}" class="rail__image" rel="sponsored nofollow noopener" target="_blank"><img src="{{ ad.image_path }}" alt="{{ ad.name }}" loading="lazy" decoding="async"></a>
+    {% else %}
+    <div class="rail__native">
+      {% if ad.broker %}<div class="rail__brand">{{ avatar(ad.broker, "avatar--36") }}<span>{{ ad.broker.name }}</span></div>{% endif %}
+      {% if ad.bonus %}
+      <span class="rail__tag">{{ ad.bonus.type_label }}</span>
+      {% if ad.bonus.amount %}<div class="rail__amount{% if ad.bonus.amount|length > 4 %} rail__amount--long{% endif %}">{{ ad.bonus.amount }}</div>{% endif %}
+      <div class="rail__title">{{ ad.bonus.title }}</div>
+      <ul class="rail__facts">
+        {% if ad.bonus.min_deposit %}<li>Nạp từ {{ ad.bonus.min_deposit }}</li>{% endif %}
+        <li>Hạn: {{ ad.bonus.expiry_date|expiry_label }}</li>
+        {% if ad.broker and ad.broker.license %}<li>{{ ad.broker.license }}</li>{% endif %}
+      </ul>
+      {% else %}
+      <div class="rail__title">{{ ad.name }}</div>
+      {% endif %}
+      <a href="{{ ad.url }}" class="rail__cta" rel="sponsored nofollow noopener" target="_blank">Mở tài khoản</a>
+    </div>
+    {% endif %}
+  </aside>
+</div>
+{%- endmacro %}
+
+{% macro empty(text) -%}
+<div class="empty">{{ text }}</div>
+{%- endmacro %}

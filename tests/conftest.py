@@ -22,7 +22,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 from app import mailer  # noqa: E402
 from app.db import Base, SessionLocal, engine  # noqa: E402
 from app.models import AdminUser, Bonus, Broker  # noqa: E402
-from app.security import hash_password, login_limiter, public_form_limiter  # noqa: E402
+from app.security import ad_view_limiter, hash_password, login_limiter, public_form_limiter  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 PASSWORD = "mat-khau-test-123"
@@ -47,6 +47,7 @@ def clean_state():
             conn.execute(table.delete())
     login_limiter.reset()
     public_form_limiter.reset()
+    ad_view_limiter.reset()
     mailer.outbox.clear()
     upload_dir = Path(os.environ["UPLOAD_DIR"])
     if upload_dir.exists():

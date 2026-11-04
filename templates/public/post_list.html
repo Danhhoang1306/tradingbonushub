@@ -1,8 +1,18 @@
-<!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><title>{{ meta.title }}</title>
-{% if meta.noindex %}<meta name="robots" content="noindex">{% endif %}</head>
-<body data-stub="BACKEND STUB – đội FE ghi đè file này">
-{% if flash %}<div class="flash flash-{{ flash.kind }}">{{ flash.text }}</div>{% endif %}
-<h1>{{ page.title }}</h1>
-{% for p in posts %}<a href="{{ p.url }}">{{ p.title }}</a>{% else %}<p>Chưa có bài viết nào.</p>{% endfor %}
-</body></html>
+{% extends "base_public.html" %}
+{% from "public/_macros.html" import post_card, empty %}
+{% block content %}
+{% if posts %}
+<div class="grid-cards grid-cards--320">
+  {% for p in posts %}{{ post_card(p, "white") }}{% endfor %}
+</div>
+{% if pagination.pages > 1 %}
+<nav class="pagination" aria-label="Phân trang">
+  {% if pagination.prev_url %}<a href="{{ pagination.prev_url }}" class="pill" rel="prev">← Trang trước</a>{% endif %}
+  <span>Trang {{ pagination.page }} / {{ pagination.pages }}</span>
+  {% if pagination.next_url %}<a href="{{ pagination.next_url }}" class="pill" rel="next">Trang sau →</a>{% endif %}
+</nav>
+{% endif %}
+{% else %}
+{{ empty("Chưa có bài viết nào.") }}
+{% endif %}
+{% endblock %}

@@ -1,14 +1,288 @@
-<!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><title>{{ meta.title }}</title>
-{% if meta.noindex %}<meta name="robots" content="noindex">{% endif %}</head>
-<body data-stub="BACKEND STUB – đội FE ghi đè file này">
-{% if flash %}<div class="flash flash-{{ flash.kind }}">{{ flash.text }}</div>{% endif %}
-<h1>{{ page.title }}</h1>
-{% for sid in home_sections %}<section id="sec-{{ sid }}">
-{% if sid == 'bonus' %}{% for b in latest_bonuses %}<article>{{ b.broker.name }} · {{ b.title }} · {{ b.amount }} · {{ b.expiry_date|expiry_label }}</article>{% endfor %}{% endif %}
-{% if sid == 'compare' %}{% for k in compare_brokers %}<div>{{ k.name }}</div>{% endfor %}{% endif %}
-{% if sid == 'blog' %}{% for p in blog_posts %}<a href="{{ p.url }}">{{ p.title }}</a>{% endfor %}{% endif %}
-{% if sid == 'ad1' %}<a href="{{ ad1.url }}">{{ ad1.name }}</a>{% endif %}
-{% if sid == 'ad2' %}<a href="{{ ad2.url }}">{{ ad2.name }}</a>{% endif %}
-</section>{% endfor %}
-</body></html>
+{% extends "base_public.html" %}
+{% from "public/_macros.html" import media, eyebrow, arrow_btn, avatar, post_card, ad_block, rail %}
+{% block body_class %}page-home{% endblock %}
+
+{% block header %}
+{% if "hero" in home_sections %}
+<section class="hero">
+  {{ media(hero.image_path, "", "hero__bg", eager=true) }}
+  <div class="hero__shade" aria-hidden="true"></div>
+  {{ site_header("hero") }}
+  <div class="hero__body">
+    <div class="hero__grid">
+      <div class="hero__text">
+        {{ eyebrow(hero.eyebrow, "glass") }}
+        <h1 class="hero__title">{{ hero.headline or site.site_name }}</h1>
+        {% if hero.sub %}<p class="hero__sub">{{ hero.sub }}</p>{% endif %}
+        {% if hero.cta %}{{ arrow_btn("/bonus", hero.cta, "blue") }}{% endif %}
+      </div>
+      {% if hero_bonus %}
+      <div class="hero-card">
+        <div class="hero-card__label">Nổi bật tuần này</div>
+        <div class="hero-card__head">
+          {{ avatar(hero_bonus.broker, "avatar--52") }}
+          <div>
+            <div class="hero-card__name">{{ hero_bonus.broker.name }}{% if hero_bonus.amount %} · {{ hero_bonus.amount }}{% endif %}</div>
+            <div class="hero-card__title">{{ hero_bonus.title }}</div>
+          </div>
+        </div>
+        <div class="hero-card__foot">
+          <span>{% if hero_bonus.expiry_date %}Hạn đến {{ hero_bonus.expiry_date|date_vn }}{% else %}{{ hero_bonus.expiry_date|expiry_label }}{% endif %}</span>
+          <a href="{{ hero_bonus.go_url or hero_bonus.broker.url }}"{% if hero_bonus.go_url %} rel="sponsored nofollow noopener" target="_blank"{% endif %}>Nhận bonus →</a>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% else %}
+{{ site_header("page") }}
+<h1 class="sr-only">{{ hero.headline or site.site_name }}</h1>
+{% endif %}
+{% endblock %}
+
+{% block main %}
+<main id="main" class="home-main">
+  {% if rail_left %}{{ rail(rail_left, "left") }}{% endif %}
+  {% if rail_right %}{{ rail(rail_right, "right") }}{% endif %}
+
+  {% for sid in home_sections %}
+
+  {% if sid == "about" %}{% set a = site.home_about %}
+  <section class="home-sec" aria-labelledby="h-about">
+    <div class="container split split--380">
+      <div>
+        {{ eyebrow(a.eyebrow) }}
+        <h2 class="h2" id="h-about">{{ a.title }}</h2>
+        {% if a.text %}<p class="lead">{{ a.text }}</p>{% endif %}
+        {% if a.points %}
+        <div class="about-point">
+          {{ media(a.images[0], a.title, "about-point__img") }}
+          <div class="about-point__text">
+            {% for pt in a.points %}
+            <h3>{{ pt.title }}</h3>
+            {% if pt.text %}<p>{{ pt.text }}</p>{% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        <div class="about-cta">
+          {{ arrow_btn("/bonus", "Xem tất cả bonus", "navy") }}
+          {% if a.badge %}<span>{{ a.badge }}</span>{% endif %}
+        </div>
+      </div>
+      <div class="about-gallery">
+        {{ media(a.images[1], a.title, "about-gallery__a" ~ ("" if active_bonus_count else " is-wide")) }}
+        {% if active_bonus_count %}
+        <div class="stat-dark">
+          <div class="stat-dark__value">{{ active_bonus_count|num }}+</div>
+          {% if a.count_label %}<div class="stat-dark__label">{{ a.count_label }}</div>{% endif %}
+        </div>
+        {% endif %}
+        {{ media(a.images[2], a.title, "about-gallery__b") }}
+      </div>
+    </div>
+  </section>
+
+  {% elif sid == "bonus" %}
+  {%- set long_labels = {} -%}{%- for t in site.bonus_types %}{% set _ = long_labels.update({t.id: t.label}) %}{% endfor %}
+  <section class="home-sec home-sec--white" id="bonus" aria-labelledby="h-bonus">
+    <div class="container">
+      <div class="sec-head">
+        <div class="sec-head__text">
+          {{ eyebrow(site.home_bonus.eyebrow, "grey") }}
+          <h2 class="h2 h2--flush" id="h-bonus">{{ site.home_bonus.title }}</h2>
+        </div>
+        {% if bonus_filters|length > 2 %}
+        <div class="pills js-only" role="group" aria-label="Lọc theo loại bonus" data-filter-group>
+          {% for f in bonus_filters %}
+          <button type="button" class="pill{% if loop.first %} is-active{% endif %}" data-filter="{{ f.id }}" aria-pressed="{{ 'true' if loop.first else 'false' }}">{{ f.label }}</button>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      <div class="grid-cards grid-cards--290">
+        {% for b in latest_bonuses %}
+        <article class="hcard" data-type="{{ b.type }}">
+          <div class="hcard__top">
+            <div class="hcard__row">
+              {{ avatar(b.broker, "avatar--48") }}
+              <span class="hcard__tag">{{ long_labels.get(b.type, b.type_label) }}</span>
+            </div>
+            {% if b.amount %}<div class="hcard__amount">{{ b.amount }}</div>{% endif %}
+          </div>
+          <div class="hcard__body">
+            <div>
+              <div class="hcard__broker">{{ b.broker.name }}{% if b.broker.license %} · {{ b.broker.license }}{% endif %}</div>
+              <h3 class="hcard__title">{{ b.title }}</h3>
+            </div>
+            <dl class="hcard__rows">
+              <div><dt>Nạp tối thiểu</dt><dd>{{ b.min_deposit or "—" }}</dd></div>
+              <div><dt>Rút lợi nhuận</dt><dd>{{ b.withdrawable or "—" }}</dd></div>
+              <div><dt>Hạn</dt><dd>{{ b.expiry_date|expiry_label }}</dd></div>
+            </dl>
+            <div class="hcard__actions">
+              {% if b.go_url %}<a href="{{ b.go_url }}" class="btn btn--navy btn--grow" rel="sponsored nofollow noopener" target="_blank">Nhận bonus</a>{% endif %}
+              <a href="{{ b.broker.url }}" class="btn btn--white btn--grow">Điều kiện</a>
+            </div>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  {% elif sid == "ad1" %}
+  <div class="ad-sec"><div class="container">{{ ad_block(ad1) }}</div></div>
+
+  {% elif sid == "ad2" %}
+  <div class="ad-sec"><div class="container">{{ ad_block(ad2) }}</div></div>
+
+  {% elif sid == "why" %}{% set w = site.home_why %}
+  <section class="home-sec" aria-labelledby="h-why">
+    <div class="container split split--380">
+      <div class="why-gallery">
+        {{ media(w.images[0], w.title, "why-gallery__a") }}
+        <div class="why-gallery__col">
+          {% if w.stat_value %}
+          <div class="stat-light">
+            <div class="stat-light__value">{{ w.stat_value }}</div>
+            {% if w.stat_label %}<div class="stat-light__label">{{ w.stat_label }}</div>{% endif %}
+          </div>
+          {% endif %}
+          {{ media(w.images[1], w.title, "why-gallery__b") }}
+        </div>
+      </div>
+      <div>
+        {{ eyebrow(w.eyebrow) }}
+        <h2 class="h2" id="h-why">{{ w.title }}</h2>
+        {% if w.text %}<p class="lead lead--gap">{{ w.text }}</p>{% endif %}
+        <ol class="reasons">
+          {% for r in w.reasons %}
+          <li>
+            <span class="reasons__n">{{ "%02d" % loop.index }}.</span>
+            <div><h3 class="reasons__title">{{ r.title }}</h3>{% if r.text %}<p class="reasons__text">{{ r.text }}</p>{% endif %}</div>
+          </li>
+          {% endfor %}
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  {% elif sid == "types" %}{% set t0 = site.home_types %}
+  <section class="home-sec home-sec--navy" aria-labelledby="h-types">
+    <div class="container split split--340">
+      <div>
+        {{ eyebrow(t0.eyebrow, "glass-dim") }}
+        <h2 class="h2 h2--types" id="h-types">{{ t0.title }}</h2>
+        <div class="type-tabs" role="tablist" aria-label="{{ t0.title }}">
+          {% for t in site.bonus_types %}
+          <button type="button" class="type-tab{% if loop.first %} is-active{% endif %}" role="tab" id="type-tab-{{ t.id }}"
+                  aria-controls="type-panel-{{ t.id }}" aria-selected="{{ 'true' if loop.first else 'false' }}" data-type-tab="{{ t.id }}"><span>{{ t.label }}</span><span aria-hidden="true">→</span></button>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="type-card">
+        {{ media(t0.image, t0.title, "type-card__img") }}
+        {% for t in site.bonus_types %}
+        <div class="type-card__body" role="tabpanel" id="type-panel-{{ t.id }}" aria-labelledby="type-tab-{{ t.id }}" data-type-panel="{{ t.id }}"{% if not loop.first %} hidden{% endif %}>
+          <h3 class="type-card__title">{{ t.label }}</h3>
+          {% if t.desc %}<p class="type-card__desc">{{ t.desc }}</p>{% endif %}
+          {% if t.points %}
+          <ul class="checks">
+            {% for p in t.points %}<li><span class="checks__icon" aria-hidden="true">✓</span><span>{{ p }}</span></li>{% endfor %}
+          </ul>
+          {% endif %}
+          <a href="/bonus?type={{ t.id }}" class="btn-arrow btn-arrow--navy btn-arrow--sm type-card__cta" data-filter-go="{{ t.id }}">Xem bonus loại này<span class="btn-arrow__icon" aria-hidden="true">→</span></a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  {% elif sid == "compare" %}
+  <section class="home-sec" id="so-sanh" aria-labelledby="h-compare">
+    <div class="container">
+      <div class="sec-head-center">
+        {{ eyebrow(site.home_compare.eyebrow) }}
+        <h2 class="h2 h2--flush" id="h-compare">{{ site.home_compare.title }}</h2>
+      </div>
+      <div class="grid-compare">
+        {% for k in compare_brokers %}
+        <div class="ccard{% if k.featured %} ccard--featured{% endif %}">
+          <div class="ccard__head">
+            <h3 class="ccard__name">{{ k.name }}</h3>
+            {% if k.featured %}<span class="ccard__badge">Phổ biến</span>{% endif %}
+          </div>
+          {% if k.tagline %}<div class="ccard__tagline">{{ k.tagline }}</div>{% endif %}
+          <dl class="ccard__rows">
+            {% if k.license %}<div><dt>Giấy phép</dt><dd>{{ k.license }}</dd></div>{% endif %}
+            {% if k.min_deposit %}<div><dt>Nạp tối thiểu</dt><dd>{{ k.min_deposit }}</dd></div>{% endif %}
+            {% if k.leverage %}<div><dt>Đòn bẩy tối đa</dt><dd>{{ k.leverage }}</dd></div>{% endif %}
+            {% if k.platforms %}<div><dt>Nền tảng</dt><dd>{{ k.platforms }}</dd></div>{% endif %}
+            {% if k.top_bonus %}<div><dt>Bonus nổi bật</dt><dd>{{ k.top_bonus.type_label }}{% if k.top_bonus.amount %} {{ k.top_bonus.amount }}{% endif %}</dd></div>{% endif %}
+          </dl>
+          <a href="{{ k.url }}" class="ccard__cta">Xem đánh giá {{ k.name }}</a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  {% elif sid == "signup" %}{% set c = site.home_contact %}
+  <section class="signup" id="dang-ky" aria-labelledby="h-signup">
+    <div class="signup__box">
+      {{ media(c.image, c.title, "signup__img") }}
+      <div class="signup__content">
+        {{ eyebrow(c.eyebrow, "grey") }}
+        <h2 class="h2 h2--signup" id="h-signup">{{ c.title }}</h2>
+        {% if c.text %}<p class="signup__text">{{ c.text }}</p>{% endif %}
+        {% if flash and flash.code == "sub_ok" %}
+        <div class="notice" role="status">
+          <div class="notice__title">{{ c.success_title }}</div>
+          <div class="notice__text">{{ c.success_text }}</div>
+        </div>
+        {% else %}
+        <form method="post" action="/api/subscribe" class="form-stack">
+          {% if flash and flash.code in ("sub_invalid", "sub_rate") %}<p class="form-error" role="alert">{{ flash.text }}</p>{% endif %}
+          <div class="field-pair">
+            <label><span class="sr-only">Họ tên</span><input type="text" name="name" placeholder="Họ tên" autocomplete="name" maxlength="120" class="input"></label>
+            <label><span class="sr-only">Email</span><input type="email" name="email" placeholder="Email" autocomplete="email" required maxlength="255" class="input"></label>
+          </div>
+          <fieldset class="chips">
+            <legend class="sr-only">Loại bonus quan tâm</legend>
+            {% for t in site.bonus_types %}
+            <label class="chip"><input type="checkbox" name="interests" value="{{ t.id }}"><span>{{ t.label }}</span></label>
+            {% endfor %}
+          </fieldset>
+          <input type="text" name="website" value="" tabindex="-1" autocomplete="off" hidden>
+          <input type="hidden" name="next" value="{{ current_path }}">
+          <button type="submit" class="btn-arrow btn-arrow--blue btn-arrow--submit">Đăng ký nhận thông báo<span class="btn-arrow__icon" aria-hidden="true">→</span></button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  {% elif sid == "blog" %}
+  <section class="home-sec home-sec--white" id="blog" aria-labelledby="h-blog">
+    <div class="container">
+      <div class="sec-head">
+        <div class="sec-head__text">
+          {{ eyebrow(site.home_blog.eyebrow, "grey") }}
+          <h2 class="h2 h2--flush" id="h-blog">{{ site.home_blog.title }}</h2>
+        </div>
+        {{ arrow_btn("/tin-tuc", "Xem tất cả tin tức", "navy") }}
+      </div>
+      <div class="grid-cards grid-cards--320">
+        {% for p in blog_posts %}{{ post_card(p, "grey", loop.index, "h3") }}{% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {% endfor %}
+</main>
+{% endblock %}
+
+{% block footer %}{% include "public/_footer_full.html" %}{% endblock %}

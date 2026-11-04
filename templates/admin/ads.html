@@ -1,14 +1,93 @@
-<!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><title>{{ title }} – Quản trị</title></head>
-<body data-stub="BACKEND STUB – đội FE ghi đè file này">
-<nav>{% for g in nav %}{% for i in g.links %}<a href="{{ i.url }}">{{ i.label }}{% if i.count %} ({{ i.count }}){% endif %}</a>{% endfor %}{% endfor %}</nav>
-<form method="post" action="/admin/logout"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button>Đăng xuất</button></form>
-{% if flash %}<div class="flash flash-{{ flash.kind }}">{{ flash.text }}</div>{% endif %}
-<h1>{{ title }}</h1>
-{% for t in subtabs %}<a href="{{ t.url }}">{{ t.label }}</a>{% endfor %}
-{% if drawer %}<aside class="drawer"><h2>{{ drawer.title }}</h2><form method="post" action="{{ drawer.action }}" enctype="multipart/form-data">
-<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-{% for k, v in drawer.errors.items() %}<p class="error" data-field="{{ k }}">{{ v }}</p>{% endfor %}</form></aside>{% endif %}
-{% if form and form.errors %}{% for k, v in form.errors.items() %}<p class="error" data-field="{{ k }}">{{ v }}</p>{% endfor %}{% endif %}
-{% for b in banners %}<div class="row">{{ b.name }} {{ b.state|banner_state_label }}</div>{% else %}<p>Chưa có banner nào.</p>{% endfor %}
-</body></html>
+{% extends "admin/_base.html" %}
+{% import "admin/_macros.html" as ui with context %}
+{% set close_url = '/admin/ads' %}
+{% set drawer_inline = ['name','broker_id','placement','target_url','image_path','start_date','end_date'] %}
+{% block content %}
+{% if current_tab == 'stats' %}
+{% set cols = 'minmax(0,1fr) 120px 120px 100px 120px' %}
+<div class="stack-lg">
+  <div class="table-wrap">
+    <div class="table" style="--min: 700px; --cols: {{ cols }}">
+      <div class="t-head"><span>Banner</span><span>Hiển thị</span><span>Click</span><span>CTR</span><span>Trạng thái</span></div>
+      {% for b in banners %}
+      <div class="t-row">
+        <span class="cell-strong cell-ellipsis">{{ b.name }}<span class="cell-sub">{% if b.broker %}{{ b.broker.name }} · {% endif %}{{ b.placement|placement_label }}</span></span>
+        <span>{{ b.views|num }}</span><span>{{ b.clicks|num }}</span><span>{{ ctr(b.clicks, b.views) }}</span>
+        <span class="{{ 'status-ok' if b.state == 'running' else 'status-muted' }}">{{ b.state|banner_state_label }}</span>
+      </div>
+      {% else %}
+      {{ ui.empty('Chưa có banner nào.') }}
+      {% endfor %}
+      {% if banners %}
+      <div class="t-row t-total"><span>Tổng</span><span>{{ totals.views|num }}</span><span>{{ totals.clicks|num }}</span><span>{{ ctr(totals.clicks, totals.views) }}</span><span></span></div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Click theo ngày (30 ngày)</div>
+    {% set ad_total = ad_click_days|sum(attribute='clicks') %}
+    {{ ui.bars(ad_click_days, ad_total) }}
+  </div>
+</div>
+{% else %}
+<div class="stack-lg">
+  {% for b in banners %}
+  <div class="ad-card">
+    <a class="ad-img" href="{{ b.edit_url }}" aria-label="Sửa ảnh banner">{% if b.image_path %}<img src="{{ b.image_path }}" alt="{{ b.name }}">{% else %}Banner dạng thẻ (không có ảnh){% endif %}</a>
+    <div class="ad-body">
+      <div class="ad-top">
+        <div class="ad-name">{% if b.broker %}{{ b.broker.name }} · {% endif %}{{ b.name }}</div>
+        <div class="ad-state">{{ b.state|banner_state_label }}{{ ui.toggle(b.toggle_url, b.is_active, 'Bật banner ' ~ b.name) }}</div>
+      </div>
+      <form class="ad-form" method="post" action="{{ b.edit_url }}">
+        {{ ui.csrf() }}
+        <input type="hidden" name="name" value="{{ b.name }}">
+        <input type="hidden" name="broker_id" value="{{ b.broker.id if b.broker else '' }}">
+        <input type="hidden" name="image_path" value="{{ b.image_path }}">
+        {% if b.is_active %}<input type="hidden" name="is_active" value="1">{% endif %}
+        <div class="ad-fields">
+          <label class="field"><span class="field-label">Vị trí</span>
+            <select name="placement">{% for p in placement_options %}<option value="{{ p.id }}"{% if p.id == b.placement %} selected{% endif %}>{{ p.label }}</option>{% endfor %}</select>
+          </label>
+          <label class="field"><span class="field-label">Link đích</span>
+            <input type="url" name="target_url" value="{{ b.target_url }}" placeholder="Trống = link affiliate của sàn">
+          </label>
+          <div class="field"><span class="field-label">Chạy từ – đến</span>
+            <div class="ad-dates">
+              <input type="date" name="start_date" value="{{ b.start_date|iso_date }}" aria-label="Từ ngày">
+              <input type="date" name="end_date" value="{{ b.end_date|iso_date }}" aria-label="Đến ngày">
+            </div>
+          </div>
+        </div>
+        <div class="ad-foot">
+          <div class="ad-stats"><span>{{ b.views|num }} lượt hiển thị</span><span>{{ b.clicks|num }} click</span><span>CTR {{ ctr(b.clicks, b.views) }}</span></div>
+          <div class="t-actions">
+            <button type="submit" class="btn-sm">Lưu</button>
+            <a class="btn-sm" href="{{ b.edit_url }}">Sửa</a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% else %}
+  {{ ui.empty('Chưa có banner nào.', add_url, '+ Thêm banner') }}
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block drawer_fields %}
+{% set d = drawer.data %}{% set e = drawer.errors %}
+{{ ui.field('name', 'Tên banner', d.name, e, required=true, hint='Chỉ dùng trong quản trị và làm chữ thay thế cho ảnh.') }}
+{% set opts = [] %}{% for k in broker_options %}{% set _ = opts.append({'id': k.id, 'label': k.name}) %}{% endfor %}
+{{ ui.select('broker_id', 'Sàn', opts, d.broker_id, e, empty_label='— Không gắn sàn —', hint='Banner không có ảnh sẽ hiện dạng thẻ từ sàn + bonus cao nhất.') }}
+{{ ui.pills('placement', 'Vị trí', placement_options, d.placement, e) }}
+{{ ui.field('target_url', 'Link đích', d.target_url, e, type='url', placeholder='https://…', hint='Trống = dùng link affiliate của sàn.') }}
+{{ ui.image_field('image_path', 'Ảnh banner', d.image_path, e, ratio='970/250', hint='Khuyên dùng 970×250 (hai bên hero: dọc). PNG/JPEG/WEBP ≤ 5MB.') }}
+<div class="fields-2">
+  {{ ui.field('start_date', 'Từ ngày', d.start_date, e, type='date') }}
+  {{ ui.field('end_date', 'Đến ngày', d.end_date, e, type='date') }}
+</div>
+<span class="field-hint">Trống = không giới hạn.</span>
+{{ ui.switch_input('is_active', 'Đang chạy', d.is_active) }}
+{% endblock %}

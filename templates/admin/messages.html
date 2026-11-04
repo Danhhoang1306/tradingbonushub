@@ -1,14 +1,38 @@
-<!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><title>{{ title }} – Quản trị</title></head>
-<body data-stub="BACKEND STUB – đội FE ghi đè file này">
-<nav>{% for g in nav %}{% for i in g.links %}<a href="{{ i.url }}">{{ i.label }}{% if i.count %} ({{ i.count }}){% endif %}</a>{% endfor %}{% endfor %}</nav>
-<form method="post" action="/admin/logout"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button>Đăng xuất</button></form>
-{% if flash %}<div class="flash flash-{{ flash.kind }}">{{ flash.text }}</div>{% endif %}
-<h1>{{ title }}</h1>
-{% for t in subtabs %}<a href="{{ t.url }}">{{ t.label }}</a>{% endfor %}
-{% if drawer %}<aside class="drawer"><h2>{{ drawer.title }}</h2><form method="post" action="{{ drawer.action }}" enctype="multipart/form-data">
-<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-{% for k, v in drawer.errors.items() %}<p class="error" data-field="{{ k }}">{{ v }}</p>{% endfor %}</form></aside>{% endif %}
-{% if form and form.errors %}{% for k, v in form.errors.items() %}<p class="error" data-field="{{ k }}">{{ v }}</p>{% endfor %}{% endif %}
-{% for m in messages %}<div class="row">{{ m.email }} {{ m.topic }}</div>{% else %}<p>Chưa có tin nhắn nào.</p>{% endfor %}{% if selected %}<article>{{ selected.body }}</article>{% endif %}
-</body></html>
+{% extends "admin/_base.html" %}
+{% import "admin/_macros.html" as ui with context %}
+{% set close_url = '/admin/messages?tab=' ~ current_tab %}
+{% if selected %}{% set drawer = {'title': selected.topic or 'Tin nhắn', 'delete_url': selected.delete_url, 'delete_confirm': 'Xóa tin nhắn này?'} %}{% endif %}
+{% set cols = 'minmax(0,220px) 150px minmax(0,1fr) 140px 80px 70px' %}
+{% block content %}
+<div class="table-wrap">
+  <div class="table" style="--min: 860px; --cols: {{ cols }}">
+    <div class="t-head"><span>Người gửi</span><span>Chủ đề</span><span>Nội dung</span><span>Ngày</span><span>Đã đọc</span><span></span></div>
+    {% for m in messages %}
+    <div class="t-row{% if not m.is_read %} is-unread{% endif %}">
+      <a class="row-link cell-ellipsis" href="{{ m.open_url }}">{% if not m.is_read %}<span class="dot" aria-label="Chưa đọc"></span>{% endif %}{{ m.name or m.email }}<span class="cell-sub">{{ m.email }}</span></a>
+      <span class="cell-muted cell-ellipsis">{{ m.topic or '—' }}</span>
+      <a class="row-link cell-ellipsis" href="{{ m.open_url }}">{{ m.body|truncate(120) }}</a>
+      <span class="cell-muted">{{ m.created_at|datetime_vn }}</span>
+      {{ ui.toggle(m.toggle_url, m.is_read, 'Đã đọc') }}
+      <span class="t-actions">{{ ui.delete_form(m.delete_url, 'Xóa tin nhắn của ' ~ m.email ~ '?') }}</span>
+    </div>
+    {% else %}
+      {{ ui.empty('Chưa có tin nhắn chưa đọc.' if current_tab == 'unread' else 'Chưa có tin nhắn nào.') }}
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block drawer_main %}
+{% set m = selected %}
+<div class="drawer-body">
+  <dl class="msg-meta">
+    <dt>Người gửi</dt><dd>{{ m.name or '—' }}</dd>
+    <dt>Email</dt><dd><a href="mailto:{{ m.email }}">{{ m.email }}</a></dd>
+    <dt>Ngày gửi</dt><dd>{{ m.created_at|datetime_vn }}</dd>
+  </dl>
+  <div class="msg-body">{{ m.body }}</div>
+  <form method="post" action="{{ m.toggle_url }}">{{ ui.csrf() }}<input type="hidden" name="back" value="{{ close_url }}"><button type="submit" class="btn-sm">{{ 'Đánh dấu chưa đọc' if m.is_read else 'Đánh dấu đã đọc' }}</button></form>
+</div>
+{% endblock %}
+{% block drawer_foot %}<a class="btn-primary btn-save" href="mailto:{{ selected.email }}?subject={{ ('Re: ' ~ (selected.topic or 'Liên hệ'))|urlencode }}">Trả lời qua email</a>{% endblock %}

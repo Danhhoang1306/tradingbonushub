@@ -1,8 +1,16 @@
-<!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><title>{{ meta.title }}</title>
-{% if meta.noindex %}<meta name="robots" content="noindex">{% endif %}</head>
-<body data-stub="BACKEND STUB – đội FE ghi đè file này">
-{% if flash %}<div class="flash flash-{{ flash.kind }}">{{ flash.text }}</div>{% endif %}
-<h1>{{ page.title }}</h1>
-{% for a in about_blocks %}<h3>{{ a.title }}</h3>{% endfor %}
-</body></html>
+{% extends "base_public.html" %}
+{% from "public/_macros.html" import media %}
+{% block content %}
+<div class="about">
+  <div class="about__blocks">
+    {% for a in about_blocks %}
+    <div class="about-block">
+      <div class="about-block__n">{{ a.n }}</div>
+      <h2 class="about-block__title">{{ a.title }}</h2>
+      {% if a.text %}<p class="about-block__text">{{ a.text }}</p>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {{ media(about_image, page.title, "about__img") }}
+</div>
+{% endblock %}

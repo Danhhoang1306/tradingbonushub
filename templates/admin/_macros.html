@@ -1,0 +1,209 @@
+{# Thành phần dùng chung cho các màn quản trị. Import: {% import "admin/_macros.html" as ui with context %} #}
+
+{% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token }}">{% endmacro %}
+
+{% macro back_url() %}{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}{% endmacro %}
+
+{# Lỗi chung đầu form. `inline` = tên trường đã hiện lỗi ngay dưới ô nhập. #}
+{% macro form_errors(errors, inline=none) %}
+{% if errors %}
+<div class="alert alert-error" role="alert">
+  <strong>Chưa lưu được.</strong>
+  {% set extra = [] %}
+  {% for k, v in errors.items() %}{% if inline is not none and k not in inline %}{% set _ = extra.append(v) %}{% endif %}{% endfor %}
+  {% if inline is none %}
+    <ul>{% for k, v in errors.items() %}<li>{{ v }}</li>{% endfor %}</ul>
+  {% elif extra %}
+    <ul>{% for v in extra %}<li>{{ v }}</li>{% endfor %}</ul>
+  {% else %} Kiểm tra các ô được đánh dấu bên dưới.{% endif %}
+</div>
+{% endif %}
+{% endmacro %}
+
+{% macro err(errors, name) %}{% if errors and errors[name] %}<span class="field-error">{{ errors[name] }}</span>{% endif %}{% endmacro %}
+
+{# Ô nhập một dòng / nhiều dòng. #}
+{% macro field(name, label, value='', errors=none, type='text', rows=0, hint='', required=false, placeholder='', mono=false, attrs='', preview='') %}
+<label class="field{% if errors and errors[name] %} has-error{% endif %}">
+  <span class="field-label">{{ label }}{% if required %} <em class="req">*</em>{% endif %}</span>
+  {% if rows %}
+  <textarea name="{{ name }}" rows="{{ rows }}"{% if placeholder %} placeholder="{{ placeholder }}"{% endif %}{% if mono %} class="mono"{% endif %}{% if preview %} data-bind="{{ preview }}"{% endif %} {{ attrs|safe }}>{% if value is not none %}{{ value }}{% endif %}</textarea>
+  {% else %}
+  <input type="{{ type }}" name="{{ name }}" value="{% if value is not none %}{{ value }}{% endif %}"{% if placeholder %} placeholder="{{ placeholder }}"{% endif %}{% if required %} required{% endif %}{% if preview %} data-bind="{{ preview }}"{% endif %} {{ attrs|safe }}>
+  {% endif %}
+  {% if hint %}<span class="field-hint">{{ hint }}</span>{% endif %}
+  {{ err(errors, name) }}
+</label>
+{% endmacro %}
+
+{# Danh sách chữ "mỗi dòng một ý" (textarea). JS biến thành danh sách thêm/xóa/sắp xếp; tắt JS vẫn là textarea.
+   Kiểu cặp "Nhãn | /url" dùng qua cột 'pairlines' của rows_editor. #}
+{% macro lines_field(name, label, lines, errors=none, hint='', add_label='+ Thêm dòng') %}
+<div class="field{% if errors and errors[name] %} has-error{% endif %}">
+  <span class="field-label">{{ label }}</span>
+  <textarea name="{{ name }}" rows="4" data-lines data-add-label="{{ add_label }}" aria-label="{{ label }}">{{ lines|join('\n') }}</textarea>
+  {% if hint %}<span class="field-hint nojs-only">{{ hint }}</span>{% endif %}
+  {{ err(errors, name) }}
+</div>
+{% endmacro %}
+
+{# Cột tiêu đề + mô tả dài: mô tả rộng gấp đôi. #}
+{% macro _tpl(cols) %}{% if cols|length == 2 and cols[1][2] == 'textarea' %}; --tpl: minmax(0,1fr) minmax(0,2fr){% endif %}{% endmacro %}
+
+{# Các dòng lặp: mỗi cột `prefix_key`. cols = [(key, nhãn, kiểu text|textarea)]. #}
+{% macro _row(prefix, cols, r, blank=false) %}
+<div class="rows-item"{% if blank %} data-blank{% endif %} data-row>
+  <div class="rows-cells" style="--n: {{ cols|length }}{{ _tpl(cols) }}">
+    {% for key, label, kind in cols %}
+      {% if kind == 'textarea' %}
+      <textarea name="{{ prefix }}_{{ key }}" rows="3" placeholder="{{ label }}" aria-label="{{ label }}">{{ r[key] if r and r[key] is not none else '' }}</textarea>
+      {% elif kind == 'pairlines' %}
+      <textarea name="{{ prefix }}_{{ key }}" rows="4" placeholder="Nhãn | /duong-dan (mỗi dòng một link)" aria-label="{{ label }}" data-lines="pair" data-add-label="+ Thêm link">{{ r[key] if r and r[key] is not none else '' }}</textarea>
+      {% else %}
+      <input type="text" name="{{ prefix }}_{{ key }}" value="{{ r[key] if r and r[key] is not none else '' }}" placeholder="{{ label }}" aria-label="{{ label }}">
+      {% endif %}
+    {% endfor %}
+  </div>
+  <div class="rows-tools js-only" data-tools>
+    <button type="button" class="icon-btn" data-act="up" aria-label="Lên">↑</button>
+    <button type="button" class="icon-btn" data-act="down" aria-label="Xuống">↓</button>
+    <button type="button" class="icon-btn icon-btn-danger" data-act="remove" aria-label="Xóa dòng">✕</button>
+  </div>
+</div>
+{% endmacro %}
+
+{% macro rows_editor(prefix, cols, rows, add_label='+ Thêm dòng', errors=none, error_key='', hint='', stacked=false) %}
+<div class="field rows{% if stacked %} rows-stacked{% endif %}{% if error_key and errors and errors[error_key] %} has-error{% endif %}" data-rows>
+  {% if not stacked %}
+  <div class="rows-head" style="--n: {{ cols|length }}{{ _tpl(cols) }}">{% for key, l, kind in cols %}<span>{{ l }}</span>{% endfor %}</div>
+  {% endif %}
+  <div class="rows-list" data-rows-list>
+    {% for r in rows %}{{ _row(prefix, cols, r) }}{% endfor %}
+    {{ _row(prefix, cols, none, true) }}
+  </div>
+  <template data-rows-template>{{ _row(prefix, cols, none) }}</template>
+  <button type="button" class="btn-add js-only" data-row-add>{{ add_label }}</button>
+  <span class="field-hint">{% if hint %}{{ hint }} {% endif %}<span class="nojs-only">Để trống cả dòng để xóa dòng đó.</span></span>
+  {% if error_key %}{{ err(errors, error_key) }}{% endif %}
+</div>
+{% endmacro %}
+
+{# Trường ảnh: đường dẫn (chọn từ thư viện) + file tải mới `<name>_file`. #}
+{% macro image_field(name, label, value='', errors=none, hint='', ratio='16/9', preview='') %}
+<div class="field img-field{% if errors and errors[name] %} has-error{% endif %}" data-image-field>
+  <span class="field-label">{{ label }}</span>
+  <div class="img-field-body">
+    <div class="img-thumb" style="aspect-ratio: {{ ratio }}" data-img-thumb>{% if value %}<img src="{{ value }}" alt="">{% endif %}</div>
+    <div class="img-controls">
+      <input type="text" name="{{ name }}" value="{{ value or '' }}" class="img-path" placeholder="Chưa có ảnh" aria-label="{{ label }} – đường dẫn"{% if preview %} data-bind-img="{{ preview }}"{% endif %} data-img-path>
+      <div class="img-actions">
+        <button type="button" class="btn-sm js-only" data-pick>Chọn từ thư viện</button>
+        <label class="btn-sm file-btn">
+          <span class="js-only">Tải ảnh mới</span>
+          <input type="file" name="{{ name }}_file" accept="image/png,image/jpeg,image/webp" data-img-file>
+        </label>
+        <button type="button" class="btn-sm btn-sm-danger js-only" data-img-clear>Bỏ ảnh</button>
+      </div>
+      <span class="field-hint" data-img-name>{{ hint or 'PNG, JPEG hoặc WEBP, tối đa 5MB.' }}</span>
+      {{ err(errors, name) }}
+    </div>
+  </div>
+</div>
+{% endmacro %}
+
+{# Công tắc bật/tắt trong form (checkbox value=1). #}
+{% macro switch_input(name, label, checked, hint='', errors=none) %}
+<div class="field">
+  <label class="switch-field">
+    <input type="checkbox" name="{{ name }}" value="1"{% if checked %} checked{% endif %}>
+    <span class="switch" aria-hidden="true"><span></span></span>
+    <span class="switch-label">{{ label }}</span>
+  </label>
+  {% if hint %}<span class="field-hint">{{ hint }}</span>{% endif %}
+  {{ err(errors, name) }}
+</div>
+{% endmacro %}
+
+{# Ô chọn. options = [{id,label}] #}
+{% macro select(name, label, options, selected, errors=none, empty_label='', hint='', required=false) %}
+<label class="field{% if errors and errors[name] %} has-error{% endif %}">
+  <span class="field-label">{{ label }}{% if required %} <em class="req">*</em>{% endif %}</span>
+  <select name="{{ name }}">
+    {% if empty_label %}<option value="">{{ empty_label }}</option>{% endif %}
+    {% for o in options %}<option value="{{ o.id }}"{% if o.id|string == selected|string %} selected{% endif %}>{{ o.label }}</option>{% endfor %}
+  </select>
+  {% if hint %}<span class="field-hint">{{ hint|safe }}</span>{% endif %}
+  {{ err(errors, name) }}
+</label>
+{% endmacro %}
+
+{# Nhóm pill chọn một (radio) / nhiều (checkbox). options = [{id,label}] #}
+{% macro pills(name, label, options, selected, errors=none, multi=false) %}
+<fieldset class="field pills-field{% if errors and errors[name] %} has-error{% endif %}">
+  <legend class="field-label">{{ label }}</legend>
+  <div class="pills">
+    {% for o in options %}
+      {% set on = (o.id in selected) if multi else (o.id|string == selected|string) %}
+      <label class="pill-opt"><input type="{{ 'checkbox' if multi else 'radio' }}" name="{{ name }}" value="{{ o.id }}"{% if on %} checked{% endif %}><span>{{ o.label }}</span></label>
+    {% endfor %}
+  </div>
+  {{ err(errors, name) }}
+</fieldset>
+{% endmacro %}
+
+{# Công tắc tròn trong bảng: form POST nhỏ. #}
+{% macro toggle(url, on, label, field='') %}
+<form method="post" action="{{ url }}" class="toggle-form">
+  {{ csrf() }}{% if field %}<input type="hidden" name="field" value="{{ field }}">{% endif %}
+  <input type="hidden" name="back" value="{{ back_url() }}">
+  <button type="submit" class="switch{% if on %} is-on{% endif %}" role="switch" aria-checked="{{ 'true' if on else 'false' }}" aria-label="{{ label }}" title="{{ label }}"><span></span></button>
+</form>
+{% endmacro %}
+
+{% macro delete_form(url, confirm, disabled=false, title='') %}
+<form method="post" action="{{ url }}" class="inline-form" data-confirm="{{ confirm }}">
+  {{ csrf() }}<input type="hidden" name="back" value="{{ back_url() }}"><button type="submit" class="btn-sm btn-sm-danger"{% if disabled %} disabled{% endif %}{% if title %} title="{{ title }}"{% endif %}>Xóa</button>
+</form>
+{% endmacro %}
+
+{% macro empty(text, action_url='', action_label='') %}
+<div class="empty">
+  <p>{{ text }}</p>
+  {% if action_url %}<a href="{{ action_url }}" class="btn-primary">{{ action_label }}</a>{% endif %}
+</div>
+{% endmacro %}
+
+{# Hộp chọn ảnh từ thư viện (JS). #}
+{% macro media_picker(items) %}
+<dialog class="picker" id="media-picker" aria-labelledby="picker-title">
+  <div class="picker-head">
+    <h2 id="picker-title">Chọn ảnh từ thư viện</h2>
+    <input type="search" placeholder="Lọc theo mô tả…" data-picker-filter aria-label="Lọc ảnh">
+    <button type="button" class="btn-close" data-picker-close aria-label="Đóng">✕</button>
+  </div>
+  <div class="picker-grid">
+    {% for m in items %}
+    <button type="button" class="picker-item" data-path="{{ m.path }}" data-alt="{{ m.alt|lower }}" title="{{ m.alt or m.path }}">
+      <img src="{{ m.path }}" alt="{{ m.alt }}" loading="lazy">
+      <span>{{ m.width }}×{{ m.height }}</span>
+    </button>
+    {% endfor %}
+  </div>
+  <div class="picker-foot"><a href="/admin/media" target="_blank" rel="noopener">Mở Thư viện ảnh ↗</a></div>
+</dialog>
+{% endmacro %}
+
+{# Biểu đồ cột 30 ngày. days = [{day, clicks, percent}] #}
+{% macro bars(days, total) %}
+{% if total %}
+<div class="bars" role="img" aria-label="Click theo ngày trong 30 ngày, tổng {{ total|num }}">
+  {% for d in days %}<div class="bar{% if loop.last %} is-today{% endif %}" style="height: {{ [d.percent, 1]|max }}%" title="{{ d.day|date_vn }}: {{ d.clicks|num }} click"></div>{% endfor %}
+</div>
+<div class="bars-axis"><span>{{ days[0].day|date_vn }}</span><span>Hôm nay</span></div>
+{% else %}
+<div class="empty empty-inline"><p>Chưa có click nào trong 30 ngày qua.</p></div>
+{% endif %}
+{% endmacro %}
+
+{# Dung lượng file dễ đọc. #}
+{% macro size(n) %}{% if n >= 1048576 %}{{ '%.1f'|format(n / 1048576) }} MB{% else %}{{ (n / 1024)|round|int }} KB{% endif %}{% endmacro %}

@@ -41,7 +41,8 @@ def test_upload_rejects_fake_image(admin, db):
     r = upload(admin, "page.png", b"\x89PNG\r\n\x1a\n" + b"<html>fake</html>" * 10)
     assert r.status_code == 400
     assert db.query(MediaFile).count() == 0
-    assert not any(Path(os.environ["UPLOAD_DIR"]).iterdir())
+    upload_dir = Path(os.environ["UPLOAD_DIR"])
+    assert not upload_dir.exists() or not any(upload_dir.iterdir())
 
 
 def test_upload_rejects_other_formats(admin, db):

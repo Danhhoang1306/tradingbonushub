@@ -6,6 +6,7 @@ from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app import content
 from app.config import config
 from app.db import SessionLocal
 
@@ -24,6 +25,13 @@ CSP_SCRIPTS = "script-src 'self'; connect-src 'self'"
 CSP_SCRIPTS_ANALYTICS = ("script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com; "
                          "connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com "
                          "https://*.analytics.google.com https://www.googletagmanager.com")
+
+
+class MediaFiles(StaticFiles):
+    """Thư mục upload chỉ được tạo khi có ảnh đầu tiên: chưa có thư mục thì trả 404, không phải lỗi cấu hình."""
+
+    async def check_config(self) -> None:
+        return None
 
 
 def create_app() -> FastAPI:
@@ -68,9 +76,8 @@ def create_app() -> FastAPI:
         log.exception("Lỗi không xử lý: %s %s", request.method, request.url.path)
         return _error_page(request, 500)
 
-    config.upload_dir.mkdir(parents=True, exist_ok=True)
     app.mount("/static", StaticFiles(directory=str(config.static_dir), check_dir=False), name="static")
-    app.mount("/media", StaticFiles(directory=str(config.upload_dir)), name="media")
+    app.mount("/media", MediaFiles(directory=str(config.upload_dir), check_dir=False), name="media")
     app.include_router(public.router)
     app.include_router(admin.router)
     return app
@@ -80,14 +87,14 @@ def _error_page(request: Request, status: int):
     from app.routes.public import page_ctx
     from app.templating import render
 
-    title = "Không tìm thấy trang" if status == 404 else "Đã có lỗi xảy ra"
+    title_key = "not_found_title" if status == 404 else "error_title"
     db = SessionLocal()
-    try:
-        return render(request, f"public/{status}.html", page_ctx(request, db, title=title, desc="", noindex=True),
+    try:  # page_ctx tự dùng nội dung mặc định khi DB hỏng, nên trang lỗi vẫn đủ khung site
+        return render(request, f"public/{status}.html", page_ctx(request, db, system_title=title_key, desc="", noindex=True),
                       status_code=status)
     except Exception:
         log.exception("Không render được trang lỗi %s", status)
-        return HTMLResponse(f"<h1>{title}</h1>", status_code=status)
+        return HTMLResponse(f"<h1>{content.DEFAULTS['system_text'][title_key]}</h1>", status_code=status)
     finally:
         db.close()
 

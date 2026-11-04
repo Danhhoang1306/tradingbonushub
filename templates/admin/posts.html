@@ -1,14 +1,53 @@
-<!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><title>{{ title }} – Quản trị</title></head>
-<body data-stub="BACKEND STUB – đội FE ghi đè file này">
-<nav>{% for g in nav %}{% for i in g.links %}<a href="{{ i.url }}">{{ i.label }}{% if i.count %} ({{ i.count }}){% endif %}</a>{% endfor %}{% endfor %}</nav>
-<form method="post" action="/admin/logout"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button>Đăng xuất</button></form>
-{% if flash %}<div class="flash flash-{{ flash.kind }}">{{ flash.text }}</div>{% endif %}
-<h1>{{ title }}</h1>
-{% for t in subtabs %}<a href="{{ t.url }}">{{ t.label }}</a>{% endfor %}
-{% if drawer %}<aside class="drawer"><h2>{{ drawer.title }}</h2><form method="post" action="{{ drawer.action }}" enctype="multipart/form-data">
-<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-{% for k, v in drawer.errors.items() %}<p class="error" data-field="{{ k }}">{{ v }}</p>{% endfor %}</form></aside>{% endif %}
-{% if form and form.errors %}{% for k, v in form.errors.items() %}<p class="error" data-field="{{ k }}">{{ v }}</p>{% endfor %}{% endif %}
-{% for p in posts %}<div class="row">{{ p.title }} {{ p.status|post_status_label }}</div>{% else %}<p>Chưa có bài viết nào.</p>{% endfor %}
-</body></html>
+{% extends "admin/_base.html" %}
+{% import "admin/_macros.html" as ui with context %}
+{% set close_url = '/admin/posts' %}
+{% set drawer_inline = ['title','slug','category','excerpt','body_md','cover_path','status','published_at'] %}
+{% set cols = 'minmax(0,1fr) 120px 110px 110px 90px 110px' %}
+{% block content %}
+<div class="stack">
+  <div class="toolbar">
+    <form class="search" method="get" action="/admin/posts" role="search">
+      <input type="hidden" name="tab" value="{{ current_tab }}">
+      <input type="search" name="q" value="{{ q }}" placeholder="Tìm theo tiêu đề…" aria-label="Tìm bài viết">
+    </form>
+  </div>
+  <div class="table-wrap">
+    <div class="table" style="--min: 840px; --cols: {{ cols }}">
+      <div class="t-head"><span>Tiêu đề</span><span>Chuyên mục</span><span>Ngày</span><span>Trạng thái</span><span>Trang chủ</span><span></span></div>
+      {% for p in posts %}
+      <div class="t-row">
+        <span class="cell-ellipsis"><a class="row-link cell-medium cell-ellipsis" href="{{ p.edit_url }}" title="{{ p.title }}">{{ p.title }}</a>
+          {% if p.views %}<span class="cell-sub">{{ p.views|num }} lượt xem</span>{% endif %}</span>
+        <span class="cell-muted">{{ p.category }}</span>
+        <span class="cell-muted">{{ p.published_at|date_vn or '—' }}</span>
+        <span class="{{ 'status-ok' if p.status == 'published' else 'status-muted' }}">{{ p.status|post_status_label }}</span>
+        {{ ui.toggle(p.toggle_url, p.show_home, 'Hiện ở trang chủ: ' ~ p.title) }}
+        <span class="t-actions">
+          {% if p.view_url %}<a class="btn-sm" href="{{ p.view_url }}" target="_blank" rel="noopener" title="Xem trên site" aria-label="Xem trên site">↗</a>{% endif %}
+          <a class="btn-sm" href="{{ p.edit_url }}">Sửa</a>
+        </span>
+      </div>
+      {% else %}
+        {% if q or current_tab != 'all' %}{{ ui.empty('Không có bài viết phù hợp.') }}
+        {% else %}{{ ui.empty('Chưa có bài viết nào.', add_url, '+ Thêm bài viết') }}{% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block drawer_fields %}
+{% set d = drawer.data %}{% set e = drawer.errors %}
+{{ ui.field('title', 'Tiêu đề', d.title, e, required=true) }}
+<div class="fields-2">
+  {{ ui.field('slug', 'Slug (đường dẫn)', d.slug, e, hint='Trống = tự tạo từ tiêu đề.') }}
+  {% set opts = [] %}{% for c in category_options %}{% set _ = opts.append({'id': c, 'label': c}) %}{% endfor %}
+  {{ ui.select('category', 'Chuyên mục', opts, d.category, e) }}
+</div>
+{{ ui.field('excerpt', 'Tóm tắt', d.excerpt, e, rows=3, hint='Hiện ở thẻ bài viết và mô tả SEO.') }}
+{{ ui.field('body_md', 'Nội dung (Markdown)', d.body_md, e, rows=14, mono=true, hint='## Tiêu đề, **đậm**, [link](https://…), - danh sách. Số phút đọc tự tính.') }}
+{{ ui.image_field('cover_path', 'Ảnh bìa', d.cover_path, e) }}
+{{ ui.pills('status', 'Trạng thái', [{'id':'draft','label':'Nháp'},{'id':'published','label':'Đã đăng'}], d.status, e) }}
+{{ ui.field('published_at', 'Ngày đăng', d.published_at, e, type='date', hint='Trống khi đăng = lấy ngày hiện tại.') }}
+{{ ui.switch_input('show_home', 'Hiện ở mục Tin tức trang chủ', d.show_home) }}
+{% endblock %}

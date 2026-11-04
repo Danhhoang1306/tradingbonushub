@@ -7,7 +7,8 @@ Database bắt đầu rỗng; mọi dữ liệu (bonus, sàn, bài viết, banne
 
 ```powershell
 py -3.12 -m venv .venv
-.venv\Scripts\pip install -r requirements.txt
+.venv\Scripts\pip install -r requirements.txt       # chạy site
+.venv\Scripts\pip install -r requirements-dev.txt   # thêm pytest, httpx, playwright
 ```
 
 ## Biến môi trường
@@ -40,6 +41,9 @@ Tạo tài khoản quản trị (không có tài khoản mặc định; mật kh
 ```
 
 Chạy lại lệnh với email đã có = đặt lại mật khẩu. Đăng nhập tại `/admin/login`.
+
+Không tương tác (script, CI, terminal không có console): đặt biến `ADMIN_PASSWORD` trước khi chạy lệnh. Không có tham số
+dòng lệnh cho mật khẩu.
 
 ## Test
 

@@ -150,7 +150,7 @@ def bonus_toggle(bid: int, a: Admin = Depends(admin_post)):
     b = get_or_404(a.db, Bonus, bid)
     b.is_active = not b.is_active
     a.db.commit()
-    return done(_back(a, "/admin/bonus"), "toggled")
+    return done(a.back("/admin/bonus"), "toggled")
 
 
 @router.post("/bonus/{bid}/delete")
@@ -158,12 +158,6 @@ def bonus_delete(bid: int, a: Admin = Depends(admin_post)):
     a.db.delete(get_or_404(a.db, Bonus, bid))
     a.db.commit()
     return done("/admin/bonus", "deleted")
-
-
-def _back(a: Admin, default: str) -> str:
-    """Trường ẩn `back` (đường dẫn admin hiện tại) để giữ tab/lọc sau khi bật/tắt."""
-    back = a.text("back", 500)
-    return back if back.startswith(default) and not back.startswith("//") else default
 
 
 # ======================= SÀN =======================
@@ -292,7 +286,7 @@ def broker_toggle(kid: int, a: Admin = Depends(admin_post)):
     field = a.text("field") or "is_active"
     if field == "in_compare":
         if not k.in_compare and _compare_full(a.db, k.id):
-            return done(_back(a, "/admin/brokers"), "compare_limit")
+            return done(a.back("/admin/brokers"), "compare_limit")
         k.in_compare = not k.in_compare
     elif field == "featured":
         if k.featured:
@@ -304,7 +298,7 @@ def broker_toggle(kid: int, a: Admin = Depends(admin_post)):
     else:
         raise HTTPException(400, "field không hợp lệ")
     a.db.commit()
-    return done(_back(a, "/admin/brokers"), "toggled")
+    return done(a.back("/admin/brokers"), "toggled")
 
 
 @router.post("/brokers/{kid}/link")
@@ -428,7 +422,7 @@ def ads_toggle(aid: int, a: Admin = Depends(admin_post)):
     b = get_or_404(a.db, Banner, aid)
     b.is_active = not b.is_active
     a.db.commit()
-    return done(_back(a, "/admin/ads"), "toggled")
+    return done(a.back("/admin/ads"), "toggled")
 
 
 @router.post("/ads/{aid}/delete")
@@ -545,7 +539,7 @@ def posts_toggle(pid: int, a: Admin = Depends(admin_post)):
     p = get_or_404(a.db, Post, pid)
     p.show_home = not p.show_home
     a.db.commit()
-    return done(_back(a, "/admin/posts"), "toggled")
+    return done(a.back("/admin/posts"), "toggled")
 
 
 @router.post("/posts/{pid}/delete")

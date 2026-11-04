@@ -144,6 +144,7 @@ class RateLimiter:
 
 login_limiter = RateLimiter(5, 15 * 60)       # 5 lần sai / 15 phút theo IP+email
 public_form_limiter = RateLimiter(5, 10 * 60)  # subscribe/contact: 5 lần / 10 phút theo IP
+ad_view_limiter = RateLimiter(30, 60)          # beacon đếm view quảng cáo dọc theo IP
 
 
 def is_http_url(url: str) -> bool:

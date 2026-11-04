@@ -1,0 +1,21 @@
+<footer class="site-footer">
+  <div class="site-footer__inner">
+    <div class="site-footer__grid">
+      <div class="site-footer__about">
+        <div class="brand brand--footer">
+          {% if site.branding.logo_path %}<img src="{{ site.branding.logo_path }}" alt="" class="brand__logo" width="42" height="42">{% endif %}
+          <span class="brand__name">{{ site.site_name }}</span>
+        </div>
+        {% if site.footer.about_text %}<p>{{ site.footer.about_text }}</p>{% endif %}
+        {% if site.social %}<div class="site-footer__social">{% for s in site.social %}<a href="{{ s.url }}" rel="noopener" target="_blank">{{ s.label }}</a>{% endfor %}</div>{% endif %}
+      </div>
+      {% for col in site.footer.columns %}
+      <nav class="site-footer__col" aria-label="{{ col.title }}">
+        <div class="site-footer__title">{{ col.title }}</div>
+        {% for l in col.links %}<a href="{{ l.url }}">{{ l.label }}</a>{% endfor %}
+      </nav>
+      {% endfor %}
+    </div>
+    <p class="site-footer__legal">{{ site.footer.risk_note }}{% if site.footer.risk_note and site.footer.copyright %} {% endif %}{{ site.footer.copyright }}</p>
+  </div>
+</footer>

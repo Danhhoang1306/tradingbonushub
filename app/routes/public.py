@@ -16,7 +16,7 @@ from app.config import config
 from app.db import get_db
 from app.mailer import send_email
 from app.models import BONUS_TYPES, POST_CATEGORIES, Banner, Broker, ContactMessage, Post, Subscriber, utcnow
-from app.security import client_ip, is_http_url, is_local_path, new_token, public_form_limiter
+from app.security import ad_view_limiter, client_ip, is_http_url, is_local_path, new_token, public_form_limiter
 from app.templating import FLASH_MESSAGES, render, set_flash
 from app.utils import EMAIL_RE, render_markdown, to_int, today_vn
 
@@ -43,16 +43,28 @@ FLASH_MESSAGES.update({
 # ---------- khung chung ----------
 
 def site_ctx(db: Session) -> dict:
-    site = content.get_all(db)
+    try:
+        site = content.get_all(db)
+    except Exception:  # DB hỏng (kể cả lỗi lúc mở kết nối): trang lỗi vẫn phải render được
+        log.exception("Không đọc được Setting, dùng nội dung mặc định")
+        site = content.resolve({})
+        try:
+            db.rollback()
+        except Exception:
+            log.exception("Không rollback được phiên DB")
     site["type_labels"] = content.type_labels(site)
+    site["bonus_types"] = [t | {"url": f"/bonus?type={t['id']}"} for t in site["bonus_types"]]
     site["year"] = today_vn().year
     return site
 
 
 def page_ctx(request: Request, db: Session, *, page_key: str | None = None, title: str | None = None,
-             desc: str | None = None, crumbs: list | None = None, noindex: bool = False, **extra) -> dict:
+             desc: str | None = None, crumbs: list | None = None, noindex: bool = False,
+             system_title: str | None = None, **extra) -> dict:
     site = site_ctx(db)
     page = site["pages"].get(page_key, {}) if page_key else {}
+    if system_title:
+        title = site["system_text"][system_title]
     title = title if title is not None else page.get("title", "")
     desc = desc if desc is not None else page.get("desc", "")
     meta_title = page.get("meta_title") or (f"{title} – {site['site_name']}" if title else site["meta_title"])
@@ -72,13 +84,18 @@ def page_ctx(request: Request, db: Session, *, page_key: str | None = None, titl
 
 
 def not_found(request: Request, db: Session):
-    return render(request, "public/404.html", page_ctx(request, db, title="Không tìm thấy trang", desc="", noindex=True),
+    return render(request, "public/404.html", page_ctx(request, db, system_title="not_found_title", desc="", noindex=True),
                   status_code=404)
 
 
 def _qs(**params) -> str:
     clean = {k: v for k, v in params.items() if v not in (None, "", "all", "new", 1)}
     return ("?" + urlencode(clean)) if clean else ""
+
+
+def _canonical(ctx: dict, **params) -> None:
+    """Giữ trong canonical các tham số đổi nội dung trang (đã chuẩn hóa). `sort` và `ids` không đổi tập nội dung."""
+    ctx["meta"]["canonical"] += _qs(**params)
 
 
 # ---------- trang chủ ----------
@@ -101,7 +118,8 @@ def home(request: Request, db: Session = Depends(get_db)):
         b = queries.live_banner(db, placement)
         if b is None:
             return None
-        db.execute(update(Banner).where(Banner.id == b.id).values(views=Banner.views + 1))
+        if placement not in queries.RAIL_PLACEMENTS:
+            db.execute(update(Banner).where(Banner.id == b.id).values(views=Banner.views + 1))
         return queries.banner_view(b, labels, tops.get(b.broker_id))
 
     banners = {p: banner(p) for p in ("rail-left", "rail-right", "after-bonus", "before-blog")}
@@ -141,6 +159,7 @@ def bonus_list(request: Request, type: str = "all", sort: str = "new", db: Sessi
     bonuses = [queries.bonus_view(b, labels) for b in
                queries.visible_bonuses(db, None if type_ == "all" else type_, sort)]
     ctx["crumbs"].append({"label": "Bonus", "url": "/bonus"})
+    _canonical(ctx, type=type_)
     ctx.update(
         current_type=type_, current_sort=sort, bonuses=bonuses, bonus_count=len(bonuses),
         tabs=[{"id": "all", "label": "Tất cả", "count": sum(counts.values()), "url": "/bonus" + _qs(sort=sort),
@@ -179,6 +198,7 @@ def broker_list(request: Request, kind: str = "all", db: Session = Depends(get_d
     all_brokers = _active_brokers(db)
     counts = queries.bonus_count_by_broker(db)
     ctx["crumbs"].append({"label": "Sàn uy tín", "url": "/san"})
+    _canonical(ctx, kind=kind)
     ctx.update(current_kind=kind, tabs=_broker_tabs(all_brokers, kind),
                brokers=[queries.broker_view(k, labels, counts.get(k.id, 0)) for k in all_brokers
                         if kind == "all" or k.kind == kind])
@@ -186,12 +206,12 @@ def broker_list(request: Request, kind: str = "all", db: Session = Depends(get_d
 
 
 @router.get("/san/so-sanh")
-def broker_compare(request: Request, ids: str = "", db: Session = Depends(get_db)):
+def broker_compare(request: Request, ids: str | None = None, db: Session = Depends(get_db)):
     ctx = page_ctx(request, db, page_key="san")
     labels = ctx["site"]["type_labels"]
     brokers = _active_brokers(db)
     by_id = {k.id: k for k in brokers}
-    if ids.strip():
+    if ids is not None:  # có tham số, kể cả rỗng (`?ids=` = đã bỏ chọn hết): theo đúng lựa chọn
         chosen = []
         for part in ids.split(","):
             n = to_int(part)
@@ -228,6 +248,7 @@ def broker_detail(request: Request, slug: str, tab: str = "overview", db: Sessio
     desc = ". ".join(x for x in (k.tagline, f"Thành lập {k.founded}" if k.founded else "") if x)
     ctx = page_ctx(request, db, page_key="san", title=f"Đánh giá {k.name}", desc=(desc + ".") if desc else "",
                    crumbs=[{"label": "Sàn uy tín", "url": "/san"}, {"label": k.name, "url": f"/san/{k.slug}"}])
+    _canonical(ctx, tab=None if tab == "overview" else tab)
     labels = ctx["site"]["type_labels"]
     bonuses = [queries.bonus_view(b, labels) for b in queries.visible_bonuses(db, sort="value", broker_id=k.id)]
     view = queries.broker_view(k, labels, len(bonuses))
@@ -259,6 +280,7 @@ def post_list(request: Request, cat: str = "all", page: int = 1, db: Session = D
     page = min(max(1, page), pages)
     posts = db.scalars(q.offset((page - 1) * POSTS_PER_PAGE).limit(POSTS_PER_PAGE)).all()
     ctx["crumbs"].append({"label": "Tin tức", "url": "/tin-tuc"})
+    _canonical(ctx, cat=cat, page=page)
     ctx.update(
         current_cat=cat, posts=[queries.post_view(p) for p in posts],
         tabs=[{"id": "all", "label": "Tất cả", "count": sum(counts.values()), "url": "/tin-tuc", "active": cat == "all"}]
@@ -404,8 +426,7 @@ def subscribe(request: Request, db: Session = Depends(get_db), name: str = Form(
 
 
 def _subscription_result(request: Request, db: Session, status: str):
-    titles = {"confirmed": "Đã xác nhận đăng ký", "unsubscribed": "Đã hủy đăng ký", "invalid": "Liên kết không hợp lệ"}
-    ctx = page_ctx(request, db, title=titles[status], desc="", noindex=True)
+    ctx = page_ctx(request, db, system_title=f"sub_{status}_title", desc="", noindex=True)
     ctx["status"] = status
     return render(request, "public/subscription.html", ctx, status_code=404 if status == "invalid" else 200)
 
@@ -458,7 +479,23 @@ def contact_submit(request: Request, db: Session = Depends(get_db), topic: str =
     return set_flash(RedirectResponse("/lien-he", status_code=303), "contact_ok")
 
 
-# ---------- chuyển hướng affiliate ----------
+# ---------- beacon + chuyển hướng affiliate ----------
+
+@router.post("/api/ad-view/{banner_id}", status_code=204)
+def ad_view(banner_id: int, request: Request, db: Session = Depends(get_db)):
+    """FE gọi bằng navigator.sendBeacon khi quảng cáo dọc thật sự hiển thị (rail ẩn dưới 1572px)."""
+    key = "view:" + client_ip(request)
+    if ad_view_limiter.blocked(key):
+        return Response(status_code=204)
+    b = db.get(Banner, banner_id)
+    if (b is None or b.placement not in queries.RAIL_PLACEMENTS or queries.banner_state(b) != "running"
+            or (b.broker and not b.broker.is_active)):
+        raise HTTPException(404)
+    ad_view_limiter.hit(key)
+    db.execute(update(Banner).where(Banner.id == b.id).values(views=Banner.views + 1))
+    db.commit()
+    return Response(status_code=204)
+
 
 @router.get("/go/broker/{broker_id}")
 def go_broker(broker_id: int, db: Session = Depends(get_db)):

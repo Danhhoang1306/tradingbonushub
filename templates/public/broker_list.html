@@ -1,8 +1,27 @@
-<!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><title>{{ meta.title }}</title>
-{% if meta.noindex %}<meta name="robots" content="noindex">{% endif %}</head>
-<body data-stub="BACKEND STUB – đội FE ghi đè file này">
-{% if flash %}<div class="flash flash-{{ flash.kind }}">{{ flash.text }}</div>{% endif %}
-<h1>{{ page.title }}</h1>
-{% for k in brokers %}<a href="{{ k.url }}">{{ k.name }}</a>{% else %}<p>Chưa có sàn nào.</p>{% endfor %}
-</body></html>
+{% extends "base_public.html" %}
+{% from "public/_macros.html" import avatar, empty %}
+{% block content %}
+{% if brokers %}
+<div class="rows">
+  {% for k in brokers %}
+  <div class="broker-row">
+    <div class="broker-row__main">
+      {{ avatar(k, "avatar--dark") }}
+      <div>
+        <h2 class="broker-row__name"><a href="{{ k.url }}">{{ k.name }}</a></h2>
+        {% if k.tagline %}<div class="broker-row__tagline">{{ k.tagline }}</div>{% endif %}
+      </div>
+    </div>
+    <dl class="kv"><dt>Giấy phép</dt><dd>{{ k.license or "—" }}</dd></dl>
+    <dl class="kv"><dt>Nạp tối thiểu</dt><dd>{{ k.min_deposit or "—" }}</dd></dl>
+    <dl class="kv"><dt>Bonus đang có</dt><dd>{{ k.bonus_count or "—" }}</dd></dl>
+    <div class="broker-row__actions">
+      <a href="{{ k.url }}" class="btn btn--navy">Xem đánh giá</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+{{ empty("Chưa có sàn nào.") }}
+{% endif %}
+{% endblock %}

@@ -1,9 +1,49 @@
-<!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><title>{{ meta.title }}</title>
-{% if meta.noindex %}<meta name="robots" content="noindex">{% endif %}</head>
-<body data-stub="BACKEND STUB – đội FE ghi đè file này">
-{% if flash %}<div class="flash flash-{{ flash.kind }}">{{ flash.text }}</div>{% endif %}
-<h1>{{ page.title }}</h1>
-{% for p in compare_pick %}<span>{{ p.name }}{% if p.selected %}*{% endif %}</span>{% endfor %}
-{% for k in compare_brokers %}<div class="col">{{ k.name }}</div>{% else %}<p>Chưa chọn sàn để so sánh.</p>{% endfor %}
-</body></html>
+{% extends "base_public.html" %}
+{% from "public/_macros.html" import empty %}
+{% block content %}
+<div class="stack stack--compare">
+  {% if compare_pick %}
+  <div class="compare-pick">
+    <span class="compare-pick__label">Chọn tối đa {{ max_compare }} sàn:</span>
+    {% for p in compare_pick %}
+    {% if p.url %}<a href="{{ p.url }}" class="pill{% if p.selected %} is-active{% endif %}" aria-pressed="{{ 'true' if p.selected else 'false' }}" rel="nofollow">{{ p.name }}</a>
+    {% else %}<span class="pill is-disabled" aria-disabled="true">{{ p.name }}</span>{% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if compare_brokers %}
+  <div class="compare-table">
+    <div class="compare-grid" style="--cols: {{ compare_brokers|length }}" role="table" aria-label="So sánh sàn">
+      <div role="row" class="sr-row">
+      <div class="compare-grid__head" role="columnheader"></div>
+      {% for c in compare_brokers %}
+      <div class="compare-grid__head" role="columnheader">
+        <h2 class="compare-grid__name"><a href="{{ c.url }}" class="link-plain">{{ c.name }}</a></h2>
+        {% if c.tagline %}<div class="compare-grid__tagline">{{ c.tagline }}</div>{% endif %}
+      </div>
+      {% endfor %}
+      </div>
+      {% for row in compare_rows %}{% set alt = loop.index0 is even %}
+      <div role="row" class="sr-row">
+      <div class="compare-grid__label{% if alt %} is-alt{% endif %}" role="rowheader">{{ row.label }}</div>
+      {% for v in row.cells %}<div class="compare-grid__cell{% if alt %} is-alt{% endif %}" role="cell">{{ v if v else "—" }}</div>{% endfor %}
+      </div>
+      {% endfor %}
+      <div role="row" class="sr-row">
+      <div class="compare-grid__foot" role="cell"></div>
+      {% for c in compare_brokers %}
+      <div class="compare-grid__foot" role="cell">
+        {% if c.go_url %}<a href="{{ c.go_url }}" class="btn btn--blue" rel="sponsored nofollow noopener" target="_blank">Mở tài khoản</a>{% endif %}
+        <a href="{{ c.url }}" class="btn btn--outline">Đánh giá</a>
+      </div>
+      {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% elif compare_pick %}
+  {{ empty("Chọn sàn để so sánh.") }}
+  {% else %}
+  {{ empty("Chưa có sàn nào.") }}
+  {% endif %}
+</div>
+{% endblock %}

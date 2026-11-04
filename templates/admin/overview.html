@@ -1,15 +1,50 @@
-<!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><title>{{ title }} – Quản trị</title></head>
-<body data-stub="BACKEND STUB – đội FE ghi đè file này">
-<nav>{% for g in nav %}{% for i in g.links %}<a href="{{ i.url }}">{{ i.label }}{% if i.count %} ({{ i.count }}){% endif %}</a>{% endfor %}{% endfor %}</nav>
-<form method="post" action="/admin/logout"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button>Đăng xuất</button></form>
-{% if flash %}<div class="flash flash-{{ flash.kind }}">{{ flash.text }}</div>{% endif %}
-<h1>{{ title }}</h1>
-{% for t in subtabs %}<a href="{{ t.url }}">{{ t.label }}</a>{% endfor %}
-{% if drawer %}<aside class="drawer"><h2>{{ drawer.title }}</h2><form method="post" action="{{ drawer.action }}" enctype="multipart/form-data">
-<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-{% for k, v in drawer.errors.items() %}<p class="error" data-field="{{ k }}">{{ v }}</p>{% endfor %}</form></aside>{% endif %}
-{% if form and form.errors %}{% for k, v in form.errors.items() %}<p class="error" data-field="{{ k }}">{{ v }}</p>{% endfor %}{% endif %}
-{% for s in stats %}<div class="stat">{{ s.label }}: {{ s.value }}</div>{% endfor %}
-{% for b in expiring %}<div>{{ b.title }}</div>{% endfor %}
-</body></html>
+{% extends "admin/_base.html" %}
+{% import "admin/_macros.html" as ui with context %}
+{% block content %}
+<div class="stack-lg">
+  <div class="stats">
+    {% for s in stats %}
+    <div class="stat">
+      <div class="stat-label">{{ s.label }}</div>
+      <div class="stat-value">{{ s.value }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if unread_messages %}
+  <a class="notice-link" href="/admin/messages?tab=unread">
+    <span><strong>{{ unread_messages|num }}</strong> tin nhắn liên hệ chưa đọc</span><span>Xem →</span>
+  </a>
+  {% endif %}
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Bonus sắp hết hạn <a href="/admin/bonus?tab=exp">Xem tất cả</a></div>
+      {% for b in expiring %}
+      <div class="card-list-row">
+        <span><strong>{{ b.broker.name }}</strong> · {{ b.title }}</span>
+        <span class="end-danger">{{ b.expiry_date|date_vn }}</span>
+      </div>
+      {% else %}
+      <div class="empty empty-inline"><p>Không có bonus nào hết hạn trong 14 ngày tới.</p></div>
+      {% endfor %}
+    </div>
+    <div class="card">
+      <div class="card-title">Sàn nhiều click nhất <a href="/admin/brokers?tab=links">Link affiliate</a></div>
+      {% for k in top_brokers %}
+      <div class="card-list-row">
+        <span><strong>{{ k.name }}</strong></span>
+        <span class="end">{{ k.clicks|num }} click</span>
+      </div>
+      {% else %}
+      <div class="empty empty-inline"><p>Chưa có click affiliate nào.</p></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Click theo ngày (30 ngày){% if click_total %}<span class="cell-muted">{{ click_total|num }} click</span>{% endif %}</div>
+    {{ ui.bars(click_days, click_total) }}
+  </div>
+</div>
+{% endblock %}

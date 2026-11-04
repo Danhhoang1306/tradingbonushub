@@ -15,11 +15,14 @@ def _make_engine(url: str):
     kwargs = {}
     if url.startswith("sqlite"):
         kwargs["connect_args"] = {"check_same_thread": False, "timeout": 15}
-        path = url.split("///", 1)[-1]
-        if path and path != ":memory:":
-            Path(path).parent.mkdir(parents=True, exist_ok=True)
     eng = create_engine(url, **kwargs)
     if url.startswith("sqlite"):
+        @event.listens_for(eng, "do_connect")
+        def _ensure_parent(*_):  # tạo thư mục lúc kết nối thật, không phải lúc import
+            path = url.split("///", 1)[-1]
+            if path and path != ":memory:":
+                Path(path).parent.mkdir(parents=True, exist_ok=True)
+
         @event.listens_for(eng, "connect")
         def _pragmas(dbapi_conn, _):
             cur = dbapi_conn.cursor()

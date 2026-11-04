@@ -1,5 +1,5 @@
 """Nền tảng chung cho khu quản trị: xác thực, CSRF, sidebar, đọc form, trường ảnh."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from urllib.parse import quote
 
 from fastapi import Depends, HTTPException, Request
@@ -8,10 +8,10 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from starlette.datastructures import FormData, UploadFile
 
-from app import uploads
+from app import content, uploads
 from app.db import get_db
 from app.models import AdminSession, AdminUser, Banner, Bonus, Broker, ContactMessage, MediaFile, Post, Subscriber
-from app.security import csrf_ok, load_session
+from app.security import csrf_ok, is_local_path, load_session
 from app.templating import render, set_flash
 
 
@@ -26,6 +26,8 @@ class Admin:
     db: Session
     session: AdminSession
     form: FormData | None = None
+    _repeated: set[str] = field(default_factory=set)  # tên trường đã đọc dạng lặp (many/rows)
+    _images: dict[str, str] = field(default_factory=dict)  # đường dẫn ảnh đã xử lý ở lần POST này
 
     @property
     def user(self) -> AdminUser:
@@ -36,6 +38,10 @@ class Admin:
         v = self.form.get(name, "") if self.form is not None else ""
         return (v if isinstance(v, str) else "").strip()[:max_len]
 
+    def keep(self, name: str, current: str, max_len: int = 1000) -> str:
+        """Như text() nhưng form không có trường này thì giữ giá trị cũ (không xóa nhầm khi form chưa hiện ô đó)."""
+        return self.text(name, max_len) if self.form is not None and name in self.form else current
+
     def long_text(self, name: str) -> str:
         return self.text(name, 100_000)
 
@@ -43,6 +49,7 @@ class Admin:
         return self.text(name) in ("1", "on", "true", "yes")
 
     def many(self, name: str, max_len: int = 1000) -> list[str]:
+        self._repeated.add(name)
         if self.form is None:
             return []
         return [v.strip()[:max_len] if isinstance(v, str) else "" for v in self.form.getlist(name)]
@@ -63,6 +70,10 @@ class Admin:
 
     def image(self, name: str, errors: dict, current: str = "") -> str:
         """Trường ảnh: file upload `{name}_file` (ưu tiên) hoặc đường dẫn chọn từ thư viện `{name}`."""
+        self._images[name] = path = self._image(name, errors, current)
+        return path
+
+    def _image(self, name: str, errors: dict, current: str) -> str:
         upload = self.form.get(f"{name}_file") if self.form is not None else None
         if isinstance(upload, UploadFile) and uploads.has_file(upload):
             try:
@@ -79,6 +90,25 @@ class Admin:
         return current
 
 
+    def form_data(self, **parsed) -> dict:
+        """Giá trị vừa nhập để render lại khi lỗi 400: trường đơn là str, trường lặp luôn là list[str],
+        ảnh là đường dẫn đã xử lý (kể cả ảnh vừa upload). `parsed`: các danh sách đã ghép sẵn thành dòng."""
+        out = {}
+        for key in self.form:
+            if key in ("csrf_token", "password", "back"):
+                continue
+            vals = [v for v in self.form.getlist(key) if isinstance(v, str)]
+            if vals:
+                out[key] = vals if key in self._repeated else vals[-1]
+        return {name: out.get(name, []) for name in self._repeated} | out | self._images | parsed
+
+    def back(self, default: str) -> str:
+        """Trường ẩn `back`: quay lại đúng tab/lọc, chỉ nhận đường dẫn nội bộ thuộc khu `default`."""
+        back = self.text("back", 500)
+        path = back.split("?", 1)[0]
+        return back if is_local_path(back) and (path == default or path.startswith(default + "/")) else default
+
+
 def _admin_session(request: Request, db: Session) -> AdminSession:
     sess = load_session(db, request)
     if sess is None:
@@ -88,6 +118,14 @@ def _admin_session(request: Request, db: Session) -> AdminSession:
 
 def admin_get(request: Request, db: Session = Depends(get_db)) -> Admin:
     return Admin(request, db, _admin_session(request, db))
+
+
+def admin_api(request: Request, db: Session = Depends(get_db)) -> Admin:
+    """Như admin_get nhưng trả 401 thay vì redirect về trang đăng nhập (cho route JSON gọi bằng fetch)."""
+    sess = load_session(db, request)
+    if sess is None:
+        raise HTTPException(401, "Cần đăng nhập")
+    return Admin(request, db, sess)
 
 
 async def admin_post(request: Request, db: Session = Depends(get_db)) -> Admin:
@@ -149,14 +187,19 @@ def render_admin(a: Admin, template: str, active: str, title: str, status_code: 
         "user": {"id": u.id, "email": u.email, "role": u.role, "is_admin": u.role == "admin"},
         "csrf_token": a.session.csrf_token,
         "nav": nav_groups(a.db, active), "active_nav": active, "title": title,
+        "branding": content.get(a.db, "branding"),
         "subtabs": [], "drawer": None, "media_library": [],
     }
     return render(a.request, template, base | ctx, status_code=status_code)
 
 
+MEDIA_PICKER_LIMIT = 200
+
+
 def media_library(db: Session) -> list[dict]:
-    return [{"id": m.id, "path": m.path, "alt": m.alt, "width": m.width, "height": m.height}
-            for m in db.scalars(select(MediaFile).order_by(MediaFile.created_at.desc(), MediaFile.id.desc()))]
+    """Ảnh cho hộp chọn trong form: mới nhất trước, tối đa MEDIA_PICKER_LIMIT dòng."""
+    stmt = select(MediaFile).order_by(MediaFile.created_at.desc(), MediaFile.id.desc()).limit(MEDIA_PICKER_LIMIT)
+    return [{"id": m.id, "path": m.path, "alt": m.alt, "width": m.width, "height": m.height} for m in db.scalars(stmt)]
 
 
 def done(url: str, flash: str = "saved") -> RedirectResponse:

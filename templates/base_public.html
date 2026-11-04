@@ -1,0 +1,75 @@
+{%- from "public/_header.html" import site_header with context -%}
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ meta.title }}</title>
+{% if meta.description %}<meta name="description" content="{{ meta.description }}">{% endif %}
+{% if meta.keywords %}<meta name="keywords" content="{{ meta.keywords }}">{% endif %}
+{% if meta.noindex %}<meta name="robots" content="noindex">{% endif %}
+{% if meta.canonical and not meta.noindex %}<link rel="canonical" href="{{ meta.canonical }}">{% endif %}
+<meta property="og:type" content="{% block og_type %}website{% endblock %}">
+<meta property="og:site_name" content="{{ site.site_name }}">
+<meta property="og:title" content="{{ meta.title }}">
+{% if meta.description %}<meta property="og:description" content="{{ meta.description }}">{% endif %}
+{% if meta.canonical and not meta.noindex %}<meta property="og:url" content="{{ meta.canonical }}">{% endif %}
+<meta property="og:locale" content="vi_VN">
+{% if meta.og_image %}<meta property="og:image" content="{{ meta.og_image }}">
+<meta name="twitter:card" content="summary_large_image">{% else %}<meta name="twitter:card" content="summary">{% endif %}
+{% if site.branding.favicon_path %}<link rel="icon" href="{{ site.branding.favicon_path }}">{% endif %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap">
+<link rel="stylesheet" href="/static/css/tokens.css">
+<link rel="stylesheet" href="/static/css/site.css">
+<noscript><style>.site-nav{display:flex!important}.js-only{display:none!important}</style></noscript>
+<script src="/static/js/site.js" defer></script>
+{% block head_extra %}{% endblock %}
+{# Trang noindex có token trong URL (/xac-nhan, /huy-dang-ky): không gửi sang analytics. #}
+{% if not meta.noindex %}{{ site.analytics_head|safe }}{% endif %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+<a class="skip-link" href="#main">Bỏ qua tới nội dung</a>
+
+
+
+{% block header %}
+{{ site_header("page") }}
+<section class="page-head">
+  <div class="page-head__inner">
+    {% if crumbs|length > 1 %}
+    <nav class="crumbs" aria-label="Breadcrumb">
+      {% for c in crumbs %}
+      {% if loop.last %}<span aria-current="page">{{ c.label }}</span>{% else %}<a href="{{ c.url }}">{{ c.label }}</a><span aria-hidden="true">/</span>{% endif %}
+      {% endfor %}
+    </nav>
+    {% endif %}
+    <h1 class="page-head__title">{{ page.title }}</h1>
+    {% if page.desc %}<p class="page-head__desc">{{ page.desc }}</p>{% endif %}
+    <div class="tabs">
+      {% for t in tabs|default([]) %}
+      <a href="{{ t.url }}" class="tabs__tab{% if t.active %} is-active{% endif %}"{% if t.active %} aria-current="page"{% endif %}>{{ t.label }}{% if t.count %}<span class="tabs__count">{{ t.count }}</span>{% endif %}</a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block main %}
+<main id="main" class="page-main">
+{% block content %}{% endblock %}
+</main>
+{% endblock %}
+
+{% block footer %}
+<footer class="site-footer site-footer--compact">
+  <div class="site-footer__compact">
+    <span>{{ site.footer.copyright }}</span>
+    {% if site.social %}<span class="site-footer__social">{% for s in site.social %}<a href="{{ s.url }}" rel="noopener" target="_blank">{{ s.label }}</a>{% endfor %}</span>{% endif %}
+    <span class="site-footer__risk">{{ site.footer.risk_note }}</span>
+  </div>
+</footer>
+{% endblock %}
+</body>
+</html>

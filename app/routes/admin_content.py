@@ -15,11 +15,15 @@ router = APIRouter()
 HOME_TABS = (("sections", "Section"), ("hero", "Hero"), ("about", "Về chúng tôi"), ("why", "Tại sao chọn"),
              ("types", "Loại bonus"), ("contact", "Liên hệ"), ("menu", "Menu & chân trang"))
 PAGE_TABS = (("bonus", "Bonus"), ("san", "Sàn"), ("tin", "Tin tức"), ("gioithieu", "Giới thiệu"), ("lienhe", "Liên hệ"),
-             ("terms", "Điều khoản"), ("privacy", "Bảo mật"))
+             ("terms", "Điều khoản"), ("privacy", "Bảo mật"), ("system", "Chữ hệ thống"))
 PAGE_URLS = {"bonus": "/bonus", "san": "/san", "tin": "/tin-tuc", "gioithieu": "/gioi-thieu", "lienhe": "/lien-he",
-             "terms": "/dieu-khoan", "privacy": "/bao-mat"}
+             "terms": "/dieu-khoan", "privacy": "/bao-mat", "system": "/"}
 SETTINGS_TABS = (("general", "Chung"), ("seo", "SEO"), ("social", "Mạng xã hội"), ("tracking", "Tracking"),
                  ("users", "Tài khoản quản trị"))
+# Chỉ các tab có ô ảnh mới nhận media_library.
+HOME_IMAGE_TABS = ("hero", "about", "why", "types", "contact")
+PAGE_IMAGE_TABS = ("gioithieu",)
+SETTINGS_IMAGE_TABS = ("general", "seo")
 HOME_VIEW = {"sections": "/", "hero": "/", "about": "/", "why": "/", "types": "/", "contact": "/#dang-ky", "menu": "/"}
 
 
@@ -41,7 +45,7 @@ def _home_page(a: Admin, tab: str, errors: dict | None = None, values: dict | No
         a, "admin/home.html", "home", "Nội dung trang chủ", status_code,
         subtabs=subtabs("/admin/home", HOME_TABS, tab), current_tab=tab, settings=s, sections=sections,
         form={"action": f"/admin/home/{tab}", "data": values or {}, "errors": errors or {}},
-        view_url=HOME_VIEW[tab], media_library=media_library(a.db))
+        view_url=HOME_VIEW[tab], media_library=media_library(a.db) if tab in HOME_IMAGE_TABS else [])
 
 
 @router.get("/home")
@@ -88,7 +92,7 @@ def _images(a: Admin, errors: dict, current: list, count: int) -> list[str]:
 def home_save(tab: str, a: Admin = Depends(admin_post)):
     if tab not in dict(HOME_TABS):
         raise HTTPException(404)
-    s, errors, updates = content.get_all(a.db), {}, {}
+    s, errors, updates, parsed = content.get_all(a.db), {}, {}, {}
     if tab == "sections":  # tiêu đề các section có dữ liệu
         for key in ("home_bonus", "home_compare", "home_blog"):
             prefix = key.split("_", 1)[1]
@@ -96,15 +100,16 @@ def home_save(tab: str, a: Admin = Depends(admin_post)):
     elif tab == "hero":
         hero = _text_fields(a, s["hero"], ("eyebrow", "headline", "sub", "cta"), ("sub",))
         hero["image_path"] = a.image("image_path", errors, s["hero"]["image_path"])
+        hero["card_label"] = a.keep("card_label", s["hero"]["card_label"], 120)
         updates["hero"] = hero
     elif tab == "about":
         about = _text_fields(a, s["home_about"], ("eyebrow", "title", "text", "badge", "count_label"), ("text",))
-        about["points"] = a.rows("point", ("title", "text"))
+        about["points"] = parsed["points"] = a.rows("point", ("title", "text"))
         about["images"] = _images(a, errors, s["home_about"]["images"], 3)
         updates["home_about"] = about
     elif tab == "why":
         why = _text_fields(a, s["home_why"], ("eyebrow", "title", "text", "stat_value", "stat_label"), ("text",))
-        why["reasons"] = a.rows("reason", ("title", "text"))
+        why["reasons"] = parsed["reasons"] = a.rows("reason", ("title", "text"))
         why["images"] = _images(a, errors, s["home_why"]["images"], 2)
         updates["home_why"] = why
     elif tab == "types":
@@ -125,7 +130,8 @@ def home_save(tab: str, a: Admin = Depends(admin_post)):
     elif tab == "menu":
         menu = a.rows("menu", ("label", "url"))
         _check_links(menu, errors, "menu")
-        columns = []
+        columns = parsed["columns"] = []
+        parsed["menu"] = menu
         titles, links = a.many("footer_col_title", 120), a.many("footer_col_links", 5000)
         for i, title in enumerate(titles):
             rows = []
@@ -138,10 +144,12 @@ def home_save(tab: str, a: Admin = Depends(admin_post)):
                 columns.append({"title": title, "links": rows})
         updates["menu"] = menu
         updates["footer"] = s["footer"] | {"about_text": a.text("about_text", 2000), "risk_note": a.text("risk_note", 2000),
-                                           "copyright": a.text("copyright", 500), "columns": columns}
+                                           "copyright": a.text("copyright", 500), "columns": columns,
+                                           "affiliate_note": a.keep("affiliate_note", s["footer"]["affiliate_note"], 500)}
+        updates["cta_note"] = a.keep("cta_note", s["cta_note"], 500)
+        updates["ads_note"] = a.keep("ads_note", s["ads_note"], 500)
     if errors:
-        values = {k: v for k, v in a.form.multi_items() if isinstance(v, str)}
-        return _home_page(a, tab, errors, values=values, status_code=400)
+        return _home_page(a, tab, errors, values=a.form_data(**parsed), status_code=400)
     for k, v in updates.items():
         content.put(a.db, k, v)
     a.db.commit()
@@ -150,15 +158,15 @@ def home_save(tab: str, a: Admin = Depends(admin_post)):
 
 # ======================= TRANG =======================
 
-def _pages_page(a: Admin, tab: str, errors: dict | None = None, status_code=200):
+def _pages_page(a: Admin, tab: str, errors: dict | None = None, values: dict | None = None, status_code=200):
     tab = _tab(tab, PAGE_TABS)
     return render_admin(
         a, "admin/pages.html", "pages", "Trang", status_code,
         subtabs=subtabs("/admin/pages", PAGE_TABS, tab), current_tab=tab, settings=content.get_all(a.db),
-        form={"action": f"/admin/pages/{tab}", "errors": errors or {}}, view_url=PAGE_URLS[tab],
+        form={"action": f"/admin/pages/{tab}", "data": values or {}, "errors": errors or {}}, view_url=PAGE_URLS[tab],
         about_tabs=[{"id": "about", "label": "Về chúng tôi"}, {"id": "method", "label": "Cách đánh giá"},
                     {"id": "affiliate", "label": "Công bố affiliate"}],
-        media_library=media_library(a.db))
+        media_library=media_library(a.db) if tab in PAGE_IMAGE_TABS else [])
 
 
 @router.get("/pages")
@@ -171,26 +179,31 @@ def pages_save(tab: str, a: Admin = Depends(admin_post)):
     if tab not in dict(PAGE_TABS):
         raise HTTPException(404)
     s, errors = content.get_all(a.db), {}
+    if tab == "system":  # không có tiêu đề/SEO riêng, chỉ các chữ hệ thống
+        content.put(a.db, "system_text", {k: a.keep(k, v, 500) for k, v in s["system_text"].items()})
+        a.db.commit()
+        return done("/admin/pages?tab=system")
     pages = s["pages"]
     pages[tab] = {"title": a.text("title"), "desc": a.text("desc", 1000), "meta_title": a.text("meta_title"),
                   "meta_desc": a.text("meta_desc", 500)}
     if not pages[tab]["title"]:
         errors["title"] = "Nhập tiêu đề trang."
-    updates = {"pages": pages}
+    updates, parsed = {"pages": pages}, {}
     if tab == "gioithieu":
         blocks = {}
         for key in content.ABOUT_TABS:
             blocks[key] = {"image": a.image(f"{key}_image", errors, s["about_blocks"][key].get("image", "")),
                            "blocks": a.rows(f"{key}_block", ("title", "text"))}
-        updates["about_blocks"] = blocks
+        updates["about_blocks"] = parsed["about_blocks"] = blocks
     elif tab == "lienhe":
         updates["contact_page"] = {"intro": a.text("intro", 2000), "topics": a.lines("topics"),
                                    "response_note": a.text("response_note", 1000),
+                                   "success_title": a.keep("success_title", s["contact_page"]["success_title"], 120),
                                    "success_text": a.text("success_text", 1000)}
     elif tab in ("terms", "privacy"):
         updates["legal"] = s["legal"] | {f"{tab}_md": a.long_text("body_md")}
     if errors:
-        return _pages_page(a, tab, errors, 400)
+        return _pages_page(a, tab, errors, a.form_data(**parsed), 400)
     for k, v in updates.items():
         content.put(a.db, k, v)
     a.db.commit()
@@ -253,7 +266,8 @@ def media_delete(mid: int, a: Admin = Depends(admin_post)):
 
 # ======================= CÀI ĐẶT =======================
 
-def _settings_page(a: Admin, tab: str, errors: dict | None = None, status_code=200):
+def _settings_page(a: Admin, tab: str, errors: dict | None = None, values: dict | None = None, status_code=200,
+                   errors_user_id: int | None = None):
     tab = _tab(tab, SETTINGS_TABS)
     users = [{"id": u.id, "email": u.email, "role": u.role, "is_active": u.is_active, "last_login_at": u.last_login_at,
               "is_self": u.id == a.user.id, "edit_url": f"/admin/settings/users/{u.id}/edit",
@@ -262,9 +276,10 @@ def _settings_page(a: Admin, tab: str, errors: dict | None = None, status_code=2
     return render_admin(
         a, "admin/settings.html", "settings", "Cài đặt", status_code,
         subtabs=subtabs("/admin/settings", SETTINGS_TABS, tab), current_tab=tab, settings=content.get_all(a.db),
-        form={"action": f"/admin/settings/{tab}", "errors": errors or {}}, users=users,
+        form={"action": f"/admin/settings/{tab}", "data": values or {}, "errors": errors or {},
+              "errors_user_id": errors_user_id}, users=users,
         role_options=[{"id": "admin", "label": "Quản trị"}, {"id": "editor", "label": "Biên tập"}],
-        user_create_action="/admin/settings/users/new", media_library=media_library(a.db) if tab == "general" else [])
+        user_create_action="/admin/settings/users/new", media_library=media_library(a.db) if tab in SETTINGS_IMAGE_TABS else [])
 
 
 @router.get("/settings")
@@ -287,7 +302,7 @@ def user_create(a: Admin = Depends(admin_post)):
     if role not in ROLES:
         errors["role"] = "Chọn vai trò."
     if errors:
-        return _settings_page(a, "users", errors, 400)
+        return _settings_page(a, "users", errors, a.form_data(), 400)
     a.db.add(AdminUser(email=email, password_hash=hash_password(password), role=role))
     a.db.commit()
     return done("/admin/settings?tab=users", "created")
@@ -301,13 +316,13 @@ def user_edit(uid: int, a: Admin = Depends(admin_post)):
     role, password = a.text("role"), a.text("password", 200)
     errors = {}
     if role and role not in ROLES:
-        errors["role"] = "Vai trò không hợp lệ."
+        errors["edit_role"] = "Vai trò không hợp lệ."
     if role and role != "admin" and u.id == a.user.id:
-        errors["role"] = "Không thể tự hạ quyền tài khoản đang đăng nhập."
+        errors["edit_role"] = "Không thể tự hạ quyền tài khoản đang đăng nhập."
     if password and len(password) < 10:
-        errors["password"] = "Mật khẩu tối thiểu 10 ký tự."
-    if errors:
-        return _settings_page(a, "users", errors, 400)
+        errors["edit_password"] = "Mật khẩu tối thiểu 10 ký tự."
+    if errors:  # khóa edit_* + errors_user_id: tách khỏi lỗi của form thêm tài khoản
+        return _settings_page(a, "users", errors, status_code=400, errors_user_id=u.id)
     if role:
         u.role = role
     if password:
@@ -345,7 +360,7 @@ def settings_save(tab: str, a: Admin = Depends(admin_post)):
     require_admin_role(a)
     if tab not in dict(SETTINGS_TABS) or tab == "users":
         raise HTTPException(404)
-    s, errors, updates = content.get_all(a.db), {}, {}
+    s, errors, updates, parsed = content.get_all(a.db), {}, {}, {}
     if tab == "general":
         updates = {"site_name": a.text("site_name", 120), "contact_email": a.text("contact_email").lower(),
                    "partner_email": a.text("partner_email").lower(), "telegram": a.text("telegram", 120)}
@@ -366,11 +381,11 @@ def settings_save(tab: str, a: Admin = Depends(admin_post)):
         bad = [r["url"] for r in social if not is_http_url(r["url"])]
         if bad:
             errors["social"] = "Link mạng xã hội phải là http(s): " + ", ".join(bad[:3])
-        updates = {"social": social}
+        updates, parsed = {"social": social}, {"social": social}
     elif tab == "tracking":
         updates = {"analytics_head": a.long_text("analytics_head")[:20000]}
     if errors:
-        return _settings_page(a, tab, errors, 400)
+        return _settings_page(a, tab, errors, a.form_data(**parsed), 400)
     for k, v in updates.items():
         content.put(a.db, k, v)
     a.db.commit()

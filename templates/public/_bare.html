@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ page.title if page is defined and page else "Lỗi" }}</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="/static/css/tokens.css">
+<link rel="stylesheet" href="/static/css/site.css">
+</head>
+<body>
+<section class="page-head">
+  <div class="page-head__inner">
+    <h1 class="page-head__title">{{ page.title if page is defined and page else "Lỗi" }}</h1>
+    <div class="tabs"></div>
+  </div>
+</section>
+<main id="main" class="page-main">{% block content %}{% endblock %}</main>
+</body>
+</html>

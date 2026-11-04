@@ -1,8 +1,20 @@
-<!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><title>{{ meta.title }}</title>
-{% if meta.noindex %}<meta name="robots" content="noindex">{% endif %}</head>
-<body data-stub="BACKEND STUB – đội FE ghi đè file này">
-{% if flash %}<div class="flash flash-{{ flash.kind }}">{{ flash.text }}</div>{% endif %}
-<h1>{{ page.title }}</h1>
-<div class="body">{{ post.body_html|safe }}</div>
-</body></html>
+{% extends "base_public.html" %}
+{% from "public/_macros.html" import media, post_card %}
+{% block og_type %}article{% endblock %}
+{% block head_extra %}{% if post.published_at %}<meta property="article:published_time" content="{{ post.published_at.isoformat() }}Z">{% endif %}{% endblock %}
+{% block content %}
+<article class="article">
+  {% if post.cover_path %}{{ media(post.cover_path, post.title, "article__cover", eager=true) }}{% endif %}
+  <div class="article__meta">{{ post.category }}{% if post.published_at %} · <time datetime="{{ post.published_at.isoformat() }}Z">{{ post.published_at|date_vn }}</time>{% endif %} · {{ post.read_minutes }} phút đọc</div>
+  <div class="prose">{{ post.body_html|safe }}</div>
+  <a href="/tin-tuc" class="article__back">← Về danh sách</a>
+</article>
+{% if related_posts %}
+<section class="related" aria-labelledby="h-related">
+  <h2 class="related__title" id="h-related">Bài viết liên quan</h2>
+  <div class="grid-cards grid-cards--320">
+    {% for p in related_posts %}{{ post_card(p, "white", none, "h3") }}{% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

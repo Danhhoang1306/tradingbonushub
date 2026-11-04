@@ -139,7 +139,11 @@ def post_view(p: Post) -> dict:
             "views": p.views, "url": f"/tin-tuc/{p.slug}"}
 
 
+RAIL_PLACEMENTS = ("rail-left", "rail-right")  # chỉ hiện ở màn rộng: view đếm bằng beacon JS, không đếm lúc render
+
+
 def banner_view(b: Banner, labels: dict[str, str], top: Bonus | None = None) -> dict:
     return {"id": b.id, "name": b.name, "image_path": b.image_path, "placement": b.placement,
-            "url": f"/go/ad/{b.id}", "broker": broker_mini(b.broker) if b.broker else None,
+            "url": f"/go/ad/{b.id}", "view_url": f"/api/ad-view/{b.id}" if b.placement in RAIL_PLACEMENTS else None,
+            "broker": broker_mini(b.broker) if b.broker else None,
             "bonus": bonus_view(top, labels) if top else None}

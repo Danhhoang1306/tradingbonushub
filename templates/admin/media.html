@@ -1,14 +1,57 @@
-<!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><title>{{ title }} – Quản trị</title></head>
-<body data-stub="BACKEND STUB – đội FE ghi đè file này">
-<nav>{% for g in nav %}{% for i in g.links %}<a href="{{ i.url }}">{{ i.label }}{% if i.count %} ({{ i.count }}){% endif %}</a>{% endfor %}{% endfor %}</nav>
-<form method="post" action="/admin/logout"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button>Đăng xuất</button></form>
-{% if flash %}<div class="flash flash-{{ flash.kind }}">{{ flash.text }}</div>{% endif %}
-<h1>{{ title }}</h1>
-{% for t in subtabs %}<a href="{{ t.url }}">{{ t.label }}</a>{% endfor %}
-{% if drawer %}<aside class="drawer"><h2>{{ drawer.title }}</h2><form method="post" action="{{ drawer.action }}" enctype="multipart/form-data">
-<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-{% for k, v in drawer.errors.items() %}<p class="error" data-field="{{ k }}">{{ v }}</p>{% endfor %}</form></aside>{% endif %}
-{% if form and form.errors %}{% for k, v in form.errors.items() %}<p class="error" data-field="{{ k }}">{{ v }}</p>{% endfor %}{% endif %}
-{% for e in errors.values() %}<p class="error">{{ e }}</p>{% endfor %}{% for m in media %}<img src="{{ m.path }}" alt="{{ m.alt }}">{% else %}<p>Chưa có ảnh nào.</p>{% endfor %}
-</body></html>
+{% extends "admin/_base.html" %}
+{% import "admin/_macros.html" as ui with context %}
+{% block content %}
+<div class="stack-lg">
+  <form class="upload-box" method="post" action="{{ upload_action }}" enctype="multipart/form-data">
+    {{ ui.csrf() }}
+    <label class="field{% if errors.files %} has-error{% endif %}">
+      <span class="field-label">Ảnh (chọn được nhiều ảnh)</span>
+      <span class="dropzone" data-dropzone>
+        <span class="js-only" data-drop-label data-default="Kéo thả ảnh vào đây hoặc bấm để chọn">Kéo thả ảnh vào đây hoặc bấm để chọn</span>
+        <input type="file" name="files" accept="image/png,image/jpeg,image/webp" multiple>
+      </span>
+      <span class="field-hint">PNG, JPEG hoặc WEBP, tối đa 5MB mỗi ảnh.</span>
+      {{ ui.err(errors, 'files') }}
+    </label>
+    {{ ui.field('alt', 'Mô tả ảnh (alt)', '', none, hint='Dùng cho SEO và người đọc màn hình. Áp dụng cho các ảnh tải lên lần này.') }}
+    <button type="submit" class="btn-primary">Tải lên</button>
+  </form>
+
+  <div class="toolbar">
+    <span class="note">{% if media %}{{ media|length }} ảnh{% if q %} khớp "{{ q }}"{% endif %}{% endif %}</span>
+    <form class="search" method="get" action="/admin/media" role="search">
+      <input type="search" name="q" value="{{ q }}" placeholder="Tìm theo mô tả…" aria-label="Tìm ảnh">
+    </form>
+  </div>
+
+  {% if media %}
+  <div class="media-grid">
+    {% for m in media %}
+    <div class="media-card">
+      <a class="media-thumb" href="{{ m.path }}" target="_blank" rel="noopener">
+        <img src="{{ m.path }}" alt="{{ m.alt }}" loading="lazy">
+        {% if m.in_use %}<span class="media-badge">Đang dùng</span>{% endif %}
+      </a>
+      <div class="media-info">
+        <div class="media-meta"><span>{{ m.width }}×{{ m.height }} · {{ ui.size(m.size) }}</span><span>{{ m.created_at|date_vn }}</span></div>
+        <form class="media-alt" method="post" action="{{ m.edit_url }}">
+          {{ ui.csrf() }}
+          <input type="text" name="alt" value="{{ m.alt }}" placeholder="Mô tả ảnh (alt)" aria-label="Mô tả ảnh">
+          <button type="submit" class="btn-sm">Lưu</button>
+        </form>
+        <div class="media-actions">
+          <button type="button" class="btn-sm js-only" data-copy="{{ m.path }}">Copy link</button>
+          <input class="nojs-only media-path" type="text" value="{{ m.path }}" readonly aria-label="Đường dẫn ảnh">
+          {{ ui.delete_form(m.delete_url, 'Xóa ảnh này khỏi thư viện?', disabled=m.in_use, title='Ảnh đang được dùng, không thể xóa' if m.in_use else '') }}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% elif q %}
+  {{ ui.empty('Không có ảnh phù hợp.') }}
+  {% else %}
+  {{ ui.empty('Chưa có ảnh nào.') }}
+  {% endif %}
+</div>
+{% endblock %}

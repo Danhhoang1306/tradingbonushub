@@ -1,8 +1,6 @@
-<!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><title>{{ meta.title }}</title>
-{% if meta.noindex %}<meta name="robots" content="noindex">{% endif %}</head>
-<body data-stub="BACKEND STUB – đội FE ghi đè file này">
-{% if flash %}<div class="flash flash-{{ flash.kind }}">{{ flash.text }}</div>{% endif %}
-<h1>{{ page.title }}</h1>
-{% if body_html %}{{ body_html|safe }}{% else %}<p>Nội dung đang được cập nhật.</p>{% endif %}
-</body></html>
+{% extends "base_public.html" %}
+{% block content %}
+<article class="legal prose">
+  {% if body_html %}{{ body_html|safe }}{% else %}<p>Nội dung đang được cập nhật.</p>{% endif %}
+</article>
+{% endblock %}

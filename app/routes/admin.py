@@ -105,6 +105,9 @@ def overview(a: Admin = Depends(admin_get)):
         click_days=days,
         click_total=sum(d["clicks"] for d in days),
         top_brokers=[{"id": k.id, "name": k.name, "clicks": k.clicks} for k in top],
+        banners=[{"id": b.id, "name": b.name, "placement": b.placement, "state": queries.banner_state(b, today),
+                  "views": b.views, "clicks": b.clicks, "edit_url": f"/admin/ads/{b.id}/edit"}
+                 for b in sorted(banners, key=lambda b: (-b.clicks, -b.views, b.id))[:5]],
         unread_messages=unread,
     )
 

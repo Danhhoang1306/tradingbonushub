@@ -31,6 +31,7 @@ DEFAULTS: dict = {
         "sub": "So sánh no-deposit, deposit bonus, cashback, cuộc thi giao dịch và khuyến mãi crypto từ các sàn có giấy phép. Mỗi ưu đãi ghi rõ khối lượng yêu cầu, thời hạn và giấy phép.",
         "cta": "Xem tất cả bonus",
         "image_path": "/static/img/hero-bg.webp",
+        "card_label": "Nổi bật tuần này",
     },
     "sections": [
         {"id": "hero", "label": "Hero", "on": True},
@@ -67,10 +68,29 @@ DEFAULTS: dict = {
                 {"label": "Tin tức", "url": "/tin-tuc"},
                 {"label": "Giới thiệu", "url": "/gioi-thieu"},
                 {"label": "Liên hệ", "url": "/lien-he"},
+                {"label": "Điều khoản", "url": "/dieu-khoan"},
+                {"label": "Bảo mật", "url": "/bao-mat"},
             ]},
         ],
         "risk_note": "Cảnh báo rủi ro: CFD là công cụ phức tạp và có rủi ro mất tiền nhanh do đòn bẩy. Bonus không phải lời khuyên đầu tư.",
         "copyright": "Copyright © 2026 TradingBonusHub.",
+        "affiliate_note": "Một số liên kết là liên kết affiliate.",
+    },
+    "cta_note": "Liên kết affiliate. CFD có rủi ro mất vốn cao do đòn bẩy.",  # dưới nút mở tài khoản
+    "ads_note": "CFD có rủi ro mất vốn cao.",  # dưới nút trong quảng cáo dọc
+    "system_text": {
+        "header_cta_home": "Xem bonus",
+        "header_cta_page": "Nhận tư vấn",
+        "not_found_title": "Không tìm thấy trang",
+        "not_found_text": "Trang bạn tìm không tồn tại hoặc đã được gỡ.",
+        "error_title": "Đã có lỗi xảy ra",
+        "error_text": "Hệ thống đang gặp sự cố. Vui lòng thử lại sau ít phút.",
+        "sub_confirmed_title": "Đã xác nhận đăng ký",
+        "sub_confirmed_text": "Email của bạn đã được xác nhận. Bạn sẽ nhận thông báo khi có bonus mới.",
+        "sub_unsubscribed_title": "Đã hủy đăng ký",
+        "sub_unsubscribed_text": "Bạn sẽ không nhận thêm email thông báo bonus.",
+        "sub_invalid_title": "Liên kết không hợp lệ",
+        "sub_invalid_text": "Liên kết đã hết hạn hoặc không đúng.",
     },
     "pages": {
         "bonus": {"title": "Tất cả bonus sàn giao dịch", "desc": "Lọc theo loại ưu đãi. Mỗi bonus ghi rõ mức nạp tối thiểu, phần rút được và thời hạn.", "meta_title": "", "meta_desc": ""},
@@ -80,6 +100,7 @@ DEFAULTS: dict = {
         "lienhe": {"title": "Liên hệ", "desc": "Gửi câu hỏi, báo lỗi thông tin bonus hoặc đề nghị hợp tác.", "meta_title": "", "meta_desc": ""},
         "terms": {"title": "Điều khoản sử dụng", "desc": "", "meta_title": "", "meta_desc": ""},
         "privacy": {"title": "Chính sách bảo mật", "desc": "", "meta_title": "", "meta_desc": ""},
+        "system": {"title": "Chữ hệ thống", "desc": "", "meta_title": "", "meta_desc": ""},  # tab admin, không phải trang public
     },
     "home_about": {
         "eyebrow": "Về TradingBonusHub",
@@ -153,6 +174,7 @@ DEFAULTS: dict = {
         "intro": "",
         "topics": ["Câu hỏi chung", "Báo lỗi thông tin bonus", "Hợp tác"],
         "response_note": "Chúng tôi phản hồi trong 1–2 ngày làm việc. Chúng tôi không tư vấn đầu tư cá nhân.",
+        "success_title": "Đã gửi",
         "success_text": "Cảm ơn bạn. Chúng tôi sẽ trả lời qua email.",
     },
     "legal": {"terms_md": "", "privacy_md": ""},
@@ -188,7 +210,11 @@ def _fix_bonus_types(types: list) -> list:
 
 
 def get_all(db: Session) -> dict:
-    stored = {s.key: s.value for s in db.scalars(select(Setting))}
+    return resolve({s.key: s.value for s in db.scalars(select(Setting))})
+
+
+def resolve(stored: dict) -> dict:
+    """Trộn giá trị đã lưu với mặc định. `resolve({})` = nội dung mặc định, dùng được khi DB hỏng."""
     out = {k: _merge(v, stored.get(k)) for k, v in DEFAULTS.items()}
     out["sections"] = _fix_sections(out["sections"])
     out["bonus_types"] = _fix_bonus_types(out["bonus_types"])

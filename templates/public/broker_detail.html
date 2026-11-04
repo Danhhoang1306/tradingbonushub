@@ -1,8 +1,77 @@
-<!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><title>{{ meta.title }}</title>
-{% if meta.noindex %}<meta name="robots" content="noindex">{% endif %}</head>
-<body data-stub="BACKEND STUB – đội FE ghi đè file này">
-{% if flash %}<div class="flash flash-{{ flash.kind }}">{{ flash.text }}</div>{% endif %}
-<h1>{{ page.title }}</h1>
-<p>{{ broker.name }}</p>{% for b in bonuses %}<div>{{ b.title }}</div>{% endfor %}
-</body></html>
+{% extends "base_public.html" %}
+{% from "public/_macros.html" import avatar, empty %}
+{% block content %}
+<div class="detail">
+  <div class="detail__main">
+    {% if current_tab == "bonus" %}
+      {% if bonuses %}
+      <div class="rows">
+        {% for b in bonuses %}
+        <div class="bonus-row">
+          <div class="bonus-row__amount">{{ b.amount or "—" }}</div>
+          <div>
+            <div class="bonus-row__meta">{{ b.type_label }} · hết hạn {{ b.expiry_date|expiry_label }}</div>
+            <h2 class="bonus-row__title">{{ b.title }}</h2>
+          </div>
+          {% if b.go_url %}<a href="{{ b.go_url }}" class="btn btn--blue" rel="sponsored nofollow noopener" target="_blank">Nhận bonus</a>{% else %}<span></span>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}{{ empty("Sàn này chưa có ưu đãi đang hoạt động.") }}{% endif %}
+
+    {% elif current_tab == "accounts" %}
+      {% if broker.accounts %}
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th scope="col">Tài khoản</th><th scope="col">Nạp tối thiểu</th><th scope="col">Spread từ</th><th scope="col">Hoa hồng</th></tr></thead>
+          <tbody>
+            {% for a in broker.accounts %}<tr><td>{{ a.name }}</td><td>{{ a.min_deposit or "—" }}</td><td>{{ a.spread or "—" }}</td><td>{{ a.commission or "—" }}</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}{{ empty("Chưa có thông tin tài khoản.") }}{% endif %}
+
+    {% elif current_tab == "pay" %}
+      {% if broker.payment_methods %}
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th scope="col">Phương thức</th><th scope="col">Nạp</th><th scope="col">Rút</th><th scope="col">Thời gian rút</th></tr></thead>
+          <tbody>
+            {% for p in broker.payment_methods %}<tr><td>{{ p.method }}</td><td>{{ p.deposit or "—" }}</td><td>{{ p.withdraw or "—" }}</td><td>{{ p.time or "—" }}</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}{{ empty("Chưa có thông tin nạp rút.") }}{% endif %}
+
+    {% else %}
+      <div class="panel">
+        {% if broker.summary %}<p class="panel__summary">{{ broker.summary }}</p>{% endif %}
+        <dl class="facts">
+          {% for f in facts %}<div><dt>{{ f.label }}</dt><dd>{{ f.value or "—" }}</dd></div>{% endfor %}
+        </dl>
+        {% if broker.pros or broker.cons %}
+        <div class="proscons">
+          {% if broker.pros %}<div><h2 class="proscons__title">Ưu điểm</h2><ul>{% for x in broker.pros %}<li>+ {{ x }}</li>{% endfor %}</ul></div>{% endif %}
+          {% if broker.cons %}<div><h2 class="proscons__title">Lưu ý</h2><ul>{% for x in broker.cons %}<li>− {{ x }}</li>{% endfor %}</ul></div>{% endif %}
+        </div>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+
+  <aside class="broker-aside" aria-label="{{ broker.name }}">
+    <div class="broker-aside__head">
+      {{ avatar(broker) }}
+      <div>
+        <div class="broker-aside__name">{{ broker.name }}</div>
+        {% if broker.license %}<div class="broker-aside__license">{{ broker.license }}</div>{% endif %}
+      </div>
+    </div>
+    {% if broker.bonus_count or broker.min_deposit %}
+    <p class="broker-aside__text">{% if broker.bonus_count %}{{ broker.bonus_count }} ưu đãi đang hoạt động.{% endif %}{% if broker.bonus_count and broker.min_deposit %} {% endif %}{% if broker.min_deposit %}Nạp tối thiểu {{ broker.min_deposit }}.{% endif %}</p>
+    {% endif %}
+    {% if broker.go_url %}<a href="{{ broker.go_url }}" class="broker-aside__cta" rel="sponsored nofollow noopener" target="_blank">Mở tài khoản {{ broker.name }}</a>{% endif %}
+    {% if site.footer.risk_note %}<p class="broker-aside__note">{{ site.footer.risk_note }}</p>{% endif %}
+  </aside>
+</div>
+{% endblock %}

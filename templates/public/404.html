@@ -1,8 +1,11 @@
-<!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><title>{{ meta.title }}</title>
-{% if meta.noindex %}<meta name="robots" content="noindex">{% endif %}</head>
-<body data-stub="BACKEND STUB – đội FE ghi đè file này">
-{% if flash %}<div class="flash flash-{{ flash.kind }}">{{ flash.text }}</div>{% endif %}
-<h1>{{ page.title }}</h1>
-<p>Không tìm thấy trang.</p>
-</body></html>
+{% extends "base_public.html" %}
+{% block content %}
+<div class="status-box">
+  <div class="status-box__code" aria-hidden="true">404</div>
+  <p class="status-box__text">Trang bạn tìm không tồn tại hoặc đã được gỡ.</p>
+  <div class="status-box__actions">
+    <a href="/" class="btn btn--navy">Về trang chủ</a>
+    <a href="/bonus" class="btn btn--outline">Xem bonus</a>
+  </div>
+</div>
+{% endblock %}

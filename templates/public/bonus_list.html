@@ -1,9 +1,19 @@
-<!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><title>{{ meta.title }}</title>
-{% if meta.noindex %}<meta name="robots" content="noindex">{% endif %}</head>
-<body data-stub="BACKEND STUB – đội FE ghi đè file này">
-{% if flash %}<div class="flash flash-{{ flash.kind }}">{{ flash.text }}</div>{% endif %}
-<h1>{{ page.title }}</h1>
-{% for t in tabs %}<a href="{{ t.url }}">{{ t.label }}{% if t.count %} {{ t.count }}{% endif %}</a>{% endfor %}
-{% for b in bonuses %}<article>{{ b.broker.name }} · {{ b.title }} · {{ b.expiry_date|expiry_label }}</article>{% else %}<p>Chưa có ưu đãi trong mục này.</p>{% endfor %}
-</body></html>
+{% extends "base_public.html" %}
+{% from "public/_macros.html" import bonus_card, empty %}
+{% block content %}
+<div class="stack">
+  <div class="toolbar">
+    {% if bonus_count %}<div class="toolbar__count">{{ bonus_count }} ưu đãi</div>{% endif %}
+    <nav class="pills" aria-label="Sắp xếp">
+      {% for o in sorts %}<a href="{{ o.url }}" class="pill{% if o.active %} is-active{% endif %}"{% if o.active %} aria-current="true"{% endif %}>{{ o.label }}</a>{% endfor %}
+    </nav>
+  </div>
+  {% if bonuses %}
+  <div class="grid-cards grid-cards--290">
+    {% for b in bonuses %}{{ bonus_card(b) }}{% endfor %}
+  </div>
+  {% else %}
+  {{ empty("Chưa có ưu đãi trong mục này.") }}
+  {% endif %}
+</div>
+{% endblock %}
