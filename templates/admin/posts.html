@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><title>{{ title }} – Quản trị</title></head>
+<body data-stub="BACKEND STUB – đội FE ghi đè file này">
+<nav>{% for g in nav %}{% for i in g.links %}<a href="{{ i.url }}">{{ i.label }}{% if i.count %} ({{ i.count }}){% endif %}</a>{% endfor %}{% endfor %}</nav>
+<form method="post" action="/admin/logout"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button>Đăng xuất</button></form>
+{% if flash %}<div class="flash flash-{{ flash.kind }}">{{ flash.text }}</div>{% endif %}
+<h1>{{ title }}</h1>
+{% for t in subtabs %}<a href="{{ t.url }}">{{ t.label }}</a>{% endfor %}
+{% if drawer %}<aside class="drawer"><h2>{{ drawer.title }}</h2><form method="post" action="{{ drawer.action }}" enctype="multipart/form-data">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+{% for k, v in drawer.errors.items() %}<p class="error" data-field="{{ k }}">{{ v }}</p>{% endfor %}</form></aside>{% endif %}
+{% if form and form.errors %}{% for k, v in form.errors.items() %}<p class="error" data-field="{{ k }}">{{ v }}</p>{% endfor %}{% endif %}
+{% for p in posts %}<div class="row">{{ p.title }} {{ p.status|post_status_label }}</div>{% else %}<p>Chưa có bài viết nào.</p>{% endfor %}
+</body></html>

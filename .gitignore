@@ -49,3 +49,4 @@ design/
 # Private working files
 mail to/
 .venv/
+.pytest_cache/

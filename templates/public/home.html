@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>{{ meta.title }}</title>
+{% if meta.noindex %}<meta name="robots" content="noindex">{% endif %}</head>
+<body data-stub="BACKEND STUB – đội FE ghi đè file này">
+{% if flash %}<div class="flash flash-{{ flash.kind }}">{{ flash.text }}</div>{% endif %}
+<h1>{{ page.title }}</h1>
+{% for sid in home_sections %}<section id="sec-{{ sid }}">
+{% if sid == 'bonus' %}{% for b in latest_bonuses %}<article>{{ b.broker.name }} · {{ b.title }} · {{ b.amount }} · {{ b.expiry_date|expiry_label }}</article>{% endfor %}{% endif %}
+{% if sid == 'compare' %}{% for k in compare_brokers %}<div>{{ k.name }}</div>{% endfor %}{% endif %}
+{% if sid == 'blog' %}{% for p in blog_posts %}<a href="{{ p.url }}">{{ p.title }}</a>{% endfor %}{% endif %}
+{% if sid == 'ad1' %}<a href="{{ ad1.url }}">{{ ad1.name }}</a>{% endif %}
+{% if sid == 'ad2' %}<a href="{{ ad2.url }}">{{ ad2.name }}</a>{% endif %}
+</section>{% endfor %}
+</body></html>

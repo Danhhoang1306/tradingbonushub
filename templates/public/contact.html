@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>{{ meta.title }}</title>
+{% if meta.noindex %}<meta name="robots" content="noindex">{% endif %}</head>
+<body data-stub="BACKEND STUB – đội FE ghi đè file này">
+{% if flash %}<div class="flash flash-{{ flash.kind }}">{{ flash.text }}</div>{% endif %}
+<h1>{{ page.title }}</h1>
+<form method="post" action="{{ form.action }}">
+<input name="name" value="{{ form.data.name }}"><input name="email" value="{{ form.data.email }}">
+<textarea name="body">{{ form.data.body }}</textarea><input name="website" value="" hidden>
+{% for k, v in form.errors.items() %}<p class="error">{{ v }}</p>{% endfor %}</form>
+</body></html>

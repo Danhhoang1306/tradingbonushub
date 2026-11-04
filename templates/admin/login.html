@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><title>Đăng nhập – Quản trị</title></head>
+<body data-stub="BACKEND STUB – đội FE ghi đè file này">
+{% if flash %}<div class="flash flash-{{ flash.kind }}">{{ flash.text }}</div>{% endif %}
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+<form method="post" action="{{ action }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<input type="hidden" name="next" value="{{ next }}"><input name="email" type="email" value="{{ email }}">
+<input name="password" type="password"><button>Đăng nhập</button></form>
+</body></html>
