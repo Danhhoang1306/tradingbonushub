@@ -165,7 +165,8 @@ def subs_mail(a: Admin = Depends(admin_post)):
             batch = messages[start:start + SEND_BATCH]
             ok = send_many(batch)
             sent += ok
-            already |= {m["To"] for m in batch if getattr(m, "delivered", False)}
+            # Lưu địa chỉ gốc: header To có thể bị chuẩn hóa (dấu phẩy, khoảng trắng), so lại sẽ gửi trùng.
+            already |= {s.email for s, m in zip(targets[start:start + SEND_BATCH], batch) if getattr(m, "delivered", False)}
             campaign.sent_to = sorted(already)
             campaign.sent_count = received_before + sent
             a.db.commit()  # cũng làm mới updated_at, để phân biệt đang gửi với đã chết

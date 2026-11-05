@@ -165,7 +165,7 @@ def test_new_default_text(client):
     site = client.get("/").context["site"]
     assert site["footer"]["affiliate_note"] == "Một số liên kết là liên kết affiliate."
     assert site["cta_note"].startswith("Liên kết affiliate.") and site["ads_note"] == "CFD có rủi ro mất vốn cao."
-    assert site["hero"]["card_label"] == "Nổi bật tuần này"
+    assert site["hero"]["card_label"] == "Nổi bật"
     assert site["contact_page"]["success_title"] == "Đã gửi"
     assert site["system_text"]["header_cta_page"] == "Xem bonus"
 
@@ -193,7 +193,7 @@ def test_old_form_without_new_fields_keeps_values(admin, db):
     admin.post("/admin/pages/lienhe", {"title": "Liên hệ"})
     s = content.get_all(db)
     assert s["cta_note"] and s["ads_note"] and s["footer"]["affiliate_note"]
-    assert s["hero"]["card_label"] == "Nổi bật tuần này" and s["contact_page"]["success_title"] == "Đã gửi"
+    assert s["hero"]["card_label"] == "Nổi bật" and s["contact_page"]["success_title"] == "Đã gửi"
 
 
 def test_admin_can_edit_system_text(admin, client, db):

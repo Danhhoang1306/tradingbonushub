@@ -33,7 +33,8 @@ def read_minutes(text: str) -> int:
 
 
 def slugify(text: str) -> str:
-    text = (text or "").replace("đ", "d").replace("Đ", "D")
+    for ch in "đĐÐð":  # các chữ D gạch ngang không tách được bằng NFKD (Ð U+00D0 hay gặp khi gõ hoặc dán)
+        text = (text or "").replace(ch, "d")
     text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
     return re.sub(r"[^a-z0-9]+", "-", text.lower())[:120].strip("-")
 

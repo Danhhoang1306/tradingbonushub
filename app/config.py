@@ -22,24 +22,36 @@ class Config:
         # Giá trị lạ được coi là production để luôn an toàn; validate() sẽ từ chối chạy.
         self.is_production = self.app_env not in ("development", "test")
         # Production thiếu SECRET_KEY: server từ chối khởi động, còn alembic/CLI vẫn chạy được.
-        self.secret_key = env("SECRET_KEY", "") or ("" if self.is_production else secrets.token_hex(32))
+        secret = env("SECRET_KEY", "")
+        self.secret_key = secret if secret.strip() else ("" if self.is_production else secrets.token_hex(32))
         self.database_url = env("DATABASE_URL", f"sqlite:///{(BASE_DIR / 'data' / 'app.db').as_posix()}")
-        self.port = int(env("PORT", "8000"))
+        self._bad_numbers: list[str] = []
+        self.port = self._port("PORT", 8000)
         self.base_url_set = bool(env("BASE_URL", "").strip())
         self.base_url = env("BASE_URL", f"http://127.0.0.1:{self.port}").strip().rstrip("/")
         self.upload_dir = Path(env("UPLOAD_DIR", str(BASE_DIR / "data" / "uploads")))
         self.smtp_backend = env("SMTP_BACKEND", "").strip().lower() or ("" if self.is_production else "console")
         self.smtp_host = env("SMTP_HOST", "")
-        self.smtp_port = int(env("SMTP_PORT", "587"))
+        self.smtp_port = self._port("SMTP_PORT", 587)
         self.smtp_user = env("SMTP_USER", "")
         self.smtp_pass = env("SMTP_PASS", "")
         self.from_email = env("FROM_EMAIL", "")
         self.templates_dir = BASE_DIR / "templates"
         self.static_dir = BASE_DIR / "static"
 
+    def _port(self, name: str, default: int) -> int:
+        """Không ném lỗi lúc import: giá trị sai được validate() báo cùng các lỗi cấu hình khác."""
+        raw = os.environ.get(name, "").strip()
+        if not raw:
+            return default
+        if raw.isascii() and raw.isdigit() and 1 <= int(raw) <= 65535:
+            return int(raw)
+        self._bad_numbers.append(f"{name}={raw!r} không hợp lệ, phải là số từ 1 đến 65535.")
+        return default
+
     def problems(self) -> list[str]:
         """Lỗi cấu hình khiến server không được phép chạy."""
-        out = []
+        out = list(self._bad_numbers)
         if self.app_env not in APP_ENVS:
             out.append(f"APP_ENV={self.app_env!r} không hợp lệ, chỉ nhận: {', '.join(APP_ENVS)}.")
         if self.smtp_backend and self.smtp_backend not in SMTP_BACKENDS:
@@ -52,7 +64,7 @@ class Config:
         if self.is_production:
             if not self.secret_key:
                 out.append("Thiếu SECRET_KEY.")
-            elif len(self.secret_key) < MIN_SECRET_LENGTH:
+            elif len(self.secret_key.strip()) < MIN_SECRET_LENGTH:
                 out.append(f"SECRET_KEY quá ngắn, cần tối thiểu {MIN_SECRET_LENGTH} ký tự.")
             if not self.base_url_set:
                 out.append("Thiếu BASE_URL (dùng trong email, sitemap, canonical), ví dụ https://ten-mien-cua-ban.")

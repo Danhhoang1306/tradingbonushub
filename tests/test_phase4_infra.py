@@ -225,7 +225,7 @@ def test_small_chunked_body_still_works(client, db):
 @pytest.mark.parametrize("value", ["inf", "-inf", "1e999", "nan"])
 def test_value_num_rejects_non_finite(admin, db, value):
     k = make_broker(db)
-    r = admin.post("/admin/bonus/new", {"broker_id": k.id, "type": "deposit", "title": "x", "value_num": value})
+    r = admin.post("/admin/bonus/new", {"min_deposit": "$10", "withdrawable": "Có", "broker_id": k.id, "type": "deposit", "title": "x", "value_num": value})
     assert r.status_code == 400
 
 

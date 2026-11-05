@@ -7,7 +7,7 @@
 {% set s = settings %}
 {% set inline = ['menu', 'footer_col_links', 'image_path', 'image', 'image_0', 'image_1', 'image_2', 'eyebrow', 'title', 'text', 'headline', 'sub', 'cta', 'card_label',
   'badge', 'count_label', 'stat_value', 'stat_label', 'success_title', 'success_text', 'about_text', 'risk_note', 'copyright', 'affiliate_note', 'cta_note', 'ads_note',
-  'bonus_eyebrow', 'bonus_title', 'compare_eyebrow', 'compare_title', 'blog_eyebrow', 'blog_title'] %}
+  'bonus_eyebrow', 'bonus_title', 'compare_eyebrow', 'compare_title', 'compare_featured_label', 'blog_eyebrow', 'blog_title'] %}
 {% for bt in s.bonus_types %}{% for suffix in ('_short', '_label', '_desc', '_points') %}{% set _ = inline.append(bt.id ~ suffix) %}{% endfor %}{% endfor %}
 {{ ui.form_errors(e, inline) }}
 
@@ -41,6 +41,7 @@
         {{ ui.field(key ~ '_title', label ~ ' – tiêu đề', fd.get(key ~ '_title', cur.title), e) }}
       </div>
       {% endfor %}
+      {{ ui.field('compare_featured_label', 'Nhãn sàn nổi bật', fd.get('compare_featured_label', s.home_compare.featured_label), e, hint='Hiện trên thẻ sàn nổi bật ở mục So sánh. Để trống = ẩn.') }}
       <div class="form-actions"><button type="submit" class="btn-primary">Lưu thay đổi</button></div>
     </form>
   </div>

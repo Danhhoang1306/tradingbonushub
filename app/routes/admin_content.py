@@ -99,6 +99,7 @@ def home_save(tab: str, a: Admin = Depends(admin_post)):
         for key in ("home_bonus", "home_compare", "home_blog"):
             prefix = key.split("_", 1)[1]
             updates[key] = s[key] | {"eyebrow": a.text(f"{prefix}_eyebrow"), "title": a.text(f"{prefix}_title")}
+        updates["home_compare"]["featured_label"] = a.keep("compare_featured_label", s["home_compare"]["featured_label"], 120)
     elif tab == "hero":
         hero = _text_fields(a, s["hero"], ("eyebrow", "headline", "sub", "cta"), ("sub",))
         hero["image_path"] = a.image("image_path", errors, s["hero"]["image_path"])

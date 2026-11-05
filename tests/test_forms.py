@@ -54,10 +54,17 @@ def test_resubscribe_after_unsubscribe(client, db):
     db.expire_all()
     db.query(Subscriber).one().confirm_sent_at = utcnow() - timedelta(days=2)  # quá hạn chờ dành cho người đã hủy
     db.commit()
+    mailer.outbox.clear()
     subscribe(client, email="KHACH@example.test")
     db.expire_all()
     sub = db.query(Subscriber).one()
-    assert sub.status == "pending" and sub.token != old
+    assert sub.status == "unsubscribed" and sub.reconfirm_token and sub.token == old  # chưa đổi cho tới khi chủ bấm link
+    assert f"/xac-nhan/{sub.reconfirm_token}" in mailer.outbox[0].get_content()
+    assert client.post(f"/xac-nhan/{old}").status_code == 404  # link cũ không kích hoạt lại
+    assert client.post(f"/xac-nhan/{sub.reconfirm_token}").status_code == 200
+    db.expire_all()
+    sub = db.query(Subscriber).one()
+    assert sub.status == "confirmed" and sub.reconfirm_token is None
 
 
 def test_subscribe_invalid_email(client, db):

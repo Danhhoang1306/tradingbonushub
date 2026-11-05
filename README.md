@@ -43,6 +43,7 @@ $env:APP_ENV = "development"; $env:PORT = "8010"
 Production:
 
 ```powershell
+$env:APP_ENV = "production"   # đặt rõ: cửa sổ vừa chạy dev còn giữ APP_ENV=development
 $env:SECRET_KEY = "<chuỗi ngẫu nhiên, tối thiểu 32 ký tự>"
 $env:BASE_URL = "https://ten-mien-cua-ban"
 $env:SMTP_BACKEND = "smtp"; $env:SMTP_HOST = "<máy chủ SMTP>"; $env:FROM_EMAIL = "<địa chỉ gửi>"
@@ -96,14 +97,20 @@ Sao lưu khi server đang chạy (dùng cơ chế backup của SQLite, an toàn 
 
 ```powershell
 .venv\Scripts\python -c "import sqlite3; s=sqlite3.connect('data/app.db'); d=sqlite3.connect('backup.db'); s.backup(d); d.close(); s.close()"
+Remove-Item -Recurse -Force backup-uploads -ErrorAction SilentlyContinue
 Copy-Item -Recurse data\uploads backup-uploads
 ```
 
 Hoặc dừng server rồi copy `data\app.db*` và `data\uploads\`.
 
-Phục hồi:
+Phục hồi (chạy tại thư mục dự án, sau khi đã dừng server):
 
-1. Dừng server.
-2. Xóa `data\app.db`, `data\app.db-wal`, `data\app.db-shm`.
-3. Copy `backup.db` thành `data\app.db`, copy `backup-uploads` thành `data\uploads`.
-4. Chạy `run.py` (tự nâng schema nếu bản sao lưu cũ hơn code). Phiên đăng nhập cũ vẫn dùng được nếu `SECRET_KEY` không đổi.
+```powershell
+Remove-Item data\app.db, data\app.db-wal, data\app.db-shm -ErrorAction SilentlyContinue
+Copy-Item backup.db data\app.db
+Remove-Item -Recurse -Force data\uploads -ErrorAction SilentlyContinue
+Copy-Item -Recurse backup-uploads data\uploads
+.venv\Scripts\python run.py
+```
+
+`run.py` tự nâng schema nếu bản sao lưu cũ hơn code. Phiên đăng nhập cũ vẫn dùng được nếu `SECRET_KEY` không đổi.

@@ -7,7 +7,7 @@ from xml.sax.saxutils import escape
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import PlainTextResponse, RedirectResponse, Response
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -39,6 +39,7 @@ FLASH_MESSAGES.update({
     "sub_invalid": ("error", "Vui lòng nhập email hợp lệ."),
     "sub_rate": ("error", "Bạn thao tác quá nhanh, vui lòng thử lại sau ít phút."),
     "sub_failed": ("error", "Chưa gửi được email xác nhận. Vui lòng thử lại sau."),
+    "sub_wait": ("error", "Chưa thể gửi thêm email tới địa chỉ này. Vui lòng thử lại sau 24 giờ."),
     "contact_ok": ("success", "Cảm ơn bạn. Chúng tôi sẽ trả lời qua email."),
 })
 
@@ -390,7 +391,7 @@ def contact_page(request: Request, db: Session = Depends(get_db)):
 
 def _legal(request: Request, db: Session, key: str, md_key: str, path: str):
     ctx = page_ctx(request, db, page_key=key)
-    ctx["crumbs"].append({"label": ctx["page"]["title"], "url": path})
+    ctx["crumbs"].append(_crumb(ctx, key, path))
     ctx["body_html"] = render_markdown(ctx["site"]["legal"][md_key])
     return render(request, "public/legal.html", ctx)
 
@@ -412,30 +413,36 @@ def _clean_email(value: str) -> str | None:
     return value if len(value) <= 255 and EMAIL_RE.match(value) else None
 
 
-def _send_confirm(sub: Subscriber, site_name: str) -> bool:
+def _send_confirm(sub: Subscriber, token: str, site_name: str) -> bool:
     """Địa chỉ chưa xác minh: thân email tuyệt đối không chứa chữ do người gửi form đặt (tên, sở thích...)."""
-    confirm = f"{config.base_url}/xac-nhan/{sub.token}"
     return send_email(sub.email, f"Xác nhận đăng ký nhận bonus – {site_name}",
-                      f"Chào bạn,\n\nBấm vào liên kết sau để xác nhận nhận email về ưu đãi:\n{confirm}\n\n"
+                      f"Chào bạn,\n\nBấm vào liên kết sau để xác nhận nhận email về ưu đãi:\n{config.base_url}/xac-nhan/{token}\n\n"
                       "Nếu bạn không đăng ký, hãy bỏ qua email này.",
                       unsubscribe_url=f"{config.base_url}/huy-dang-ky/{sub.token}")
 
 
-def _may_send_confirm(sub: Subscriber) -> bool:
-    if sub.confirm_sent_at is None:
-        return True
-    age = utcnow() - sub.confirm_sent_at
-    if sub.status == "unsubscribed":
-        return age >= timedelta(days=UNSUBSCRIBED_RESEND_DAYS)
-    return age >= timedelta(days=1) or sub.confirm_count < CONFIRM_EMAILS_PER_DAY
-
-
-def _note_confirm_sent(sub: Subscriber) -> None:
+def _claim_confirm_slot(db: Session, sub: Subscriber) -> bool:
+    """Chiếm suất gửi trước khi gửi, bằng UPDATE có điều kiện, để giới hạn không vượt khi nhiều request đồng thời.
+    Đang chờ xác nhận: tối đa CONFIRM_EMAILS_PER_DAY email/24 giờ. Đã hủy: tối đa 1 email/24 giờ."""
     now = utcnow()
-    if sub.confirm_sent_at is None or now - sub.confirm_sent_at >= timedelta(days=1):
-        sub.confirm_sent_at, sub.confirm_count = now, 1
-    else:
-        sub.confirm_count += 1
+    window = now - timedelta(days=1)
+    claimed = db.execute(update(Subscriber).where(
+        Subscriber.id == sub.id, or_(Subscriber.confirm_sent_at.is_(None), Subscriber.confirm_sent_at <= window)
+    ).values(confirm_sent_at=now, confirm_count=1)).rowcount
+    if not claimed and sub.status == "pending":
+        claimed = db.execute(update(Subscriber).where(
+            Subscriber.id == sub.id, Subscriber.confirm_sent_at > window, Subscriber.confirm_count < CONFIRM_EMAILS_PER_DAY
+        ).values(confirm_count=Subscriber.confirm_count + 1)).rowcount
+    db.commit()
+    return bool(claimed)
+
+
+def _release_confirm_slot(db: Session, sub: Subscriber) -> None:
+    """Gửi hỏng thì trả suất: lần hỏng không tính vào giới hạn."""
+    db.execute(update(Subscriber).where(Subscriber.id == sub.id, Subscriber.confirm_count > 0)
+               .values(confirm_count=Subscriber.confirm_count - 1))
+    db.execute(update(Subscriber).where(Subscriber.id == sub.id, Subscriber.confirm_count == 0).values(confirm_sent_at=None))
+    db.commit()
 
 
 @router.post("/api/subscribe")
@@ -452,29 +459,30 @@ def subscribe(request: Request, db: Session = Depends(get_db), name: str = Form(
     if addr is None:
         return set_flash(resp, "sub_invalid")
     public_form_limiter.hit(key)
-    interests = [t for t in dict.fromkeys(interests) if t in BONUS_TYPES]
     sub = db.scalar(select(Subscriber).where(Subscriber.email == addr))
     if sub is None:
-        sub = Subscriber(name=name.strip()[:120], email=addr, interests=interests, status="pending", token=new_token())
+        # Tên và sở thích chỉ ghi lúc tạo: địa chỉ chưa xác minh thì người lạ không được ghi đè của chủ địa chỉ.
+        sub = Subscriber(name=name.strip()[:120], email=addr, status="pending", token=new_token(),
+                         interests=[t for t in dict.fromkeys(interests) if t in BONUS_TYPES])
         db.add(sub)
-    elif sub.status == "confirmed" or not _may_send_confirm(sub):
-        return set_flash(resp, "sub_ok")  # không gửi thêm; cùng thông báo để không lộ trạng thái của địa chỉ
-    else:
-        if sub.status == "unsubscribed":  # đổi token: link trong email cũ không kích hoạt lại được
-            sub.status, sub.token = "pending", new_token()
-            sub.confirm_sent_at, sub.confirm_count = None, 0
-        # Đang chờ xác nhận: giữ token để link trong email trước vẫn dùng được.
-        sub.name = name.strip()[:120] or sub.name
-        sub.interests = interests
-    try:
+        try:
+            db.commit()
+        except IntegrityError:  # request đồng thời vừa tạo cùng địa chỉ
+            db.rollback()
+            sub = db.scalar(select(Subscriber).where(Subscriber.email == addr))
+    if sub.status == "confirmed":
+        return set_flash(resp, "sub_ok")  # không gửi lại, không lộ thông tin
+    if not _claim_confirm_slot(db, sub):
+        # Đã có link trong hộp thư thì "kiểm tra hộp thư" là đúng; đã hủy mà chưa có link thì phải nói thật.
+        waiting = sub.status == "unsubscribed" and not sub.reconfirm_token
+        return set_flash(resp, "sub_wait" if waiting else "sub_ok")
+    token = sub.token
+    if sub.status == "unsubscribed":  # chỉ cấp link; trạng thái giữ nguyên tới khi chính chủ bấm link
+        sub.reconfirm_token = token = sub.reconfirm_token or new_token()
         db.commit()
-    except IntegrityError:
-        db.rollback()
-        return set_flash(resp, "sub_ok")
-    if not _send_confirm(sub, content.get(db, "site_name")):
+    if not _send_confirm(sub, token, content.get(db, "site_name")):
+        _release_confirm_slot(db, sub)
         return set_flash(resp, "sub_failed")  # không báo "kiểm tra hộp thư" khi email chưa đi
-    _note_confirm_sent(sub)
-    db.commit()
     return set_flash(resp, "sub_ok")
 
 
@@ -484,11 +492,19 @@ def _subscription_result(request: Request, db: Session, status: str, action_url:
     return render(request, "public/subscription.html", ctx, status_code=404 if status == "invalid" else 200)
 
 
+def _sub_for_confirm(db: Session, token: str) -> Subscriber | None:
+    """Người đã hủy chỉ kích hoạt lại được bằng reconfirm_token; link trong email cũ không còn tác dụng."""
+    sub = db.scalar(select(Subscriber).where(or_(Subscriber.token == token, Subscriber.reconfirm_token == token)))
+    if sub is not None and sub.status == "unsubscribed" and sub.reconfirm_token != token:
+        return None
+    return sub
+
+
 # GET chỉ hiện nút, POST mới đổi trạng thái: máy quét link trong email chỉ gọi GET.
 @router.get("/xac-nhan/{token}")
 def confirm_page(request: Request, token: str, db: Session = Depends(get_db)):
-    sub = db.scalar(select(Subscriber).where(Subscriber.token == token))
-    if sub is None or sub.status == "unsubscribed":
+    sub = _sub_for_confirm(db, token)
+    if sub is None:
         return _subscription_result(request, db, "invalid")
     if sub.status == "confirmed":
         return _subscription_result(request, db, "confirmed")
@@ -497,11 +513,11 @@ def confirm_page(request: Request, token: str, db: Session = Depends(get_db)):
 
 @router.post("/xac-nhan/{token}")
 def confirm_subscription(request: Request, token: str, db: Session = Depends(get_db)):
-    sub = db.scalar(select(Subscriber).where(Subscriber.token == token))
-    if sub is None or sub.status == "unsubscribed":
+    sub = _sub_for_confirm(db, token)
+    if sub is None:
         return _subscription_result(request, db, "invalid")
-    if sub.status == "pending":
-        sub.status, sub.confirmed_at = "confirmed", utcnow()
+    if sub.status != "confirmed":
+        sub.status, sub.confirmed_at, sub.reconfirm_token = "confirmed", utcnow(), None
         db.commit()
     return _subscription_result(request, db, "confirmed")
 

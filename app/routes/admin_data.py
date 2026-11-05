@@ -20,6 +20,8 @@ BONUS_TABS = (("all", "Tất cả"), ("on", "Đang hiển thị"), ("off", "Đã
 BROKER_TABS = (("list", "Danh sách"), ("links", "Link affiliate"))
 ADS_TABS = (("banner", "Banner"), ("stats", "Thống kê"))
 POST_TABS = (("all", "Tất cả"), ("pub", "Đã đăng"), ("draft", "Nháp"))
+EMPTY_WORDS = {"n/a", "na", "none", "null"}
+NO_LICENSE_WORDS = {"không", "không có", "chưa có"}  # "Không" hợp lệ với phần rút được, nhưng không phải là giấy phép
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 
@@ -101,6 +103,11 @@ def bonus_edit(bid: int, a: Admin = Depends(admin_get)):
                                          delete_url=f"/admin/bonus/{bid}/delete"))
 
 
+def _has_content(value: str) -> bool:
+    """Chuỗi chỉ gồm dấu ("-", "—", "...") hoặc kiểu "N/A" không phải là thông tin."""
+    return any(ch.isalnum() for ch in value) and value.strip().lower() not in EMPTY_WORDS
+
+
 def _bonus_save(a: Admin, b: Bonus | None):
     errors, v = {}, {
         "broker_id": a.text("broker_id"), "type": a.text("type"), "title": a.text("title"), "amount": a.text("amount", 60),
@@ -114,6 +121,11 @@ def _bonus_save(a: Admin, b: Bonus | None):
         errors["type"] = "Chọn loại bonus."
     if not v["title"]:
         errors["title"] = "Nhập tiêu đề."
+    # Site cam kết "mỗi ưu đãi ghi rõ mức nạp tối thiểu, phần rút được và thời hạn".
+    if not _has_content(v["min_deposit"]):
+        errors["min_deposit"] = "Nhập mức nạp tối thiểu, ví dụ $0 nếu không cần nạp."
+    if not _has_content(v["withdrawable"]):
+        errors["withdrawable"] = "Nhập phần rút được, ví dụ Lợi nhuận hoặc Không."
     try:
         value_num = parse_float(v["value_num"])
     except ValueError:
@@ -252,7 +264,7 @@ def _broker_save(a: Admin, k: Broker | None):
         errors["slug"] = "Slug này trùng địa chỉ có sẵn của site, hãy chọn slug khác."
     elif db.scalar(select(Broker.id).where(Broker.slug == v["slug"], Broker.id != (k.id if k else 0))):
         errors["slug"] = "Slug đã được dùng."
-    if not v["license"]:
+    if not _has_content(v["license"]) or v["license"].lower() in NO_LICENSE_WORDS:
         errors["license"] = "Nhập giấy phép: site chỉ liệt kê sàn có giấy phép."
     v["mono"] = (v["mono"] or mono_from_name(v["name"]))[:2].upper()
     if v["kind"] not in BROKER_KINDS:

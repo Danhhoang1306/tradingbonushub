@@ -171,3 +171,18 @@ Chi tiết trong `docs/VIEW_CONTEXT.md`.
 17. **[ĐÃ XỬ LÝ 05/11]** **Ô `label` ở Trang › Cách đánh giá và Công bố affiliate lưu được nhưng không hiện trên site**: `_about()` trong `app/routes/public.py` luôn tạo
     breadcrumb bằng `_crumb(ctx, "gioithieu", "/gioi-thieu")`, nên nhãn của `pages.method`, `pages.affiliate` không được dùng. Đề nghị thêm crumb theo `tab`, hoặc bỏ ô này khỏi hai tab đó.
 
+## [Backend → FE] Vòng 2: thay đổi hợp đồng (05/11)
+**Public FE**
+1. `home.html` dòng badge sàn nổi bật: thay chữ cứng "Phổ biến" bằng `site.home_compare.featured_label` (mặc định "Nổi bật", rỗng → ẩn badge).
+2. Form đăng ký: thêm `sub_wait` vào danh sách flash lỗi (`sub_invalid`, `sub_rate`, `sub_failed`), hiện `flash.text` cạnh form, không hiện khối "đã đăng ký".
+3. `site.hero.card_label` mặc định đổi thành "Nổi bật" (template không cần sửa).
+
+**Admin FE**
+1. Trang chủ › tab Section: thêm ô `compare_featured_label` (giá trị `settings.home_compare.featured_label`, nhãn "Nhãn sàn nổi bật"). Form không gửi trường này thì giữ giá trị cũ.
+2. Bonus: `min_deposit`, `withdrawable` bắt buộc, không nhận giá trị chỉ có dấu như "-", "—" (lỗi ở `drawer.errors`). Thêm `required`.
+3. Sàn: `license` không nhận "-", "—", "N/A", "không có".
+4. Người đăng ký: người đã hủy giữ trạng thái `unsubscribed` cho tới khi chính chủ bấm link xác nhận; không còn đổi sang `pending` khi ai đó nhập lại địa chỉ.
+
+**Vận hành**
+- Migration mới `0003` (cột `subscribers.reconfirm_token`), tự chạy khi khởi động lại `run.py`.
+- Site đang chạy có thể đã lưu `hero.card_label` cũ trong Setting: đổi mặc định không ghi đè giá trị đã lưu, phải sửa ở admin nếu muốn đổi.

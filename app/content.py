@@ -66,7 +66,7 @@ Trang dùng cookie kỹ thuật ngắn hạn để hiện thông báo sau khi g�
 
 ## Quyền của bạn
 
-Bạn có thể hủy nhận email bất cứ lúc nào qua liên kết trong email. Để yêu cầu xem, sửa hoặc xóa dữ liệu, hãy gửi yêu cầu qua trang [Liên hệ](/lien-he). Dữ liệu được giữ cho đến khi bạn yêu cầu xóa hoặc quản trị viên xóa.
+Bạn có thể hủy nhận email bất cứ lúc nào qua liên kết trong email. Để yêu cầu xóa dữ liệu của bạn, hãy gửi yêu cầu qua trang [Liên hệ](/lien-he). Dữ liệu được giữ cho đến khi bạn yêu cầu xóa hoặc quản trị viên xóa.
 """
 
 SYSTEM_TEXT_LABELS = {
@@ -107,7 +107,7 @@ DEFAULTS: dict = {
         "sub": "So sánh no-deposit, deposit bonus, cashback, cuộc thi giao dịch và khuyến mãi crypto từ các sàn có giấy phép. Mỗi ưu đãi ghi rõ mức nạp tối thiểu, phần rút được và thời hạn.",
         "cta": "Xem tất cả bonus",
         "image_path": "",
-        "card_label": "Nổi bật tuần này",
+        "card_label": "Nổi bật",
     },
     "sections": [
         {"id": "hero", "label": "Hero", "on": True},
@@ -211,7 +211,7 @@ DEFAULTS: dict = {
         "images": ["", ""],
     },
     "home_types": {"eyebrow": "Loại ưu đãi", "title": "Hiểu từng loại bonus trước khi nhận", "image": ""},
-    "home_compare": {"eyebrow": "So sánh sàn", "title": "Chọn sàn phù hợp với cách bạn giao dịch"},
+    "home_compare": {"eyebrow": "So sánh sàn", "title": "Chọn sàn phù hợp với cách bạn giao dịch", "featured_label": "Nổi bật"},
     "home_contact": {
         "eyebrow": "Thông báo bonus",
         "title": "Nhận bonus mới qua email",

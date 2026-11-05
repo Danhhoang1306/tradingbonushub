@@ -125,6 +125,8 @@ class Subscriber(TimestampMixin, Base):
     token: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     confirmed_at: Mapped[datetime | None] = mapped_column(DateTime)
     confirm_sent_at: Mapped[datetime | None] = mapped_column(DateTime)  # đầu cửa sổ đếm email xác nhận
+    # Link đăng ký lại của người đã hủy: trạng thái chỉ đổi khi chính chủ bấm link này.
+    reconfirm_token: Mapped[str | None] = mapped_column(String(64), unique=True, index=True)
     confirm_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
 
 

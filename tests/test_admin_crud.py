@@ -33,7 +33,7 @@ def test_admin_posts_require_csrf(admin, url):
 
 def test_bonus_crud(admin, db):
     k = make_broker(db)
-    r = admin.post("/admin/bonus/new", {"broker_id": k.id, "type": "nodep", "title": "Bonus không cần nạp",
+    r = admin.post("/admin/bonus/new", {"min_deposit": "$10", "withdrawable": "Có", "broker_id": k.id, "type": "nodep", "title": "Bonus không cần nạp",
                                          "amount": "$50", "value_num": "50", "expiry_date": "2999-12-31",
                                          "is_active": "1"})
     assert r.status_code == 303 and r.headers["location"] == "/admin/bonus"
@@ -41,7 +41,7 @@ def test_bonus_crud(admin, db):
     assert b.value_num == 50 and b.expiry_date.year == 2999 and b.is_active
     assert flash_code(admin.get("/admin/bonus")) == "created"
 
-    r = admin.post(f"/admin/bonus/{b.id}/edit", {"broker_id": k.id, "type": "nodep", "title": "Đã sửa",
+    r = admin.post(f"/admin/bonus/{b.id}/edit", {"min_deposit": "$10", "withdrawable": "Có", "broker_id": k.id, "type": "nodep", "title": "Đã sửa",
                                                  "expiry_date": "", "is_active": "1"})
     assert r.status_code == 303
     db.expire_all()
@@ -58,7 +58,7 @@ def test_bonus_crud(admin, db):
 
 
 def test_bonus_validation(admin, db):
-    r = admin.post("/admin/bonus/new", {"broker_id": "999", "type": "xx", "title": "", "value_num": "abc",
+    r = admin.post("/admin/bonus/new", {"min_deposit": "$10", "withdrawable": "Có", "broker_id": "999", "type": "xx", "title": "", "value_num": "abc",
                                          "expiry_date": "31-31-2020"})
     assert r.status_code == 400
     assert set(errors_of(r)) == {"broker_id", "type", "title", "value_num", "expiry_date"}

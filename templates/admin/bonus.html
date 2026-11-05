@@ -56,8 +56,8 @@
   {{ ui.field('value_num', 'Giá trị để sắp xếp', d.value_num, e, hint='Số, dùng cho "Giá trị cao". Có thể trống.', attrs='inputmode="decimal"') }}
 </div>
 <div class="fields-2">
-  {{ ui.field('min_deposit', 'Nạp tối thiểu', d.min_deposit, e) }}
-  {{ ui.field('withdrawable', 'Phần rút được', d.withdrawable, e) }}
+  {{ ui.field('min_deposit', 'Nạp tối thiểu', d.min_deposit, e, required=true) }}
+  {{ ui.field('withdrawable', 'Phần rút được', d.withdrawable, e, required=true) }}
 </div>
 {{ ui.field('expiry_date', 'Hết hạn', d.expiry_date, e, type='date', hint='Để trống = Liên tục.') }}
 {{ ui.switch_input('is_active', 'Hiển thị trên site', d.is_active) }}

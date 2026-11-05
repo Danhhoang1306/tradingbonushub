@@ -73,16 +73,18 @@
           {% if a.badge %}<span>{{ a.badge }}</span>{% endif %}
         </div>
       </div>
+      {% if a.images[1] or a.images[2] or active_bonus_count %}
       <div class="about-gallery">
         {{ media(a.images[1], a.title, "about-gallery__a" ~ ("" if active_bonus_count else " is-wide")) }}
         {% if active_bonus_count %}
-        <div class="stat-dark">
+        <div class="stat-dark{% if not a.images[1] %} is-wide{% endif %}">
           <div class="stat-dark__value">{{ active_bonus_count|num }}+</div>
           {% if a.count_label %}<div class="stat-dark__label">{{ a.count_label }}</div>{% endif %}
         </div>
         {% endif %}
         {{ media(a.images[2], a.title, "about-gallery__b") }}
       </div>
+      {% endif %}
     </div>
   </section>
 
@@ -143,8 +145,11 @@
   {% elif sid == "why" %}{% set w = site.home_why %}
   <section class="home-sec" aria-labelledby="h-why">
     <div class="container split split--380">
-      <div class="why-gallery">
+      {%- set why_col = w.stat_value or w.images[1] %}
+      {% if w.images[0] or why_col %}
+      <div class="why-gallery{% if not (w.images[0] and why_col) %} why-gallery--single{% endif %}">
         {{ media(w.images[0], w.title, "why-gallery__a") }}
+        {% if why_col %}
         <div class="why-gallery__col">
           {% if w.stat_value %}
           <div class="stat-light">
@@ -154,7 +159,9 @@
           {% endif %}
           {{ media(w.images[1], w.title, "why-gallery__b") }}
         </div>
+        {% endif %}
       </div>
+      {% endif %}
       <div>
         {{ eyebrow(w.eyebrow) }}
         <h2 class="h2" id="h-why">{{ w.title }}</h2>
@@ -184,7 +191,7 @@
           {% endfor %}
         </div>
       </div>
-      <div class="type-card">
+      <div class="type-card{% if not t0.image %} type-card--plain{% endif %}">
         {{ media(t0.image, t0.title, "type-card__img") }}
         {% for t in site.bonus_types %}
         <div class="type-card__body" role="tabpanel" id="type-panel-{{ t.id }}" aria-labelledby="type-tab-{{ t.id }}" data-type-panel="{{ t.id }}"{% if not loop.first %} hidden{% endif %}>
@@ -214,7 +221,7 @@
         <div class="ccard{% if k.featured %} ccard--featured{% endif %}">
           <div class="ccard__head">
             <h3 class="ccard__name">{{ k.name }}</h3>
-            {% if k.featured %}<span class="ccard__badge">Phổ biến</span>{% endif %}
+            {% if k.featured and site.home_compare.featured_label %}<span class="ccard__badge">{{ site.home_compare.featured_label }}</span>{% endif %}
           </div>
           {% if k.tagline %}<div class="ccard__tagline">{{ k.tagline }}</div>{% endif %}
           <dl class="ccard__rows">
@@ -246,7 +253,7 @@
         </div>
         {% else %}
         <form method="post" action="/api/subscribe" class="form-stack">
-          {% if flash and flash.code in ("sub_invalid", "sub_rate", "sub_failed") %}<p class="form-error" role="alert">{{ flash.text }}</p>{% endif %}
+          {% if flash and flash.code in ("sub_invalid", "sub_rate", "sub_failed", "sub_wait") %}<p class="form-error" role="alert">{{ flash.text }}</p>{% endif %}
           <div class="field-pair">
             <label><span class="sr-only">Họ tên</span><input type="text" name="name" placeholder="Họ tên" autocomplete="name" maxlength="120" class="input"></label>
             <label><span class="sr-only">Email</span><input type="email" name="email" placeholder="Email" autocomplete="email" required maxlength="255" class="input"></label>

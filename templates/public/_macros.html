@@ -1,7 +1,8 @@
 {# Macro dùng chung cho site public. Chỉ nhãn giao diện được viết cứng ở đây. #}
 
+{# Không có ảnh thì không in gì: bố cục tự co, không còn ô trống. #}
 {% macro media(path, alt="", cls="", eager=false) -%}
-<div class="media {{ cls }}">{% if path %}<img src="{{ path }}" alt="{{ alt }}"{% if eager %} fetchpriority="high"{% else %} loading="lazy"{% endif %} decoding="async">{% endif %}</div>
+{% if path %}<div class="media {{ cls }}"><img src="{{ path }}" alt="{{ alt }}"{% if eager %} fetchpriority="high"{% else %} loading="lazy"{% endif %} decoding="async"></div>{% endif %}
 {%- endmacro %}
 
 {% macro eyebrow(text, tone="") -%}

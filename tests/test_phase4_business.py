@@ -240,7 +240,7 @@ def test_unsubscribed_can_resubscribe_next_day(client, db):
     mailer.outbox.clear()
     subscribe(client)
     db.expire_all()
-    assert len(mailer.outbox) == 1 and db.query(Subscriber).one().status == "pending"
+    assert len(mailer.outbox) == 1 and db.query(Subscriber).one().status == "unsubscribed"
 
 
 def test_excerpt_is_not_double_escaped(client, db):
@@ -455,7 +455,7 @@ def test_long_about_block_now_saves_whole(admin, db):
 def test_bonus_title_too_long_keeps_value(admin, db):
     k = make_broker(db)
     long_title = "x" * 400
-    r = admin.post("/admin/bonus/new", {"broker_id": k.id, "type": "deposit", "title": long_title})
+    r = admin.post("/admin/bonus/new", {"min_deposit": "$10", "withdrawable": "Có", "broker_id": k.id, "type": "deposit", "title": long_title})
     assert r.status_code == 400 and r.context["drawer"]["data"]["title"] == long_title
 
 

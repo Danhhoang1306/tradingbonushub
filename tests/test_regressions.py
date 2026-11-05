@@ -18,7 +18,7 @@ def png() -> bytes:
 def test_unicode_digits_do_not_crash(client, admin, db):
     make_broker(db)
     assert client.get("/san/so-sanh?ids=²,٣,1").status_code == 200
-    r = admin.post("/admin/bonus/new", {"broker_id": "²", "type": "deposit", "title": "x"})
+    r = admin.post("/admin/bonus/new", {"min_deposit": "$10", "withdrawable": "Có", "broker_id": "²", "type": "deposit", "title": "x"})
     assert r.status_code == 400
 
 

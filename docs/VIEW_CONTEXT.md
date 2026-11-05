@@ -56,6 +56,7 @@ public hiện trong khối form tương ứng dựa vào `flash.code`.
 | `sub_invalid` | error | Vui lòng nhập email hợp lệ. | như trên |
 | `sub_rate` | error | Bạn thao tác quá nhanh, vui lòng thử lại sau ít phút. | như trên |
 | `sub_failed` | error | Chưa gửi được email xác nhận. Vui lòng thử lại sau. | như trên |
+| `sub_wait` | error | Chưa thể gửi thêm email tới địa chỉ này. Vui lòng thử lại sau 24 giờ. | như trên (người đã hủy, chưa có link đăng ký lại) |
 | `send_failed` | error | Không gửi được email nào... | admin Gửi email, chiến dịch vẫn là nháp |
 | `send_partial` | error | Mới gửi được một phần... | admin Gửi email, `campaigns[].status = partial` |
 | `too_long` | error | Nội dung quá dài. | admin Sàn › Link affiliate, Thư viện ảnh (sửa alt) |
@@ -167,13 +168,13 @@ Google Fonts Be Vietnam Pro, và cuối `<head>`: `{{ site.analytics_head|safe }
 | `analytics_head` | str (HTML) | cuối `<head>`, `\|safe` |
 | `menu` | `list[{label, url}]` | menu header |
 | `footer` | `{about_text, columns: list[{title, links: list[{label, url}]}], risk_note, copyright, affiliate_note}` | footer. `copyright` ở `site` đã thay `{year}` bằng năm hiện tại (trong `settings` phía admin vẫn là mẫu `{year}`). `affiliate_note` in cạnh `copyright` ở footer trang con (rỗng → ẩn). `columns` mặc định đã có `/dieu-khoan`, `/bao-mat` |
-| `hero` | `{eyebrow, headline, sub, cta, image_path, card_label}` | hero trang chủ (`image_path` mặc định rỗng → nền navy; `card_label` = nhãn thẻ "Nổi bật tuần này") |
+| `hero` | `{eyebrow, headline, sub, cta, image_path, card_label}` | hero trang chủ (`image_path` mặc định rỗng → nền navy; `card_label` = nhãn thẻ bonus nổi bật, mặc định "Nổi bật") |
 | `sections` | `list[{id, label, on}]` | admin; public dùng `home_sections` |
 | `home_about` | `{eyebrow, title, text, points: list[{title,text}], badge, count_label, images: [str,str,str]}` | section Về chúng tôi. `badge` mặc định rỗng → ẩn |
 | `home_bonus` | `{eyebrow, title}` | tiêu đề section Bonus mới nhất |
 | `home_why` | `{eyebrow, title, text, stat_value, stat_label, reasons: list[{title,text}], images: [str,str]}` | Tại sao chọn. `stat_value`, `stat_label` mặc định rỗng → ẩn khối số (số thứ tự `01.` FE tự in theo `loop.index`) |
 | `home_types` | `{eyebrow, title, image}` | Loại bonus |
-| `home_compare` | `{eyebrow, title}` | So sánh 3 sàn |
+| `home_compare` | `{eyebrow, title, featured_label}` | So sánh 3 sàn. `featured_label` = badge sàn nổi bật, mặc định "Nổi bật", rỗng → ẩn |
 | `home_contact` | `{eyebrow, title, text, image, success_title, success_text}` | form đăng ký trang chủ |
 | `home_blog` | `{eyebrow, title}` | Tin tức mới nhất |
 | `bonus_types` | `list[{id, short, label, desc, points: list[str], url}]` – luôn đủ 5 theo thứ tự `nodep, deposit, cashback, contest, crypto` | section Loại bonus, chip đăng ký. `short` = nhãn ngắn (tab/chip), `label` = nhãn dài, `url` = `/bonus?type=<id>` (chỉ có ở `site`, không có ở `settings` phía admin) |
@@ -263,7 +264,7 @@ Form đăng ký (section `signup`, nên đặt `id="dang-ky"`):
 ```
 Sau POST luôn redirect 303 về `next#dang-ky` kèm flash `sub_ok|sub_invalid|sub_rate`.
 Hành vi: email mới → gửi mail xác nhận; đã xác nhận → không gửi lại (vẫn báo `sub_ok`); đang chờ → gửi lại cùng link, tối đa
-3 email/24 giờ cho một địa chỉ; đã hủy → tối đa 1 email/24 giờ. Vượt giới hạn vẫn báo `sub_ok`. SMTP lỗi → `sub_failed`.
+3 email/24 giờ cho một địa chỉ; đã hủy → tối đa 1 email/24 giờ, trạng thái giữ `unsubscribed` tới khi chính chủ bấm link trong email đó; tên và sở thích chỉ ghi lúc tạo mới, không bị form sau ghi đè. Vượt giới hạn vẫn báo `sub_ok`. SMTP lỗi → `sub_failed`.
 
 ### `GET /bonus?type=&sort=` → `public/bonus_list.html`
 `type ∈ nodep|deposit|cashback|contest|crypto` (khác → all), `sort ∈ new|value|expiry` (khác → new).
@@ -427,7 +428,7 @@ Form: `POST /admin/login` – `email`, `password`, `csrf_token`, `next`. Không 
 | `drawer` | 4.1 |
 Tìm kiếm: `<form method="get">` với `q` (+ giữ `tab`, `type` bằng hidden).
 Form drawer (`POST drawer.action`): `broker_id` (select), `type` (pill/radio), `title`*, `amount`, `value_num`
-(số để sort, có thể trống), `min_deposit`, `withdrawable`, `expiry_date` (`<input type=date>`, trống = Liên tục),
+(số để sort, có thể trống), `min_deposit`*, `withdrawable`* (không nhận giá trị chỉ có dấu hoặc "N/A"), `expiry_date` (`<input type=date>`, trống = Liên tục),
 `is_active` (checkbox value=1). Khóa `drawer.data` trùng tên trường. Toggle: `POST /admin/bonus/{id}/toggle`. Xóa: `POST /admin/bonus/{id}/delete`.
 
 ### `/admin/brokers?tab=list|links` → `admin/brokers.html`
@@ -448,7 +449,7 @@ nạp/rút: `payment_method`, `payment_deposit`, `payment_withdraw`, `payment_ti
 `in_compare`, `featured`, `is_active` (checkbox value=1).
 `drawer.data.pros/cons` là `list[str]` (in vào textarea bằng `|join('\n')`), `accounts`/`payment_methods` là list dict
 như mục 2.2. Lỗi có thể ở: `name, slug, license, kind, affiliate_url, in_compare, logo_path`, và bất kỳ trường nào vượt độ dài.
-`license` bắt buộc. Slug `so-sanh` bị cấm. Độ dài tối đa: `name, slug` 120; `mono` 2; `tagline, license, platforms` 255;
+`license` bắt buộc, không nhận giá trị chỉ có dấu hoặc "N/A". Slug `so-sanh` bị cấm. Độ dài tối đa: `name, slug` 120; `mono` 2; `tagline, license, platforms` 255;
 `min_deposit, leverage, spread` 60; `withdrawal` 120; `founded` 20; `affiliate_url` 1000.
 
 ### `/admin/ads?tab=banner|stats` → `admin/ads.html`
@@ -478,7 +479,7 @@ Số phút đọc tự tính. Lỗi: `title, slug, category, status, published_a
 | `view_url` | link “Xem trên site ↗” |
 | `media_library` | tab `hero, about, why, types, contact`; tab khác là `[]` |
 Mọi form tab là `POST {{ form.action }}` + csrf + `enctype="multipart/form-data"`. Trường theo tab:
-- **sections**: công tắc từng dòng `POST s.toggle_url`; lên/xuống `POST s.move_url` với `direction=up|down`
+- **sections** (thêm ô `compare_featured_label`, hiện tại `settings.home_compare.featured_label`): công tắc từng dòng `POST s.toggle_url`; lên/xuống `POST s.move_url` với `direction=up|down`
   (ẩn nút up khi `first`, down khi `last`). Thêm form tiêu đề section: `bonus_eyebrow`, `bonus_title`,
   `compare_eyebrow`, `compare_title`, `blog_eyebrow`, `blog_title` (→ `settings.home_bonus/home_compare/home_blog`).
 - **hero**: `eyebrow`, `headline`, `sub` (textarea), `cta`, `card_label`, `image_path` + `image_path_file`.
