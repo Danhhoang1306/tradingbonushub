@@ -180,7 +180,7 @@ with sync_playwright() as p:
     pg.wait_for_timeout(300)
     c("E5.3", "Esc đóng drawer", "/admin/bonus/new" not in pg.url, pg.url)
     pg.goto(BASE + "/admin/brokers/1/edit")
-    pg.locator(".drawer button:has-text('Xóa')").first.focus()
+    pg.locator(".drawer-foot button[form=drawer-delete]").focus()
     pg.keyboard.press("Enter")
     pg.wait_for_selector("#confirm-dialog[open]")
     infoc = pg.evaluate("() => !!document.activeElement.closest('#confirm-dialog')")

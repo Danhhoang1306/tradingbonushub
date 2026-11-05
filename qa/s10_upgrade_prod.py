@@ -1,6 +1,7 @@
 """Vòng 2: (A) nâng cấp thật: DB + dữ liệu tạo bằng code commit 9c29ee1 (schema 0001), rồi chạy code hiện tại.
 (B) quy trình production trong README trên bản git archive + venv mới, cổng 8014, BASE_URL giả, SMTP_BACKEND=console,
 proxy TLS 8016. Lệnh sao lưu lấy nguyên văn từ README."""
+import atexit
 import io
 import os
 import re
@@ -69,7 +70,7 @@ s.stop()
 
 s = Server("up", env=env_up, fresh=False).start()
 try:
-    c("U1", "run.py nâng lên 0002", s.sql("select version_num from alembic_version") == [("0002",)], s.sql("select version_num from alembic_version"))
+    c("U1", "run.py nâng lên head (0003)", s.sql("select version_num from alembic_version") == [("0003",)], s.sql("select version_num from alembic_version"))
     after = {t: s.sql(f"select count(*) from {t}")[0][0] for t in TABLES}
     c("U2", "Số dòng mọi bảng không đổi", before == after, {k: (before[k], after[k]) for k in before if before[k] != after[k]})
     c("U3", "Subscriber giữ nguyên email/token/trạng thái", s.sql("select email,status,token,interests,confirmed_at from subscribers order by id") == rows_before)
@@ -149,6 +150,8 @@ kp, cp = WORK / "qa.key", WORK / "qa.crt"
 ossl = shutil.which("openssl") or r"C:\Program Files\Git\mingw64\bin\openssl.exe"
 subprocess.run([ossl, "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-keyout", str(kp), "-out", str(cp), "-days", "30", "-subj", "/CN=localhost", "-addext", "subjectAltName=DNS:localhost"], check=True, capture_output=True)
 px = subprocess.Popen([PY, str(ROOT / "qa" / "https_proxy.py"), str(cp), str(kp), "8016", str(PORT)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+atexit.register(lambda: subprocess.run(["taskkill", "/T", "/F", "/PID", str(px.pid)], capture_output=True))
+atexit.register(lambda: subprocess.run(["taskkill", "/T", "/F", "/PID", str(p.pid)], capture_output=True))
 try:
     for _ in range(50):
         try:
@@ -194,15 +197,18 @@ try:
         with pg.expect_navigation():
             pg.click(".drawer-foot .btn-save")
         # khách đăng ký qua https, bấm nút xác nhận
-        k = ctx.new_page() if False else b.new_context(ignore_https_errors=True).new_page()
-        k.goto(PBASE + "/#dang-ky")
-        k.fill("#dang-ky input[name=email]", "khach@qa.test")
+        k = b.new_context(ignore_https_errors=True).new_page()
+        k.route("**/*", lambda r_: r_.fulfill(status=200, body="", content_type="text/css") if "fonts.g" in r_.request.url else r_.continue_())
+        k.goto(PBASE + "/#lien-he")
+        k.fill("#lien-he input[name=email]", "khach@qa.test")
         with k.expect_navigation():
-            k.locator("#dang-ky button[type=submit]").click()
-        log = LOG.read_text(encoding="utf-8", errors="replace")
-        m = re.search(r"https://localhost:8016/xac-nhan/[\w-]+", log)
-        c("P7", "Email dùng BASE_URL https", bool(m) and f"{PBASE}/huy-dang-ky/" in log)
-        k.goto(m.group(0))
+            k.locator("#lien-he button[type=submit]").click()
+        c("P7", "Production + console: khách thấy lỗi, không thấy 'Kiểm tra hộp thư'", "Chưa gửi được email" in k.inner_text("#lien-he"), k.inner_text("#lien-he")[:160])
+        cn = sqlite3.connect(D / "data" / "app.db")
+        cn.execute("insert into subscribers(name,email,interests,status,token,confirm_count,created_at,updated_at) values('','da-co@qa.test','[]','pending','tokenqa',0,'2026-01-01 00:00:00','2026-01-01 00:00:00')")
+        cn.commit()
+        cn.close()
+        k.goto(PBASE + "/xac-nhan/tokenqa")
         with k.expect_navigation():
             k.locator(".status-box form button").click()
         c("P8", "Bấm nút xác nhận trên https: CSP form-action không chặn", "Đã xác nhận" in k.inner_text("body"), k.inner_text("body")[:120])
@@ -230,30 +236,20 @@ try:
 finally:
     stop(p, f)
 # Phục hồi theo 4 bước README
-for n in ("app.db", "app.db-wal", "app.db-shm"):
-    (D / "data" / n).unlink(missing_ok=True)
-shutil.copy2(D / "backup.db", D / "data" / "app.db")
 (D / "data" / "uploads" / name).unlink()  # ảnh cũng mất nhưng thư mục còn
-r = subprocess.run(["powershell", "-NoProfile", "-Command", "Copy-Item -Recurse backup-uploads data\\uploads"], cwd=D, capture_output=True, text=True, encoding="utf-8", errors="replace")
+block = re.search(r"Phục hồi \(chạy tại.*?```powershell\n(.*?)```", readme, re.S).group(1)
+cmds = [ln for ln in block.splitlines() if ln.strip() and "run.py" not in ln]  # đúng lệnh README, run.py chạy bên dưới
+r = subprocess.run(["powershell", "-NoProfile", "-Command", "; ".join(cmds)], cwd=D, capture_output=True, text=True, encoding="utf-8", errors="replace")
+c("P14b", "Lệnh phục hồi README chạy được", r.returncode == 0, r.stderr[-300:])
 p, f = start()
 try:
     c("P15", "Sau phục hồi: dữ liệu về", sqlite3.connect(D / "data" / "app.db").execute("select count(*) from posts").fetchone()[0] == 1 and httpx.get(BASE + "/health").status_code == 200)
     st = httpx.get(BASE + mp).status_code
-    c("P16", "Bước 'copy backup-uploads thành data\\uploads' khi thư mục còn tồn tại: ảnh trở lại", st == 200, f"ảnh {st}; Copy-Item lồng vào data\\uploads\\backup-uploads={(D / 'data' / 'uploads' / 'backup-uploads').exists()}")
+    c("P16", "Sau lệnh phục hồi README: ảnh trở lại", st == 200, f"ảnh {st}; Copy-Item lồng vào data\\uploads\\backup-uploads={(D / 'data' / 'uploads' / 'backup-uploads').exists()}")
 finally:
     stop(p, f)
     subprocess.run(["taskkill", "/T", "/F", "/PID", str(px.pid)], capture_output=True)
 
-# README: khối dev đặt $env:APP_ENV, khối Production không đặt lại
-r = subprocess.Popen([vpy, "run.py"], cwd=D, env=env | {"APP_ENV": "development"}, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-try:
-    for _ in range(60):
-        try:
-            hd = httpx.get(BASE + "/health", timeout=2).headers
-            break
-        except httpx.HTTPError:
-            time.sleep(0.2)
-    c("P17", "Chạy khối Production trong cùng cửa sổ PowerShell vừa chạy dev: vẫn là production", "strict-transport-security" in hd, "APP_ENV=development còn sót: không HSTS, cookie không Secure; README Production không đặt lại APP_ENV")
-finally:
-    subprocess.run(["taskkill", "/T", "/F", "/PID", str(r.pid)], capture_output=True)
+block = re.search(r"Production:.*?```powershell\n(.*?)```", readme, re.S).group(1)
+c("P17", "Khối Production trong README đặt rõ APP_ENV=production", 'APP_ENV = "production"' in block, block[:200])
 R.save()

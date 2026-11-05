@@ -423,7 +423,7 @@ try:
         c("D10.3", f"{len(admin_urls)} trang admin: không có HTML/JS lọt ra", not fails and not dlg, fails[:4])
         # hover/mở hộp chọn ảnh, xem trước trực tiếp
         pg.goto(BASE + "/admin/home?tab=hero")
-        pg.fill("input[name=eyebrow]", XSS)
+        pg.fill("[name=eyebrow]", XSS)
         pg.wait_for_timeout(200)
         res = pg.evaluate(check)
         c("D10.4", "Xem trước trực tiếp không chèn HTML", not res["x"] and not res["imgs"], res)

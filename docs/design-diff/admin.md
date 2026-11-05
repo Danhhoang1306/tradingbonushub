@@ -204,3 +204,208 @@ Thiết kế không responsive: sidebar 248px cố định, trang tràn ngang 45
 - Các màn mới (Trang, Thư viện ảnh, Tin nhắn, Đăng nhập, tab Về chúng tôi, Tại sao chọn, Loại bonus, Liên hệ, Mạng xã hội, Tracking): không có bản gốc, chưa soi phong cách từng màn.
 - Kéo thả ảnh của image-slot trong thiết kế: bản dựng không dùng runtime này.
 - Màn hình cao khác 900 và Windows khác font hệ thống: Arial ở phía thiết kế có thể đổi.
+
+## Vòng 2 (đo lại trên commit 272be90, theo TEAM_BRIEF mục 13)
+
+Tự đo ngày 06/11/2026 ở 1440x900 và 390, cả DB có dữ liệu và DB rỗng, không dựa vào báo cáo dev. Mục 13: mọi khác biệt ngoài danh sách GIỮ là lỗi. Ảnh ghép vòng 2 nằm ở thư mục tạm `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\`. Các dòng ghi "cần user xác nhận" là tôi suy ra, mục 13 không nêu rõ.
+
+**Dòng cũ (136):** 87 đã khôi phục, 17 được phép, 32 còn lệch. **Khác biệt mới:** 10. **Tổng còn lệch: 42** (Lớn 2, Vừa 17, Nhỏ 23).
+
+Dev ghi ở docs/ISSUES.md "Đã xử lý mọi dòng A, C". Đo thực tế không đúng như vậy: nhiều dòng chỉ chuyển chỗ, và một số được ghi là "user quyết" trong khi chưa nằm trong danh sách GIỮ.
+
+### Trạng thái từng dòng cũ
+
+| # | Màn | Vị trí | Trạng thái | Mức còn lại | Ghi chú | Ảnh ghép |
+|---|---|---|---|---|---|---|
+| 1 | Sidebar | Nhóm menu | ĐÃ KHÔI PHỤC | | | |
+| 2 | Sidebar | Thứ tự mục | ĐÃ KHÔI PHỤC | | | |
+| 3 | Sidebar | Số mục | ĐƯỢC PHÉP (mục 13) | | Mục mới đặt sau 8 mục gốc, đúng mục 13 | |
+| 4 | Sidebar | Nhãn mục | ĐÃ KHÔI PHỤC | | | |
+| 5 | Toàn admin | Font của mọi nút: menu, tab con, pill, Thêm, Sửa, Lưu | CÒN | Nhỏ | Vẫn Be Vietnam Pro. Chiều cao đã đúng (menu 38px, nút 40 và 42px) nhưng rộng hơn: "Xuất bản thay đổi" 163→170px, "Gửi thử" 139.5→146px | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\bonus_all_1440.png` |
+| 6 | Sidebar | Chiều cao dòng menu | ĐÃ KHÔI PHỤC | | | |
+| 7 | Sidebar | Số đếm trên mục đang chọn | ĐÃ KHÔI PHỤC | | | |
+| 8 | Sidebar | Hover mục menu | ĐÃ KHÔI PHỤC | | | |
+| 9 | Sidebar | Khối logo | ĐÃ KHÔI PHỤC | | | |
+| 10 | Sidebar | Cuối sidebar | CÒN | Nhỏ | Link "Đăng xuất" vẫn cùng hàng email. Không có trong GIỮ nhưng cần để đăng xuất; cần user xác nhận | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\overview_1440.png` |
+| 11 | Sidebar | Giá trị email | ĐƯỢC PHÉP (mục 13) | | Không còn email demo | |
+| 12 | Sidebar | "Xem trang chủ ↗" | ĐÃ KHÔI PHỤC | | | |
+| 13 | Sidebar | Số đếm Người đăng ký | ĐÃ KHÔI PHỤC | | | |
+| 14 | Đầu trang | Nút "Xuất bản thay đổi" trên Tổng quan, Bonus, Sàn, Quảng cáo, Bài viết, Người đăng ký, Tài khoản | ĐÃ KHÔI PHỤC | | | |
+| 15 | Đầu trang | Ý nghĩa "Xuất bản thay đổi" | CÒN | Vừa | Vẫn không có nháp hay xuất bản. Màn form: trùng hẳn "Lưu thay đổi". Tab Section: chỉ lưu tiêu đề section. Xem mục kiểm tra nút Xuất bản | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\home_sections_1440.png` |
+| 16 | Đầu trang | Hộp nút "+ Thêm" | ĐÃ KHÔI PHỤC | | | |
+| 17 | Đầu trang | Cao h1 | ĐÃ KHÔI PHỤC | | | |
+| 18 | Đầu trang | "+ Thêm banner" | ĐƯỢC PHÉP (mục 13) | | Suy ra từ "thay bằng dữ liệu DB": phải có chỗ thêm dữ liệu. Áp dụng cả "+ Thêm bài viết". Cần user xác nhận | |
+| 19 | Đầu trang | "Xem trên site ↗" | CÒN | Nhỏ | Còn "Xem trên site ↗" ở đầu trang trên tab gốc Section, Hero, Menu | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\home_hero_1440.png` |
+| 20 | Toàn admin | Màu xanh trạng thái ("Đã lưu", "Đã đăng") | ĐÃ KHÔI PHỤC | | | |
+| 21 | Toàn admin | Rê chuột dòng bảng | ĐÃ KHÔI PHỤC | | | |
+| 22 | Tổng quan | Số thẻ thống kê | ĐÃ KHÔI PHỤC | | | |
+| 23 | Tổng quan | Thẻ "Sàn nhiều click nhất" | ĐÃ KHÔI PHỤC | | | |
+| 24 | Tổng quan | Biểu đồ "Click theo ngày" | ĐÃ KHÔI PHỤC | | | |
+| 25 | Tổng quan | Thẻ "Bonus sắp hết hạn" | ĐÃ KHÔI PHỤC | | | |
+| 26 | Tổng quan | Số dòng và thứ tự bonus sắp hết hạn | ĐÃ KHÔI PHỤC | | | |
+| 27 | Tổng quan | Nhãn thẻ 3 | ĐÃ KHÔI PHỤC | | | |
+| 28 | Tổng quan | Định dạng số thẻ thống kê | ĐÃ KHÔI PHỤC | | | |
+| 29 | Tổng quan | Dòng banner | ĐÃ KHÔI PHỤC | | | |
+| 30 | Tổng quan | Link ở tiêu đề thẻ | ĐÃ KHÔI PHỤC | | | |
+| 31 | Tổng quan | Ngày hết hạn | ĐÃ KHÔI PHỤC | | | |
+| 32 | Tổng quan, Quảng cáo | Dấu thập phân CTR | ĐÃ KHÔI PHỤC | | | |
+| 33 | Tổng quan | Dải thông báo tin nhắn chưa đọc | ĐÃ KHÔI PHỤC | | | |
+| 34 | Bonus | Tab "Sắp hết hạn" | ĐÃ KHÔI PHỤC | | | |
+| 35 | Bonus | Lọc và tìm khi đổi tab con | ĐÃ KHÔI PHỤC | | | |
+| 36 | Bonus | Ô tìm kiếm | ĐÃ KHÔI PHỤC | | | |
+| 37 | Bonus | Hộp ô tìm kiếm | ĐÃ KHÔI PHỤC | | | |
+| 38 | Bonus | Cột bảng | ĐÃ KHÔI PHỤC | | | |
+| 39 | Bonus | Ngày ở cột Hết hạn | ĐÃ KHÔI PHỤC | | | |
+| 40 | Bonus | Nút Sửa | ĐÃ KHÔI PHỤC | | | |
+| 41 | Bonus | Dòng đang ẩn | ĐÃ KHÔI PHỤC | | | |
+| 42 | Bonus | Cảnh báo trong ô Tiêu đề, ngày đỏ | ĐÃ KHÔI PHỤC | | | |
+| 43 | Bonus | Tiêu đề bonus | ĐÃ KHÔI PHỤC | | | |
+| 44 | Bonus | Công tắc | CÒN | Nhỏ | Vẫn POST rồi tải lại, báo "Đã cập nhật". Cuộn đã giữ được | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\bonus_all_1440.png` |
+| 45 | Sàn > Danh sách | Cột bảng | ĐÃ KHÔI PHỤC | | | |
+| 46 | Sàn > Danh sách | Ô tên sàn | ĐÃ KHÔI PHỤC | | | |
+| 47 | Sàn > Danh sách | Thứ tự sàn | ĐÃ KHÔI PHỤC | | | |
+| 48 | Sàn > Danh sách | Câu ghi chú | ĐÃ KHÔI PHỤC | | | |
+| 49 | Sàn > Link affiliate | Cột thứ 4 | ĐƯỢC PHÉP (mục 13) | | Tên cột đã đúng; ô luôn "—" vì sàn không báo số đăng ký | |
+| 50 | Sàn > Link affiliate | Câu ghi chú trên bảng | ĐÃ KHÔI PHỤC | | | |
+| 51 | Sàn > Link affiliate | Lưu link | ĐÃ KHÔI PHỤC | | | |
+| 52 | Sàn > Link affiliate | Độ rộng cột | ĐÃ KHÔI PHỤC | | | |
+| 53 | Sàn > Danh sách | Bật So sánh sàn thứ 4 | ĐƯỢC PHÉP (mục 13) | | Logic chặn ở server, chỉ hiện khi vi phạm | |
+| 54 | Quảng cáo > Banner | Ô chạy từ – đến | ĐÃ KHÔI PHỤC | | | |
+| 55 | Quảng cáo > Banner | Tiêu đề thẻ | ĐÃ KHÔI PHỤC | | | |
+| 56 | Quảng cáo > Banner | Nhãn ô link | ĐÃ KHÔI PHỤC | | | |
+| 57 | Quảng cáo > Banner | Chân thẻ | CÒN | Nhỏ | Bỏ nút Lưu; còn link "Sửa" xanh cuối dòng số liệu | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\ads_banner_1440.png` |
+| 58 | Quảng cáo > Banner | Ô ảnh khi chưa có ảnh | ĐÃ KHÔI PHỤC | | | |
+| 59 | Quảng cáo > Banner | Khoảng cách giữa các thẻ | ĐÃ KHÔI PHỤC | | | |
+| 60 | Quảng cáo > Banner | Vị trí banner | ĐƯỢC PHÉP (mục 13) | | Suy ra từ placement cột hero của public. Cần user xác nhận | |
+| 61 | Quảng cáo > Thống kê | Ô Banner | ĐÃ KHÔI PHỤC | | | |
+| 62 | Quảng cáo > Thống kê | Hàng "Tổng" | ĐÃ KHÔI PHỤC | | | |
+| 63 | Quảng cáo > Thống kê | Cột Trạng thái | ĐÃ KHÔI PHỤC | | | |
+| 64 | Quảng cáo > Thống kê | Trục biểu đồ | ĐÃ KHÔI PHỤC | | | |
+| 65 | Nội dung trang chủ | Số tab con | ĐƯỢC PHÉP (mục 13) | | Tab mới mục 12 | |
+| 66 | Nội dung trang chủ > Section | Khối "Tiêu đề các section có dữ liệu" | CÒN | Vừa | Khối tiêu đề và nút "Lưu thay đổi" vẫn nằm dưới danh sách section, trang cao 900→1393px | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\home_sections_1440.png` |
+| 67 | Nội dung trang chủ > Section | Mũi tên dòng đầu, dòng cuối | ĐÃ KHÔI PHỤC | | | |
+| 68 | Nội dung trang chủ > Section | Câu mô tả | ĐÃ KHÔI PHỤC | | | |
+| 69 | Nội dung trang chủ > Section | Sau khi bấm mũi tên (công tắc cùng cơ chế, chưa đo riêng) | ĐÃ KHÔI PHỤC | | | |
+| 70 | Nội dung trang chủ > Section | Section đang tắt | ĐÃ KHÔI PHỤC | | | |
+| 71 | Nội dung trang chủ > Hero | Bố cục | CÒN | Vừa | Form vẫn 700px (ô 712→652px) + cột Xem trước | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\home_hero_1440.png` |
+| 72 | Nội dung trang chủ > Hero | Ô Nhãn nhỏ, Chữ trên nút | ĐÃ KHÔI PHỤC | | | |
+| 73 | Nội dung trang chủ > Hero | Cao textarea | ĐÃ KHÔI PHỤC | | | |
+| 74 | Nội dung trang chủ > Hero | Ô "Nhãn thẻ bonus nổi bật" | CÒN | Nhỏ | Ô thêm vẫn có | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\home_hero_1440.png` |
+| 75 | Nội dung trang chủ > Hero | Ảnh nền | CÒN | Vừa | Vẫn thẻ riêng, ảnh nhỏ, ô đường dẫn, 2 nút; không còn vùng 160px trong thẻ gốc | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\home_hero_1440.png` |
+| 76 | Trang chủ, Cài đặt | Nút lưu đáy form | CÒN | Vừa | Thanh "Lưu thay đổi" dính đáy vẫn có ở Hero, Menu, SEO, Chung. Trùng nút Xuất bản | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\home_menu_1440.png` |
+| 77 | Nội dung trang chủ > Menu | Dòng menu chính | CÒN | Vừa | Số 01–06 đã về; ô 330→300px, y+2; thêm ↑ ↓ ✕ hiện khi rê hoặc focus và "+ Thêm mục menu", đẩy cảnh báo rủi ro y593→635 | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\home_menu_1440.png` |
+| 78 | Nội dung trang chủ > Menu | Màu chữ ô đường dẫn | ĐÃ KHÔI PHỤC | | | |
+| 79 | Nội dung trang chủ > Menu | Nội dung tab | CÒN | Lớn | Cảnh báo rủi ro đã về thẻ Menu, nhưng còn 3 thẻ thêm; trang cao 900→2385px | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\home_menu_1440.png` |
+| 80 | Bài viết | Ô tìm kiếm | CÒN | Nhỏ | Hàng tìm đã bỏ, bảng về y182; đổi thành nút "Lọc" cuối hàng tab, không có trong thiết kế | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\posts_all_1440.png` |
+| 81 | Bài viết | Cột thao tác và nút Sửa, nút Thêm | ĐƯỢC PHÉP (mục 13) | | Cột đã về 5. Cần chỗ sửa bài; nút Sửa nay hiện khi rê, xem MỚI 1 | |
+| 82 | Bài viết | Nút ↗ từng dòng | ĐÃ KHÔI PHỤC | | | |
+| 83 | Bài viết | Tiêu đề dài | ĐÃ KHÔI PHỤC | | | |
+| 84 | Bài viết | Cao dòng | ĐÃ KHÔI PHỤC | | | |
+| 85 | Bài viết | Thứ tự | ĐÃ KHÔI PHỤC | | | |
+| 86 | Bài viết | Chuyên mục thứ 4 | CÒN | Nhỏ | Vẫn "Tin sàn" theo brief mục 6, thiết kế là "Tin tức" | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\posts_all_1440.png` |
+| 87 | Bài viết | Số lượt xem dưới tiêu đề | ĐÃ KHÔI PHỤC | | | |
+| 88 | Người đăng ký > Danh sách | Hàng lọc và tìm | CÒN | Nhỏ | Hàng lọc đã bỏ; đổi thành nút "Lọc" cuối hàng tab | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\subs_list_1440.png` |
+| 89 | Người đăng ký > Danh sách | Cột bảng | ĐÃ KHÔI PHỤC | | | |
+| 90 | Gửi email | Nhóm chọn sẵn | ĐÃ KHÔI PHỤC | | | |
+| 91 | Gửi email | Ô Tiêu đề | ĐÃ KHÔI PHỤC | | | |
+| 92 | Gửi email | Nút "Lưu nháp" | ĐÃ KHÔI PHỤC | | | |
+| 93 | Gửi email | Bảng "Lịch sử gửi" | CÒN | Nhỏ | Bảng đã bỏ; đổi thành link "Lịch sử gửi" cạnh hai nút, mở drawer | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\subs_mail_1440.png` |
+| 94 | Gửi email | Câu hướng dẫn dưới Nội dung | ĐÃ KHÔI PHỤC | | | |
+| 95 | Gửi email | Nút "Gửi thử cho tôi" | ĐÃ KHÔI PHỤC | | | |
+| 96 | Gửi email | Nút "Gửi tới N người" | ĐÃ KHÔI PHỤC | | | |
+| 97 | Gửi email | Trước khi gửi | CÒN | Nhỏ | Vẫn hộp xác nhận (đọc từ code; ghi ở docs/ISSUES.md là chờ user quyết) | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\subs_mail_1440.png` |
+| 98 | Cài đặt | Số tab con | ĐƯỢC PHÉP (mục 13) | | Tab mới mục 12; tab gốc đứng trước | |
+| 99 | Cài đặt > Chung | Bố cục | ĐÃ KHÔI PHỤC | | | |
+| 100 | Cài đặt > Chung | Trường thêm | ĐƯỢC PHÉP (mục 13) | | Đã chuyển sang tab mới Thương hiệu; tab Chung còn đúng 3 ô | |
+| 101 | Cài đặt > Chung, SEO | Ô nhập | CÒN | Nhỏ | Cỡ đã đúng 45px, 15px; nhưng là input, không phải textarea có tay kéo như thiết kế | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\set_general_1440.png` |
+| 102 | Cài đặt > Chung | Dấu * bắt buộc ở Tên website | ĐÃ KHÔI PHỤC | | | |
+| 103 | Cài đặt > SEO | Bố cục | CÒN | Vừa | Form vẫn 700px (ô 704→644px) + cột xem trước Google | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\set_seo_1440.png` |
+| 104 | Cài đặt > SEO | Ảnh chia sẻ | CÒN | Vừa | Đã về cùng thẻ, nhưng vẫn ảnh nhỏ + ô đường dẫn + nút, không phải vùng 380x200 | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\set_seo_1440.png` |
+| 105 | Cài đặt > SEO | Gợi ý dưới ô | ĐÃ KHÔI PHỤC | | | |
+| 106 | Cài đặt > Tài khoản | Cột bảng | ĐÃ KHÔI PHỤC | | | |
+| 107 | Cài đặt > Tài khoản | Cột Tên | CÒN | Vừa | Cột đã về, luôn hiện "—" vì không có trường tên | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\set_users_1440.png` |
+| 108 | Cài đặt > Tài khoản | Sửa trong dòng | CÒN | Nhỏ | Bảng đã chỉ xem; thêm nút "Sửa" hiện khi rê dòng, mở drawer | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\set_users_1440.png` |
+| 109 | Cài đặt > Tài khoản | Dưới bảng | CÒN | Nhỏ | Ghi chú và form đã bỏ khỏi trang; thêm nút "+ Thêm tài khoản" cuối hàng tab | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\set_users_1440.png` |
+| 110 | Cài đặt > Tài khoản | Định dạng Đăng nhập | ĐÃ KHÔI PHỤC | | | |
+| 111 | Drawer Sửa bonus | Thứ tự trường | ĐÃ KHÔI PHỤC | | | |
+| 112 | Drawer Sửa bonus | Bố cục ô | ĐÃ KHÔI PHỤC | | | |
+| 113 | Drawer Sửa bonus | Trường thêm | CÒN | Vừa | Thứ tự 5 ô đầu đã đúng; vẫn thêm Giá trị sắp xếp, Phần rút được, công tắc, dấu * | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\drawer_bonus_edit_1440.png` |
+| 114 | Drawer Sửa bonus | Ô Sàn, ô Hết hạn | CÒN | Vừa | Vẫn select và ô ngày; ô cao 47px làm các ô dưới lệch 2px | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\drawer_bonus_edit_1440.png` |
+| 115 | Drawer | Chân drawer | ĐÃ KHÔI PHỤC | | | |
+| 116 | Drawer | Đổ bóng | ĐÃ KHÔI PHỤC | | | |
+| 117 | Drawer | Đóng drawer | ĐÃ KHÔI PHỤC | | | |
+| 118 | Drawer | Cách mở | CÒN | Nhỏ | Vẫn tải trang mới, nhìn giống nhau | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\drawer_bonus_edit_1440.png` |
+| 119 | Drawer | Esc | CÒN | Nhỏ | Vẫn Esc đóng, có hỏi nếu đã đổi. Focus ô đầu đã bỏ | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\drawer_bonus_edit_1440.png` |
+| 120 | Drawer | Xóa | CÒN | Nhỏ | Vẫn hộp xác nhận | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\drawer_bonus_edit_1440.png` |
+| 121 | Drawer Sửa sàn | Số trường | CÒN | Lớn | Vẫn 7 nhóm, form rất dài, các ô gốc bị xáo: Giấy phép y162→835 | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\drawer_broker_edit_1440.png` |
+| 122 | Drawer Sửa sàn | "Xem trên site ↗" ở đầu drawer | CÒN | Nhỏ | Vẫn có | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\drawer_broker_edit_1440.png` |
+| 123 | Gửi email | Số trên nút Gửi | ĐƯỢC PHÉP (mục 13) | | Số thật thay mock | |
+| 124 | Quảng cáo > Banner | Nội dung ô ảnh | ĐƯỢC PHÉP (mục 13) | | Ô trống là khối xám, đúng quyết định của user | |
+| 125 | Sàn > Danh sách | Link affiliate, số click theo sàn | ĐƯỢC PHÉP (mục 13) | | Số thật thay mock | |
+| 126 | Quảng cáo > Banner | Cách hiện ngày trong ô date | ĐÃ KHÔI PHỤC | | | |
+
+### Trạng thái dòng cũ khi DB rỗng
+
+| # | Màn | Vị trí | Trạng thái | Mức còn lại | Ghi chú | Ảnh ghép |
+|---|---|---|---|---|---|---|
+| R1 | Tổng quan | Thẻ thống kê khi bằng 0 | ĐÃ KHÔI PHỤC |  | Số 0 để trống, giữ khung thẻ | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\overview_empty_1440.png` |
+| R2 | Tổng quan | Thẻ Banner quảng cáo | ĐÃ KHÔI PHỤC |  | Thẻ luôn hiện, 2 cột như thiết kế | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\overview_empty_1440.png` |
+| R3 | Tổng quan | Bonus sắp hết hạn | ĐÃ KHÔI PHỤC |  | Câu không còn nêu ngưỡng | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\overview_empty_1440.png` |
+| R4 | Sidebar | Số đếm | ĐƯỢC PHÉP (mục 13) |  | Mục 5 | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\overview_empty_1440.png` |
+| R5 | Bonus | Khi chưa có sàn | ĐƯỢC PHÉP (mục 13) |  | Mục 5: dải nhắc thêm sàn | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\bonus_all_empty_1440.png` |
+| R6 | Sàn, Quảng cáo, Bài viết | Trạng thái rỗng | ĐÃ KHÔI PHỤC |  | Đã bỏ nút Thêm trùng | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\ads_banner_empty_1440.png` |
+| R7 | Quảng cáo > Thống kê | Rỗng | ĐƯỢC PHÉP (mục 13) |  | Mục 5 | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\ads_stats_empty_1440.png` |
+| R8 | Người đăng ký > Danh sách | Rỗng | ĐÃ KHÔI PHỤC |  | Pill và ô tìm đã vào drawer Lọc | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\subs_list_empty_1440.png` |
+| R9 | Gửi email | Nút gửi khi chưa có người nhận | CÒN | Nhỏ | Nút mờ "Chưa có người nhận" vẫn có. Mức Nhỏ | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\subs_mail_empty_1440.png` |
+| R10 | Drawer Thêm bonus | Chưa có sàn | ĐƯỢC PHÉP (mục 13) |  | Hệ quả select sàn | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\drawer_bonus_new_empty_1440.png` |
+
+### Khác biệt MỚI (đều là loại A)
+
+| # | Màn | Vị trí | Thiết kế gốc | Bản dựng | Mức độ | Cách sửa (file:dòng) | Ảnh ghép |
+|---|---|---|---|---|---|---|---|
+| MỚI 1 | Bài viết | Nút "Sửa" hiện khi rê (rê, focus, cảm ứng) | Không có nút | Nút tràn 20px ra ngoài ô, đè 4px chữ đầu cột Chuyên mục ở MỌI dòng ("Hướng dẫn" mất nét đầu); đè tiêu đề dài (26x13px ở 1440). Trên cảm ứng nút hiện thường trực nên đè mọi tiêu đề xuống dòng, tới 20x13px | Vừa | static/css/admin.css:204, chừa chỗ trong ô thay vì right:-20px | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\hover_posts_long_1440.png` |
+| MỚI 2 | Người đăng ký | Nút "Xóa" hiện khi rê | Không có nút | Đè 2px chữ ngày ở các ngày rộng (30/10/2026); liền sát chữ ở các dòng khác. Cả 1440 và cảm ứng | Nhỏ | static/css/admin.css:204 | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\hover_subs_1440.png` |
+| MỚI 3 | Nội dung trang chủ > Menu | Nút ↑ ↓ ✕ khi đang gõ ô đường dẫn | Không có | Nút nổi đè 104x32px lên phần phải ô đang gõ; ô không chừa padding (12px) nên chữ dài bị che ngay lúc nhập | Vừa | static/css/admin.css:296-297 | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\menu_focus_long.png` |
+| MỚI 4 | Drawer Lọc, Lịch sử gửi, Sửa/Thêm tài khoản | Bàn phím | Drawer gốc không có các màn này | Esc không đóng (drawer dữ liệu thì đóng). Tab đi ra ngoài: sau 3 lần sang sidebar nằm dưới lớp phủ, dù khai aria-modal | Vừa | templates/admin/_macros.html:190; static/js/admin.js:170 chỉ xử lý [data-drawer] | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\set_users_1440.png` |
+| MỚI 5 | Thư viện ảnh | Nút Xuất bản | Màn mới | Gõ mô tả ảnh rồi bấm: 0 POST, vẫn báo "Đã lưu"; tải lại thì mất chữ. Báo sai | Vừa | templates/admin/_base.html:52 và static/js/admin.js:79-88; màn có ô chưa lưu không được báo Đã lưu | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\overview_1440.png` |
+| MỚI 6 | Gửi email | Nút Xuất bản khi chưa soạn | "Đã lưu" (mock) | Chỉ đổi nhóm rồi bấm: 0 POST, báo "Đã lưu"; tải lại về Deposit bonus. Báo sai | Nhỏ | static/js/admin.js:90-97 | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\subs_mail_1440.png` |
+| MỚI 7 | Quảng cáo > Banner | Nút Xuất bản khi có banner thiếu link | Lưu được | Một banner "Thiếu link đích" chặn lưu mọi banner, kể cả sửa banner khác. Câu lỗi "Link phải bắt đầu bằng http:// hoặc https://" không nói banner nào. Tái hiện bằng cách xóa link của sàn | Vừa | app/routes/admin_data.py:491 (bỏ qua banner không đổi link, nêu tên banner) | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\ads_banner_1440.png` |
+| MỚI 8 | Quảng cáo > Banner, Sàn > Link affiliate | Lỗi khi Xuất bản nhiều dòng | Không có | Một ô sai thì mọi ô vừa sửa về giá trị cũ (thử "abc" ở ô ngày; javascript: ở ô link), phải nhập lại từ đầu | Vừa | app/routes/admin_data.py:351-354,491-496 render lại với dữ liệu đã nhập | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\ads_banner_1440.png` |
+| MỚI 9 | Trang > Điều khoản, Bảo mật | Xuất bản không đổi gì | Màn mới | Dữ liệu lưu bị đổi \n thành \r\n. Không thấy trên giao diện | Nhỏ | Chuẩn hóa xuống dòng ở app/routes/admin_content.py | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\overview_1440.png` |
+| MỚI 10 | Bài viết, Người đăng ký, Tài khoản | Cỡ nút trên cảm ứng | Không có nút | Nút Sửa, Xóa cao 26px, rộng 46–48px; bấm được nhưng nhỏ | Nhỏ | static/css/admin.css:205 | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-admin\pairs2\hover_subs_1440.png` |
+
+### Chức năng dời vào hover: bàn phím và cảm ứng
+
+| Chức năng | Bàn phím | Cảm ứng (390 và 1024) | Vấn đề |
+|---|---|---|---|
+| Xóa người đăng ký | Dùng được: Tab tới (18 lần), nút hiện, có viền focus; Enter mở hộp xác nhận; Esc hủy, focus về nút | Dùng được: nút luôn hiện, chạm mở hộp xác nhận | MỚI 2, MỚI 10 |
+| Sửa bài viết | Dùng được: Tab tới (21 lần), Enter mở drawer, Esc về đúng danh sách | Dùng được: chạm mở drawer | MỚI 1, MỚI 10 |
+| Sửa tài khoản | Mở được: Tab tới (22 lần), Enter mở drawer. Esc không đóng, Tab thoát ra ngoài | Dùng được: chạm mở drawer | MỚI 4, MỚI 10 |
+| ↑ ↓ ✕ Menu chính | Dùng được: focus ô nhập là hiện, Tab tới được | Dùng được: luôn hiện, không tràn ngang | MỚI 3 |
+
+Giới hạn: trình mô phỏng cảm ứng báo hover:none. Chưa thử laptop cảm ứng thật, nơi chuột là con trỏ chính: ở đó nút ẩn cho tới khi rê, và chạm phải kích hoạt trạng thái hover trước.
+
+### Nút Xuất bản từng màn
+
+| Màn | Hành vi đo được | Đúng nhãn? |
+|---|---|---|
+| Tổng quan, Bonus, Sàn > Danh sách, Quảng cáo > Thống kê, Bài viết, Người đăng ký > Danh sách, Tài khoản, Tin nhắn | 0 POST, hiện "Đã lưu" 1.8s rồi ẩn | Không xuất bản gì. Giống hành vi file thiết kế và quyết định mục 13. Câu "Đã lưu" đúng vì các thao tác trên màn đã lưu ngay |
+| Sàn > Link affiliate | Lưu mọi dòng, ở lại tab, báo Đã lưu; URL sai bị chặn | Lưu đúng. Lỗi làm mất chữ đã sửa (MỚI 8) |
+| Quảng cáo > Banner | Lưu vị trí, link, ngày. Không đổi gì thì DB y nguyên; khứ hồi đúng với ngày qua năm, năm cũ, chỉ từ, chỉ đến, trống | Lưu đúng. Bị chặn bởi banner thiếu link (MỚI 7), lỗi làm mất chữ (MỚI 8) |
+| Trang chủ: Section | Chỉ lưu tiêu đề section; công tắc và mũi tên đã lưu từ trước | Đúng mục 13, nhưng nhãn rộng hơn việc làm (dòng 15) |
+| Trang chủ, Trang, Cài đặt: các tab form còn lại | Lưu form, ở lại tab. Bấm khi không đổi gì: giá trị hiệu lực không đổi ở 23 tab, trừ xuống dòng của tab Điều khoản, Bảo mật | Lưu đúng (MỚI 9) |
+| Gửi email, đã soạn | Lưu nháp, trạng thái draft, sent_count 0. Enter ở ô Tiêu đề cũng chỉ lưu nháp, không gửi | An toàn, nhưng nhãn "Xuất bản" làm việc "lưu nháp". Chỉ có tiêu đề thì báo lỗi |
+| Gửi email, chưa soạn | 0 POST, báo "Đã lưu", không lưu nhóm đã chọn | Báo sai (MỚI 6) |
+| Thư viện ảnh | 0 POST, báo "Đã lưu", không lưu ô mô tả đang gõ | Báo sai (MỚI 5) |
+
+### Phần đo khớp ở vòng 2
+
+Khớp dưới 2px, trừ độ rộng do font nút: Tổng quan (4 thẻ, 2 thẻ danh sách, cả khi rỗng); Bonus (mọi tab con, 5 dòng Sắp hết hạn, tìm khi gõ, giữ lọc, ô tìm 226x42); Sàn (7 cột, đúng thứ tự); Link affiliate (cột, dòng); Quảng cáo > Banner (thẻ 175px, gap 20); Thống kê (cột, biểu đồ); Bài viết (5 cột, thứ tự, dòng 51px khi tiêu đề 1 dòng); Người đăng ký (4 cột, dòng 47px); Gửi email (chọn sẵn nhóm, ô 45px và 15px, nút); Section (20 mũi tên, dòng 53px, giữ cuộn: 459→459, ↑ dòng đầu 0 POST); Cài đặt > Chung (1 thẻ, padding 28). Sidebar: 8 mục đầu đúng tên, thứ tự, 38px, bước 42; hover, "Xem trang chủ" cùng tab đã về. Rộng 390: không tràn ngang ở cả 22 màn DB rỗng.
+
+### Kết luận vòng 2
+
+Chưa khớp hoàn toàn theo mục 13. Các màn bảng và Tổng quan đã gần như trùng thiết kế. Còn lệch rõ ở form Trang chủ (Section, Hero, Menu), Cài đặt > SEO và hai drawer Sửa, chủ yếu vì ô nhập của mục 12 và model. Muốn khớp hoàn toàn thì user phải chọn: chuyển các ô đó sang tab hoặc màn mới, hay đưa chúng vào danh sách GIỮ.
+
+### Chưa so được
+
+- Laptop cảm ứng thật. Hành vi sau khi bấm Gửi tới và Gửi thử (không bấm, vì không được gửi email). Phong cách từng màn mới. 390 với DB có dữ liệu ở vòng 2 (chỉ đo DB rỗng và các phép thử cảm ứng).

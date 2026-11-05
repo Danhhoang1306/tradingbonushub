@@ -175,9 +175,8 @@ try:
     loc = r.headers.get("location", "")
     c("F4.8", "URL có / cuối qua proxy: không redirect về http:// (hạ cấp) hay lộ origin", (not loc) or loc.startswith("/") or loc.startswith("https://"), f"{r.status_code} {loc}")
     # rate limit theo IP thật từ CF-Connecting-IP
-    hx.post("/api/subscribe", data={"email": "p@qa.test", "next": "/"}, headers={"X-Test-Real-IP": "198.51.100.1"})
-    log = s.log_text()
-    c("F4.9", "Link trong email là https BASE_URL", f"{PBASE}/xac-nhan/" in log and f"{PBASE}/huy-dang-ky/" in log)
+    r = hx.post("/api/subscribe", data={"email": "p@qa.test", "next": "/"}, headers={"X-Test-Real-IP": "198.51.100.1"})
+    c("F4.9", "Production + console: đăng ký báo sub_failed (link email kiểm ở s11 mục G)", "sub_failed" in r.headers.get("set-cookie", ""), r.headers.get("set-cookie", "")[:40])
     codes = [hx.post("/api/subscribe", data={"email": f"pp{i}@qa.test", "next": "/"}, headers={"X-Test-Real-IP": "198.51.100.2", "CF-Connecting-IP": f"1.1.1.{i}"}).headers.get("set-cookie", "") for i in range(6)]
     c("F4.10", "Qua proxy: client tự gửi CF-Connecting-IP giả không lách được (proxy ghi đè)", "sub_rate" in codes[-1], codes[-1][:50])
     pg_noindex = hx.get("/admin/login")

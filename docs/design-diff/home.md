@@ -187,3 +187,152 @@ Chiều cao toàn trang: thiết kế 7586px, bản dựng 3161px ở 1440; thi�
 - Hover rail, hover CTA thẻ nổi bật: chỉ đọc CSS. Menu xổ ở 390: chưa bấm thử.
 - Luồng gửi form đăng ký thật: không gửi. Chữ "Đã đăng ký" lấy từ `app/content.py:220-221`, trùng thiết kế.
 - Ô ảnh dùng ảnh giả, nên chỉ so khung, không so nội dung ảnh. Ảnh thật cho các ô này chưa có.
+
+
+## Vòng 2: đo lại trên commit 272be90
+
+Đo lại từ đầu bằng cùng công cụ, không dựa báo cáo dev. Chuẩn: `docs/TEAM_BRIEF.md` mục 13. Server tạm cổng 8021, 8022, DB tạm; không đụng cổng 8000 và `data/app.db`.
+
+Trạng thái đã đo, ở 1440 và 390: đủ ảnh + chữ gốc; đủ ảnh + chữ mặc định; có dữ liệu thiếu ảnh; DB rỗng. Thêm rail ở 1920 và banner ngang ở 1440.
+
+### Kết luận vòng 2
+
+**Có, trang chủ khớp thiết kế về bố cục, kiểu chữ, câu chữ, link và hover.** Còn 6 lệch, không lệch nào mức Lớn, đều ở nơi dữ liệu không có trường tương ứng hoặc ở 390.
+
+| Mức còn lệch | Số lượng | Mục |
+|---|---|---|
+| Lớn | 0 | |
+| Vừa | 3 | K16, K24, K25 |
+| Nhỏ | 3 | K18, K59, N1 |
+
+| Nhóm | ĐÃ KHÔI PHỤC | CÒN | Được phép theo mục 13 | Tổng |
+|---|---|---|---|---|
+| K (có dữ liệu) | 43 | 5 | 11 | 59 |
+| R (DB rỗng) | 10 | 0 | 6 | 16 |
+
+K24, K25 chỉ thấy ở màn từ 1572px và khi có banner rail. Việc còn K16, K18, K24, K25 cần trường dữ liệu mới, user chưa quyết. K59, N1 sửa được bằng CSS. ISSUES ghi K59 là chống tràn, nhưng footer thiết kế ở 390 không tràn.
+
+Chiều cao section (px, thiết kế / bản dựng):
+
+| Section | 1440 đủ dữ liệu | 390 đủ dữ liệu | 1440 DB rỗng | 390 DB rỗng |
+|---|---|---|---|---|
+| Hero | 820 / 820 | 1142.2 / 1143.2 | 820 / 820 | 1142.2 / 891.2 |
+| Về chúng tôi | 891.4 / 891.4 | 1791.6 / 1791.6 | 891.4 / 891.4 | 1791.6 / 1791.6 |
+| Bonus | 1555.9 / 1520.9 | 4879.7 / 4829.7 | ẩn | ẩn |
+| Tại sao chọn | 773.8 / 773.8 | 1502.5 / 1502.5 | 773.8 / 773.8 | 1502.5 / 1502.5 |
+| Loại bonus | 863.1 / 863.1 | 1640.9 / 1640.9 | 863.1 / 863.1 | 1640.9 / 1640.9 |
+| So sánh | 882.4 / 882.4 | 1889.6 / 1889.6 | ẩn | ẩn |
+| Đăng ký | 582.5 / 582.5 | 1222 / 1268 | 582.5 / 692.5 | 1222 / 1378 |
+| Tin tức | 819.4 / 819.4 | 1854.6 / 1854.6 | ẩn | ẩn |
+| Footer | 397.1 / 397.1 | 636.5 / 636.5 | 397.1 / 397.1 | 636.5 / 636.5 |
+| Toàn trang | 7586 / 7551 | 16559 / 16556 | 7586 / 4438 | 16559 / 7841 |
+
+Có dữ liệu thiếu ảnh: mọi section cao bằng dòng đủ dữ liệu. 10 ô ảnh in đủ khung nền `rgba(127,127,127,.12)`, không chữ, đúng kích thước thiết kế ở 1440, kể cả 3 ảnh bài viết khi không có ảnh bìa.
+
+### Khác biệt mới
+
+| Mục | Vị trí | Viewport | Thiết kế gốc | Bản dựng | Mức | Cách sửa | Ảnh ghép |
+|---|---|---|---|---|---|---|---|
+| N1 | Nút "Đăng ký nhận thông báo" | 390 | 1 dòng, rộng 263.8px, H2 2 dòng | Chữ nút xuống 2 dòng, rộng 250px, H2 3 dòng | Nhỏ | Hệ quả của khung 322px. Cho `.btn-arrow--submit` không xuống dòng và xem lại padding `.signup__content` | `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-home\pairs\r2full_390_signup.png` |
+
+Không có section, khối hay chữ tự thêm nào khác. Hai khoảng trống ở K7, R7 là hệ quả của quyết định ẩn, không tính là lệch.
+
+### Trạng thái từng mục K
+
+| Mục | Trạng thái | Đo được ở 272be90 |
+|---|---|---|
+| K1 | Được phép theo mục 13 | Không tên sàn: dữ liệu mock thay bằng chữ chung |
+| K2 | ĐÃ KHÔI PHỤC | Câu "khối lượng yêu cầu, thời hạn và giấy phép" đã về |
+| K3 | ĐÃ KHÔI PHỤC | "Nổi bật tuần này" |
+| K4 | ĐÃ KHÔI PHỤC | Nguyên văn |
+| K5 | ĐÃ KHÔI PHỤC | "Cập nhật ưu đãi hằng ngày" |
+| K6 | ĐÃ KHÔI PHỤC | Nguyên văn |
+| K7 | Được phép theo mục 13 | User quyết bỏ số 100%: thẻ ẩn khi chưa nhập, khi nhập thì đúng vị trí. Khi ẩn còn khoảng trống 420x130px trên ảnh |
+| K8 | ĐÃ KHÔI PHỤC | Nguyên văn |
+| K9 | ĐÃ KHÔI PHỤC | "Phổ biến" |
+| K10 | ĐÃ KHÔI PHỤC | "Tối đa một email mỗi tuần." |
+| K11 | ĐÃ KHÔI PHỤC | 4 link, footer 397.1px |
+| K12 | Được phép theo mục 13 | Câu nói về dữ liệu mock; Bonus ngắn hơn 35px (1440), 50px (390) |
+| K13 | ĐÃ KHÔI PHỤC | Thẻ nổi bật ở giữa, x=555 |
+| K14 | ĐÃ KHÔI PHỤC | Cột 158 + 420px, thẻ số y=187 |
+| K15 | ĐÃ KHÔI PHỤC | Deposit bonus chọn sẵn |
+| K16 | CÒN | Vẫn lấy bonus cao nhất của sàn nổi bật; không có sàn nổi bật thì mất thẻ. Đã ghi ISSUES. Cần ô chọn bonus ở admin |
+| K17 | ĐÃ KHÔI PHỤC | dd/mm |
+| K18 | CÒN | Vẫn ghép nhãn + số tiền, ô rộng hơn 45-49px. Đã ghi ISSUES. Cần trường dữ liệu mới |
+| K19 | Được phép theo mục 13 | Dữ liệu DB, một trường license; dữ liệu mock thiết kế tự mâu thuẫn |
+| K20 | ĐÃ KHÔI PHỤC | `#lien-he` |
+| K21 | ĐÃ KHÔI PHỤC | #757575 |
+| K22 | ĐÃ KHÔI PHỤC | #000000 |
+| K23 | Được phép theo mục 13 | Đã bỏ khối navy tự thiết kế, còn khung ảnh 970x250px của Admin.dc.html. Vị trí trên trang chủ không có nguồn: mỗi section cao 381px, trang thêm 762px khi có đủ 2 banner |
+| K24 | CÒN | Đúng dạng navy, không tag, 3 dòng. Thiếu chữ phụ dưới số; số 30px thay vì 44px khi chuỗi tiền dài hơn 4 ký tự. Đã ghi ISSUES |
+| K25 | CÒN | Đúng nền xanh, tag, số 52px, 1 dòng hạn, nút "Nhận {số tiền}". Thiếu chữ phụ và đoạn mô tả riêng (in tiêu đề bonus). Đã ghi ISSUES |
+| K26 | ĐÃ KHÔI PHỤC | `#bonus`; section Bonus ẩn thì `/bonus` |
+| K27 | ĐÃ KHÔI PHỤC | Như trên |
+| K28 | ĐÃ KHÔI PHỤC | Như trên |
+| K29 | Được phép theo mục 13 | Thiết kế để `#`, buộc phải có đích. Đã ghi ISSUES |
+| K30 | Được phép theo mục 13 | Link affiliate thật thay link mock |
+| K31 | ĐÃ KHÔI PHỤC | Đo lại: không đổi khi hover |
+| K32 | ĐÃ KHÔI PHỤC | Đo lại: không đổi khi hover |
+| K33 | ĐÃ KHÔI PHỤC | Đo lại: không đổi khi hover |
+| K34 | ĐÃ KHÔI PHỤC | Đo lại: không đổi khi hover |
+| K35 | ĐÃ KHÔI PHỤC | Đo lại: không đổi khi hover |
+| K36 | ĐÃ KHÔI PHỤC | Đo lại: không đổi khi hover |
+| K37 | ĐÃ KHÔI PHỤC | Đo lại: không đổi khi hover |
+| K38 | ĐÃ KHÔI PHỤC | Đo lại: không đổi khi hover |
+| K39 | ĐÃ KHÔI PHỤC | Đo lại: không đổi khi hover |
+| K40 | ĐÃ KHÔI PHỤC | Đo lại: không đổi khi hover |
+| K41 | ĐÃ KHÔI PHỤC | Đo lại: không đổi khi hover |
+| K42 | ĐÃ KHÔI PHỤC | Đo lại: 0s |
+| K43 | Được phép theo mục 13 | Hamburger trong danh sách GIỮ. Menu mở đủ 6 mục và nút, không tràn. Header cao 89px thay vì 97px nên nội dung hero lệch lên 8px |
+| K44 | Được phép theo mục 13 | Chống tràn trong danh sách GIỮ: scrollWidth 390px |
+| K45 | ĐÃ KHÔI PHỤC | 24px |
+| K46 | ĐÃ KHÔI PHỤC | 19px |
+| K47 | ĐÃ KHÔI PHỤC | 64px, 5 dòng, cao 352px |
+| K48 | ĐÃ KHÔI PHỤC | 1143.2px so với 1142.2px, phần lệch do chữ bonus dài hơn |
+| K49 | ĐÃ KHÔI PHỤC | 48px |
+| K50 | ĐÃ KHÔI PHỤC | 110px; toàn trang 16556 so với 16559px |
+| K51 | ĐÃ KHÔI PHỤC | 180x127px |
+| K52 | ĐÃ KHÔI PHỤC | Chiều cao, cỡ số 56px đã về; ô rộng 161px thay vì 180px do chống tràn |
+| K53 | ĐÃ KHÔI PHỤC | 44px |
+| K54 | Được phép theo mục 13 | Chống tràn: ảnh 88x460 và 234x280 (thiết kế 0px và 420px tràn). Số 40px đã về |
+| K55 | ĐÃ KHÔI PHỤC | Không còn sai lệch |
+| K56 | ĐÃ KHÔI PHỤC | Không còn sai lệch |
+| K57 | ĐÃ KHÔI PHỤC | 36px |
+| K58 | Được phép theo mục 13 | Chữ, padding, 2 cột ô, ảnh cao 420px đã về. Khung 322px thay vì 340px bị tràn nên cao hơn 46px; xem N1 |
+| K59 | CÒN | Cao 636.5px, padding 90px đã về. 2 cột link chia đều 151/151px, thiết kế 215/87px, cột 2 lệch trái 64px dù thiết kế không tràn. Thử `repeat(2, auto)` ở `static/css/site.css:201` |
+
+### Trạng thái từng mục R
+
+| Mục | Trạng thái | Đo được ở 272be90 |
+|---|---|---|
+| R1 | ĐÃ KHÔI PHỤC | Ảnh trùng từng byte với `v2-hero-bg` |
+| R2 | ĐÃ KHÔI PHỤC | 820px ở 1440. Ở 390 cao 891px vì không có hero card (R3) |
+| R3 | Được phép theo mục 13 | Thiếu dữ liệu |
+| R4 | ĐÃ KHÔI PHỤC | Đủ ô nền trung tính đúng kích thước, không chữ |
+| R5 | ĐÃ KHÔI PHỤC | Cột 598px, H2 3 dòng |
+| R6 | ĐÃ KHÔI PHỤC | Ô 237x167px |
+| R7 | Được phép theo mục 13 | Brief mục 5: số đếm 0 thì ẩn. Để lại khoảng trống 289x300px cạnh ảnh |
+| R8 | Được phép theo mục 13 | Thiếu dữ liệu, brief mục 5 |
+| R9 | ĐÃ KHÔI PHỤC | Đủ 2 ô ảnh; thẻ số ẩn theo quyết định của user |
+| R10 | ĐÃ KHÔI PHỤC | Xếp dọc |
+| R11 | ĐÃ KHÔI PHỤC | Có ô ảnh, section 863.1px |
+| R12 | Được phép theo mục 13 | Thiếu dữ liệu |
+| R13 | ĐÃ KHÔI PHỤC | Mặc định bật trong code. Chưa kiểm chứng DB thật, nơi có thể đã lưu trạng thái tắt |
+| R14 | ĐÃ KHÔI PHỤC | Ảnh và form 2 cột, 582.5px khi có section So sánh. DB rỗng cao 692.5px vì thêm 110px trên khi So sánh ẩn |
+| R15 | Được phép theo mục 13 | Thiếu dữ liệu |
+| R16 | Được phép theo mục 13 | Thiếu dữ liệu |
+
+### Ảnh ghép vòng 2
+
+- Đủ dữ liệu: `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-home\pairs\r2full_1440_full.png`, `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-home\pairs\r2full_390_full.png`
+- Chữ mặc định: `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-home\pairs\r2def_1440_full.png`, `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-home\pairs\r2def_390_full.png`
+- Có dữ liệu thiếu ảnh: `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-home\pairs\r2noimg_1440_full.png`, `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-home\pairs\r2noimg_390_full.png`
+- DB rỗng: `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-home\pairs\r2empty_1440_full.png`, `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-home\pairs\r2empty_390_full.png`
+- Rail: `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-home\pairs\r2rail_1920.png`. Banner ngang: `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-home\pairs\r2ads_1440_full.png`. Menu mở ở 390: `C:\Users\danhh\AppData\Local\Temp\claude\17ec8c0066fedc03\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\scratchpad\design-home\pairs\r2_menu_390.png`
+
+### Chưa so ở vòng 2
+
+- Site thật và DB thật. Setting đã lưu trong DB thật có thể đè mặc định mới, gồm section Đăng ký và chữ. Cần xem trực tiếp sau khi triển khai.
+- Đăng ký ở production khi chưa có SMTP: chỉ đọc code `can_deliver` (`app/mailer.py:18`), chưa chạy. Không gửi email.
+- Khổ 768, 1024; Firefox, Safari, điện thoại thật.
+- Nội dung ảnh thật ngoài ảnh hero: ô ảnh dùng ảnh giả hoặc để trống.

@@ -229,3 +229,136 @@ Chữ mới không có trong thiết kế: "Bài viết liên quan"; câu affili
 - Dữ liệu thật ở cổng 8000: theo yêu cầu không đụng tới. Những gì user đang thấy có thể khác vì phụ thuộc dữ liệu thật, đặc biệt là việc có ảnh hay không.
 - Hover menu chưa chọn: kết luận từ CSS, không đo trực tiếp.
 - Sticky: chỉ kiểm tra thuộc tính `position`, không cuộn thử.
+
+## Vòng 2 (commit 272be90, đối chiếu docs/TEAM_BRIEF.md mục 13)
+
+Đo lại từ đầu, không dùng báo cáo dev. DB tạm mới với dữ liệu của thiết kế; 18 màn ở 1440 và 390; thêm thiếu ảnh và thiếu link (`noimg`), DB rỗng (`empty`), hover, link, sort, chọn sàn, form. Ảnh giả và cách đo như vòng 1. Ảnh ghép vòng 2 nằm ở `C:/Users/danhh/AppData/Local/Temp/claude/17ec8c0066fedc03/0e1ca350-6c2d-4075-8d81-f49e661aa4cb/scratchpad/design-pages/shots2/`. Hai server đã tắt, cổng 8000 không bị đụng.
+
+Quy ước: mọi khác biệt ngoài danh sách GIỮ của mục 13 là CÒN, kể cả khi `docs/ISSUES.md` ghi "giữ có lý do" nhưng vẫn khôi phục được. Tiêu chuẩn "Được phép" là suy luận của kiểm toán từ mục 13; dòng 48 và 89-91 nên được user hoặc team leader xác nhận.
+
+### Kết quả
+
+| | Lớn | Vừa | Nhỏ | Tổng |
+|---|---|---|---|---|
+| Còn lệch (6 dòng cũ, 4 mới) | 0 | 2 | 8 | 10 |
+
+Dòng cũ: 71 đã khôi phục, 16 được phép, 6 còn (tổng 93, gồm 85 dòng chính và 8 dòng DB rỗng).
+
+Đo được ở 1440, có dữ liệu và thiếu ảnh: chiều cao cả 18 màn bằng đúng thiết kế, không còn chữ hay kiểu chữ nào khác, trừ giấy phép trên thẻ bonus (dữ liệu DB). Ở 390: mọi màn nhích đều −280px do hamburger; ngoài ra chỉ khác ở Giới thiệu, Liên hệ (chống tràn), hàng sàn −11px, tab Bonus của chi tiết sàn và M2, M4.
+
+### Từng dòng cũ
+
+| # | Trang | Vị trí | Trạng thái | Ghi chú đo được |
+|---|---|---|---|---|
+| 1 | Mọi trang | Menu, mục thứ 3 | ĐÃ KHÔI PHỤC | "Sàn uy tín" ở mọi trang con |
+| 2 | Mọi trang | Nút header | ĐÃ KHÔI PHỤC | "Nhận tư vấn", tới `/bonus` |
+| 3 | Liên hệ | Menu: mục đang chọn | ĐÃ KHÔI PHỤC | Mục "Giới thiệu" sáng |
+| 4 | Mọi trang | Đổi tab, sort, chọn sàn | CÒN | Sort: cuộn 400→0, thiết kế giữ 400. Do server render (mục 3), mục 13 không liệt kê, chưa ghi ISSUES. Vừa |
+| 5 | Bonus, Sàn, Tin, Giới thiệu | Mục cuối breadcrumb | ĐÃ KHÔI PHỤC | Mục cuối là link |
+| 6 | Mọi trang | Hover menu chưa chọn | ĐÃ KHÔI PHỤC | Hover đo trực tiếp, không đổi |
+| 7 | Mọi trang | Hover tab chưa chọn | ĐÃ KHÔI PHỤC |  |
+| 8 | Mọi trang | Hover breadcrumb | ĐÃ KHÔI PHỤC |  |
+| 9 | Bonus, So sánh | Hover pill sort/chọn sàn | ĐÃ KHÔI PHỤC |  |
+| 10 | Mọi trang | Chuyển trạng thái nút | ĐÃ KHÔI PHỤC | Duration 0s; không còn transition trên nút |
+| 11 | Bonus, Sàn, Tin, chi tiết | Số đếm ở tab đang chọn | ĐÃ KHÔI PHỤC |  |
+| 12 | Bonus, So sánh, Bài viết, Liên hệ | Chữ nút trắng (Về sàn, Đánh giá, Về danh sách), chữ trong ô nhập | ĐÃ KHÔI PHỤC | Về sàn, Đánh giá #000; hết sai màu chữ khi đo |
+| 13 | Liên hệ | Màu placeholder | ĐÃ KHÔI PHỤC | Đã bỏ rule màu placeholder (đọc CSS) |
+| 14 | Mọi trang | Skip link, viền focus | Được phép | Sửa của QA, không thấy khi không dùng bàn phím |
+| 15 | Mọi trang | Header mobile | Được phép | Hamburger, header 81px, mọi nội dung dưới header nhích đúng −280px |
+| 16 | Mọi trang | Nút header mobile | Được phép | Nút nằm trong menu mở ra, đúng nhãn, đúng kích thước. Đi kèm hamburger |
+| 17 | Mọi trang | Tên thương hiệu | ĐÃ KHÔI PHỤC |  |
+| 18 | Mọi trang | H1 | ĐÃ KHÔI PHỤC | 52px; riêng "Về TradingBonusHub" xem dòng 22 |
+| 19 | Mọi trang | Lề hai bên | ĐÃ KHÔI PHỤC |  |
+| 20 | Mọi trang | Đầu trang | ĐÃ KHÔI PHỤC |  |
+| 21 | Mọi trang | Khung main | ĐÃ KHÔI PHỤC |  |
+| 22 | Giới thiệu, Liên hệ | Tràn ngang | Được phép | Không tràn. H1 40,35px rộng 339/342px, cỡ tối đa vừa màn là ~40,7px: đạt "cỡ lớn nhất vừa màn" |
+| 23 | Bonus | Thẻ: Hết hạn | ĐÃ KHÔI PHỤC |  |
+| 24 | Bonus | Thẻ: lưới 3 cột điều kiện | ĐÃ KHÔI PHỤC |  |
+| 25 | Bonus | Sort "Sắp hết hạn" | CÒN | Vẫn theo ngày tăng dần, 8/10 vị trí khác. ISSUES ghi "giữ có lý do", dev tự giữ. Nhỏ |
+| 26 | Bonus | Thanh sort | ĐÃ KHÔI PHỤC |  |
+| 27 | Bonus | Padding ngang nút "Nhận bonus" | ĐÃ KHÔI PHỤC |  |
+| 28 | Bonus | Link "Nhận bonus" | Được phép | Link thật thay `#`, cùng hình dạng nút |
+| 29 | Bonus | Thẻ: giấy phép cạnh tên sàn | Được phép | Dữ liệu DB: giấy phép của sàn thay mock của bonus |
+| 30 | Sàn | Thứ tự sàn | ĐÃ KHÔI PHỤC |  |
+| 31 | Sàn | Breadcrumb | ĐÃ KHÔI PHỤC |  |
+| 32 | Sàn | Tên sàn trong hàng | ĐÃ KHÔI PHỤC |  |
+| 33 | Sàn | Hàng sàn | Được phép | Padding và nút đúng thiết kế; cột 2 lệch −11px để nút không lấn padding. Đã ghi ISSUES |
+| 34 | So sánh | H1 | ĐÃ KHÔI PHỤC |  |
+| 35 | So sánh | Mô tả | ĐÃ KHÔI PHỤC |  |
+| 36 | So sánh | Breadcrumb | ĐÃ KHÔI PHỤC |  |
+| 37 | So sánh | Pill khi đã đủ 3 sàn | ĐÃ KHÔI PHỤC |  |
+| 38 | So sánh | Thứ tự pill và cột | ĐÃ KHÔI PHỤC |  |
+| 39 | So sánh | Thứ tự cột sau khi chọn lại | ĐÃ KHÔI PHỤC |  |
+| 40 | So sánh | Dưới bảng | ĐÃ KHÔI PHỤC |  |
+| 41 | So sánh | Tên sàn ở đầu cột | ĐÃ KHÔI PHỤC |  |
+| 42 | So sánh | Bỏ chọn hết | CÒN | Vẫn câu "Chưa chọn sàn nào..." thay bảng nhãn. ISSUES ghi giữ, dev tự giữ. Nhỏ |
+| 43 | So sánh | Hover "Đánh giá" | ĐÃ KHÔI PHỤC |  |
+| 44 | So sánh | Bảng | ĐÃ KHÔI PHỤC |  |
+| 45 | Chi tiết sàn | Breadcrumb | ĐÃ KHÔI PHỤC |  |
+| 46 | Tab Bonus | Dòng ưu đãi: ngày | ĐÃ KHÔI PHỤC |  |
+| 47 | Tab Bonus | Thứ tự ưu đãi | ĐÃ KHÔI PHỤC |  |
+| 48 | Tab Bonus | Dòng ưu đãi | Được phép | Giữ xếp dọc vì thiết kế tự lỗi ở 390 (nút đè chữ). Cao hàng 216 so với 324px. Đã ghi ISSUES; đây là khác biệt mobile lớn nhất còn lại, nên user xác nhận |
+| 49 | Tab Tài khoản, Nạp & rút | Ô bảng khi hàng 2 dòng | ĐÃ KHÔI PHỤC | 1440 hết lệch. Ở 390 xem M2 |
+| 50 | Tab Tổng quan | Viền Ưu điểm/Lưu ý | ĐÃ KHÔI PHỤC |  |
+| 51 | Tab Tổng quan | Khối nội dung | ĐÃ KHÔI PHỤC |  |
+| 52 | Tab Tổng quan | Ưu điểm/Lưu ý | ĐÃ KHÔI PHỤC |  |
+| 53 | Chi tiết sàn | Khung sàn | ĐÃ KHÔI PHỤC |  |
+| 54 | Tin tức | Ảnh thẻ khi bài chưa có ảnh | ĐÃ KHÔI PHỤC | Khối 220px, chiều cao trang = thiết kế. Không chữ và không viền chấm. Màu nền xem M1 |
+| 55 | Tin tức | Xuống dòng tiêu đề thẻ | ĐÃ KHÔI PHỤC |  |
+| 56 | Tin tức | Hover thẻ | ĐÃ KHÔI PHỤC |  |
+| 57 | Tin tức | Phân trang | ĐÃ KHÔI PHỤC | Đã bỏ phân trang (đọc code) |
+| 58 | Bài viết | Dòng dưới H1 | ĐÃ KHÔI PHỤC | "{chuyên mục} · {n} phút đọc" |
+| 59 | Bài viết | Khối "Bài viết liên quan" | ĐÃ KHÔI PHỤC |  |
+| 60 | Bài viết | Ảnh bìa khi chưa có ảnh | ĐÃ KHÔI PHỤC | Khối 400px |
+| 61 | Bài viết | Ngày trong dòng meta | ĐÃ KHÔI PHỤC |  |
+| 62 | Bài viết | Nút "Về danh sách" | ĐÃ KHÔI PHỤC |  |
+| 63 | Bài viết | Hover "Về danh sách" | ĐÃ KHÔI PHỤC |  |
+| 64 | Bài viết | Ảnh bìa | ĐÃ KHÔI PHỤC |  |
+| 65 | Bài viết | Thân bài | ĐÃ KHÔI PHỤC |  |
+| 66 | Về chúng tôi, Cách đánh giá, Affiliate | Khi tab chưa có ảnh | ĐÃ KHÔI PHỤC | 2 cột, khối 602x520, trang 1229=1229 |
+| 67 | Cách đánh giá | H1 | ĐÃ KHÔI PHỤC |  |
+| 68 | Cách đánh giá | Mô tả | ĐÃ KHÔI PHỤC |  |
+| 69 | Cách đánh giá | Khối 03: tiêu đề | ĐÃ KHÔI PHỤC |  |
+| 70 | Cách đánh giá | Khối 03: nội dung | ĐÃ KHÔI PHỤC |  |
+| 71 | Công bố affiliate | H1 | ĐÃ KHÔI PHỤC |  |
+| 72 | Công bố affiliate | Mô tả | ĐÃ KHÔI PHỤC |  |
+| 73 | Cách đánh giá, Affiliate | Breadcrumb | ĐÃ KHÔI PHỤC |  |
+| 74 | Giới thiệu | Bố cục | ĐÃ KHÔI PHỤC |  |
+| 75 | Liên hệ | H1 | ĐÃ KHÔI PHỤC |  |
+| 76 | Liên hệ | Mô tả | ĐÃ KHÔI PHỤC |  |
+| 77 | Liên hệ | Breadcrumb | ĐÃ KHÔI PHỤC |  |
+| 78 | Liên hệ | Câu trong khung navy | ĐÃ KHÔI PHỤC |  |
+| 79 | Liên hệ | Email trong khung navy | ĐÃ KHÔI PHỤC |  |
+| 80 | Liên hệ | Gửi form rỗng | Được phép | Kiểm tra form thật: logic, không đổi giao diện khi chưa lỗi |
+| 81 | Liên hệ | Bố cục | ĐÃ KHÔI PHỤC | Padding 36, 2 cột. Khung 322 thay 340px và ô nhập 119 thay 128px: được phép vì chống tràn |
+| 82 | Bonus | Nút "Nhận bonus" | Được phép | Không có link trong DB thì ẩn nút |
+| 83 | So sánh | Nút "Mở tài khoản", câu affiliate | Được phép | Không có link trong DB thì ẩn. Câu affiliate đã bỏ |
+| 84 | Chi tiết sàn | Nút và câu trong khung sàn | Được phép | Không có link trong DB thì ẩn |
+| 85 | Liên hệ | Email, Hợp tác, Telegram | Được phép | Rỗng thì ẩn dòng. Có dữ liệu ở 390: email 17,2 và 15,4px để vừa khung, đạt quy tắc cỡ chữ |
+| 86 | Bonus, Sàn, Tin | Số đếm ở tab | CÒN | Tab 0 vẫn ẩn; thiết kế in "0", và trạng thái này xảy ra cả khi có dữ liệu. Mục 13 đè mục 5. Vừa |
+| 87 | Bonus | "0 ưu đãi" | CÒN | "0 ưu đãi" vẫn ẩn; thiết kế có màn này. Nhỏ |
+| 88 | Bonus | Câu báo rỗng | ĐÃ KHÔI PHỤC | Chữ và kiểu khớp. Vị trí xem M3 |
+| 89 | Sàn | Danh sách rỗng | Được phép | Thiết kế không có màn rỗng cho Sàn; để trắng là do tôi xóa mock |
+| 90 | So sánh | Không có sàn | Được phép | Như dòng 89 |
+| 91 | Tin tức | Danh sách rỗng | Được phép | Như dòng 89 |
+| 92 | Sàn, So sánh | "Bonus đang có" = 0 | CÒN | `/san` vẫn "—", thiết kế in "0" (đọc code, chưa chụp). Bảng so sánh cũng vậy. Nhỏ |
+| 93 | Giới thiệu | Thiếu ảnh | ĐÃ KHÔI PHỤC | Khối ảnh giữ nguyên, 2 cột |
+
+### Khác biệt mới hoặc vòng 1 chưa ghi
+
+| # | Trang | Vị trí | Viewport | Thiết kế gốc | Bản dựng | Mức | Cách sửa | Ảnh ghép |
+|---|---|---|---|---|---|---|---|---|
+| M1 | Tin tức, Bài viết, Giới thiệu | Màu khối ảnh trống | 1440, 390 | rgba(127,127,127,.08): pixel 245 trên thẻ trắng, 235 trên nền xám | rgba(127,127,127,.12): pixel 239 và 230 | Nhỏ | `static/css/tokens.css:24` | [noimg_about_1440](file:///C:/Users/danhh/AppData/Local/Temp/claude/17ec8c0066fedc03/0e1ca350-6c2d-4075-8d81-f49e661aa4cb/scratchpad/design-pages/shots2/pair_noimg_about_1440.png) |
+| M2 | Chi tiết sàn, tab Tài khoản và Nạp & rút | Cột cuối bảng | 390 | Chữ cột cuối ở vị trí chuẩn | Lệch +3px do `<table>` với cột 32/24% | Nhỏ | `static/css/site.css:525-526` | [detail_pay_390](file:///C:/Users/danhh/AppData/Local/Temp/claude/17ec8c0066fedc03/0e1ca350-6c2d-4075-8d81-f49e661aa4cb/scratchpad/design-pages/shots2/pair_detail_pay_390.png) |
+| M3 | Bonus, DB rỗng hoặc tab 0 mục | Vị trí khối báo rỗng | 1440 | y=500 (thêm một gap của lưới rỗng) | y=476, cao hơn 24px | Nhỏ | `templates/public/bonus_list.html:11` | [empty_bonus_nodep_1440](file:///C:/Users/danhh/AppData/Local/Temp/claude/17ec8c0066fedc03/0e1ca350-6c2d-4075-8d81-f49e661aa4cb/scratchpad/design-pages/shots2/pair_empty_bonus_nodep_1440.png) |
+| M4 | Chi tiết sàn | Dải tab | 390 | Giữ vị trí cuộn sau khi bấm tab | Tải lại trang nên dải về đầu: tab đang chọn lệch +43 đến +157px, có thể bị khuất. Cùng nguyên nhân dòng 4 | Nhỏ | `templates/base_public.html:52`, hoặc cuộn tab đang chọn vào vùng nhìn | [detail_pay_390](file:///C:/Users/danhh/AppData/Local/Temp/claude/17ec8c0066fedc03/0e1ca350-6c2d-4075-8d81-f49e661aa4cb/scratchpad/design-pages/shots2/pair_detail_pay_390.png) |
+
+### Không tính là lệch giao diện, nhưng nên biết
+
+- Chuỗi "Sàn uy tín" và "Nhận tư vấn" trong file thiết kế dùng dạng Unicode không chuẩn NFC, bản dựng dùng NFC. Mắt thường không thấy; vị trí menu lệch 1px.
+- `/dieu-khoan`, `/bao-mat` không còn link nào trên site (đúng thiết kế, đã ghi ISSUES). Chính sách bảo mật thường cần link công khai: user nên quyết.
+- Mặc định mới chỉ có tác dụng với khóa Setting chưa từng lưu. Nếu `data/app.db` đã lưu các khóa cũ qua admin thì site thật có thể vẫn hiện chữ cũ. Vòng này đo trên DB tạm nên chưa xác nhận điều đó.
+
+### Chưa so được
+
+Trang 500; xác nhận và hủy đăng ký với token đúng; khổ 768 và 1080; dữ liệu thật ở cổng 8000; sticky chỉ kiểm tra thuộc tính; `bonus_count` = 0 có dữ liệu chỉ đọc code.

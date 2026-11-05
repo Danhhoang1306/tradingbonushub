@@ -448,3 +448,72 @@ Bản `git archive`, venv mới, `SMTP_BACKEND=console`, `BASE_URL=https://local
 - SMTP thật, Cloudflare Tunnel thật; lô SMTP bị từ chối từng địa chỉ chỉ giả lập.
 - Firefox, Safari, thiết bị thật, trình đọc màn hình.
 - CPU khi spam đăng nhập; chạy dài ngày, DB lớn.
+
+## Kiểm thử chức năng – Vòng 3
+
+Người kiểm: qa-func, 06/11/2026, trên commit 272be90. Giao diện khác trước theo brief mục 13 không tính là lỗi.
+Chạy lại: `.venv\Scripts\python qa\run_all.py --full`. Bộ mới: `qa/s11_round3.py` (bulk save, đối chiếu chức năng với 2e4229e, bảo mật route mới, nâng cấp DB, production + SMTP qua bộ nhận local `qa/fake_smtp.py`). Danh sách đối chiếu: `qa/results/s11_parity.json`.
+
+**Kết quả: 775 kiểm tra, 769 đạt, 6 không đạt. 2 lỗi Trung bình, 2 lỗi Thấp. Không có lỗi Nghiêm trọng hay Cao.** 6 dòng gồm 4 lỗi dưới đây (B1.1, E20, B10.1, C19.1) và 2 dòng không tính là lỗi: C9.3 (Markdown đúng chuẩn), E7.1 (màu lấy từ thiết kế).
+Số liệu gộp kết quả mới nhất của từng bộ: một lượt `--full`, sau đó chạy lại s2, s9, s10, s11 vì script còn kỳ vọng cũ hoặc lỗi script. Không có lượt liền mạch nào sau lần sửa script cuối.
+
+**Đính chính vòng 2:** kiểm tra D1.1 ("route admin chưa đăng nhập bị chặn") ở vòng 2 đạt mà không thử route nào, vì `admin_routes()` của QA trả danh sách rỗng với FastAPI hiện tại. Dòng "đã đạt" đó không có giá trị. Vòng 3 đã sửa script, có kiểm số lượng, và thử thật 59 đường dẫn, đều đạt.
+
+### Trung bình
+
+**V3-1. "Xuất bản thay đổi" ở Quảng cáo âm thầm đổi ngày kết thúc của banner chạy trên một năm** (B1.1)
+- Bước: banner chạy từ 01/01/2025 đến 30/11/2026. Mở `/admin/ads`, ô ngày hiện `01/01/2025 – 30/11`. Không sửa gì, bấm "Xuất bản thay đổi".
+- Mong đợi: mọi dòng giữ nguyên.
+- Thực tế: báo "Đã lưu", `end_date` thành 2025-11-30. Theo `banner_state`, banner thành "Đã kết thúc", ngừng hiện và `/go/ad` trả 404. Admin không sửa gì ở dòng đó.
+- Vị trí: `app/utils.py`. `date_range_label` bỏ năm của ngày đến khi đó là năm nay, còn `parse_date_range` hiểu ngày đến thiếu năm theo năm của ngày bắt đầu.
+- Cũng xảy ra khi năm bắt đầu khác năm nay và ngày đến nằm trong năm nay, với ngày/tháng đến không nhỏ hơn ngày/tháng bắt đầu. 9 dạng khoảng ngày còn lại giữ nguyên.
+
+**V3-2. Trang Bảo mật và Điều khoản không còn link nào trên site public** (E20)
+- Bước: DB mới, xem `/` và `/bonus`, tìm `/bao-mat`, `/dieu-khoan`.
+- Mong đợi: người để lại email vào được chính sách bảo mật.
+- Thực tế: hai trang vẫn 200 nhưng chỉ vào được bằng URL. Mặc định `footer.columns` đã bỏ hai link trong commit này; thiết kế không có hai link đó.
+- Vị trí: `app/content.py`, `DEFAULTS["footer"]`. Theo chữ của brief 13 đây có thể là chủ đích, nhưng brief không nhắc tới, nên cần user quyết định. Admin thêm lại được ở Trang chủ › Menu & chân trang.
+
+### Thấp
+
+**V3-3. Một banner mất link chặn lưu cả trang Quảng cáo, thông báo không chỉ banner nào** (B10.1)
+- Bước: banner gắn sàn, để trống link. Xóa link affiliate của sàn đó. Sửa một banner khác trên `/admin/ads`, bấm Xuất bản.
+- Mong đợi: lưu được, hoặc lỗi chỉ rõ thẻ nào.
+- Thực tế: flash chung "Link phải bắt đầu bằng http:// hoặc https://", không thẻ nào được lưu, chữ vừa sửa mất vì redirect. Thẻ lỗi có nhãn "no_link" nhưng thông báo không dẫn tới đó.
+- Vị trí: `app/routes/admin_data.py:ads_bulk`.
+
+**V3-4. Banner không ảnh là link rỗng, không có tên cho trình đọc màn hình** (C19.1)
+- Bước: banner không ảnh ở vị trí after-bonus. Xem `/`.
+- Mong đợi: khối nền theo brief, nhưng link có `aria-label`.
+- Thực tế: `<a href="/go/ad/1" class="ad__image" ...></a>`.
+- Vị trí: `templates/public/_macros.html:66`.
+
+### Chức năng bị mất so với 2e4229e
+
+Crawl mọi form và link của 41 màn admin + 10 trang public ở cả hai bản rồi so.
+
+- **Chưa có quyết định:** link footer tới `/dieu-khoan`, `/bao-mat` (V3-2).
+- **Thay thế, không mất:** lưu link từng dòng thành `/admin/brokers/links` (route cũ còn, không còn nút). Logo, favicon, email hợp tác dời từ tab Chung sang tab Thương hiệu, lưu và hiện đúng. Công tắc ẩn sàn, khóa/xóa tài khoản dời vào drawer, đã thao tác thật.
+- **Bỏ theo brief 13:** biểu đồ, top sàn, thẻ click affiliate, dòng tin chưa đọc ở Tổng quan (số chưa đọc còn ở sidebar). Bài liên quan, phân trang tin tức. Ô Nhãn của Trang › Liên hệ (dùng header mục Giới thiệu). Rail ảnh không in `ads_note`, đã ghi ở `docs/ISSUES.md`.
+- Không có route POST nào mất nút ngoài mục trên.
+
+### Đã kiểm và đạt
+
+- **Bulk save:** lưu nguyên trạng đúng (trừ V3-1); sửa một dòng chỉ đổi dòng đó, không mất views, clicks, ảnh, sàn; Enter trong ô lưu đúng; công tắc không nộp nhầm form lớn. Một dòng sai (javascript:, ngày sai, quá dài) thì không lưu dòng nào; dòng không gửi lên giữ nguyên; id lạ bỏ qua; xóa trống link được. Dạng ngày `30/11`, `– 30/11`, `01/12 – 31/01` đúng.
+- **Bảo mật:** 43 đường dẫn POST thiếu hoặc sai CSRF đều 403, chưa đăng nhập về login, gồm route mới. Editor 403 toàn bộ Cài đặt, gồm tab Thương hiệu. Editor sửa được link và banner, như quyền cũ. Redirect qua `back`, `tab`, `q`, `next`, Referer không ra ngoài host; `/admin/bonus/../..//evil.com` trong `back` vẫn cùng host; CRLF trong `q` không chèn header. XSS: payload trong URL, tên, giấy phép, nhãn mới, tham số drawer, `cat`, tìm trực tiếp không lọt ra trên 23 trang khi bỏ CSP; `s4` đạt 157/157.
+- **Production + console:** đăng ký báo lỗi, không lưu, không ghi token vào log; chiến dịch về nháp, không mất chữ; gửi thử 502; liên hệ và hủy đăng ký vẫn chạy.
+- **Production + SMTP (bộ nhận local, có STARTTLS và kiểm chứng chỉ):** đăng ký nhận đúng email, link https, có `List-Unsubscribe-Post`, không có tên; địa chỉ bị từ chối không chặn người khác, báo `send_partial`; SMTP tắt báo `sub_failed`.
+- **Nâng cấp, restart:** DB từ 2e4229e lên 0003, từ 9c29ee1 lên 0003: đủ dòng, phiên, link email cũ, chiến dịch partial gửi tiếp không trùng; `alembic check` sạch; downgrade rồi upgrade được. Restart và tắt nóng giữ dữ liệu, ảnh.
+- **README production:** cài sạch, lệnh sao lưu và phục hồi chạy nguyên văn, ảnh trở lại.
+- **Lỗi vòng 2 đã sửa:** thấp 18 và N-1 đến N-11, đã chạy lại. 20 POST đồng thời còn đúng 3 email; đã hủy nhận 1 email, giữ `unsubscribed`, báo `sub_wait`; `Ð` thành `dong`; `PORT=abc` thoát mã 2.
+- **Nghi ngờ vòng 1:** số 3 đã sửa (đổi email bị chặn sau 20 lần sai theo IP). Số 5 (`curl /go/*` vẫn đếm) và số 7 (editor gửi được chiến dịch, không tự đổi được mật khẩu) vẫn chờ quyết định.
+
+Tương phản: nhãn "Tài trợ" 2,64 và `nav-count` 3,46 dưới AA, nhưng hai màu này có trong thiết kế nên không tính là lỗi theo brief 13.
+
+### Chưa kiểm được
+
+- Site thật ở cổng 8000, `start.bat`, tunnel, `data/app.db`, `.env`: cấm đụng.
+- Nhà cung cấp SMTP thật, độ trễ khi gửi lô lớn: chỉ có bộ nhận local.
+- Firefox, Safari, thiết bị thật, trình đọc màn hình. Điện thoại chỉ giả lập Chromium.
+- So từng màn với thiết kế: `s8` chạy và tạo ảnh ghép, nhưng tôi không xem lại vòng này. Báo cáo so thiết kế ở `docs/design-diff/` là của người khác.
+- Chạy dài ngày, DB lớn.

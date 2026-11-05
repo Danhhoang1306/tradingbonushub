@@ -39,15 +39,16 @@ def prod_env(**kw):
     return {"APP_ENV": "production", "SECRET_KEY": PROD_KEY, "BASE_URL": BASE, "SMTP_BACKEND": "console", **kw}
 
 
-def admin_routes(env):
-    """Danh sách route admin (GET/POST). /openapi.json đã bị bỏ nên đọc trực tiếp từ app."""
-    code = ("from app.main import app\n"
-            "for r in app.routes:\n"
-            "    m = getattr(r, 'methods', None)\n"
-            "    if m and r.path.startswith('/admin'):\n"
-            "        print(r.path, ','.join(sorted(m)))\n")
-    out = subprocess.run([PY, "-c", code], cwd=ROOT, env=env, capture_output=True, text=True, encoding="utf-8", check=True).stdout
-    return [(ln.split()[0], ln.split()[1].lower().split(",")) for ln in out.splitlines() if ln.strip()]
+def admin_routes(env=None, root=None):
+    """Danh sách route admin, đọc từ decorator trong mã nguồn (app.routes rỗng với FastAPI hiện tại do _IncludedRouter).
+    Có kiểm số lượng: danh sách rỗng từng làm kiểm tra phân quyền đạt mà không thử route nào."""
+    out = {}
+    for name in ("admin.py", "admin_data.py", "admin_content.py", "admin_people.py"):
+        src = Path(root or ROOT, "app", "routes", name).read_text(encoding="utf-8")
+        for method, path in re.findall(r'@router\.(get|post)\("([^"]*)"', src):
+            out.setdefault("/admin" + path, []).append(method)
+    assert len(out) >= 50, f"chỉ tìm thấy {len(out)} route admin"
+    return list(out.items())
 
 
 def port_free(port: int) -> bool:

@@ -174,6 +174,16 @@ Quyết định của team leader để thực hiện:
   màn như thiết kế: màn có form thì lưu form, màn danh sách báo thay đổi đã được lưu. Tổng quan đúng 4 thẻ và bố cục thiết kế,
   bỏ biểu đồ tự thêm. "Sắp hết hạn" = còn tối đa 60 ngày. Cột bảng đúng thiết kế.
 
+### 13.1 Chốt sau đo lại vòng 2 (06/11, team leader)
+Hai yêu cầu của user cùng đúng: màn có trong thiết kế phải giống thiết kế, VÀ admin sửa được mọi nội dung public (mục 12).
+Cách dung hòa: tab và drawer gốc CHỈ có đúng các ô của thiết kế. Ô bổ sung chuyển sang tab mới (ví dụ "Chân trang", "Hero nâng cao",
+"SEO nâng cao") hoặc khối thu gọn mặc định đóng "Thông tin chi tiết" ở cuối drawer. Không bỏ chức năng nào.
+Bỏ cột Xem trước và thanh lưu dính đáy ở các tab có trong thiết kế.
+GIỮ thêm: font nút Be Vietnam Pro; nút Đăng xuất; "+ Thêm"; nút Sửa bài; hộp xác nhận Xóa và Gửi; Esc đóng drawer; sort
+"Sắp hết hạn" theo ngày thật; hàng bonus xếp dọc ở 390; câu báo rỗng trung tính ở danh sách.
+Số 0: theo thiết kế, tab và thống kê in "0" (đè quy tắc ẩn số 0 ở mục 5).
+Chưa làm, chờ user: trường dữ liệu mới cho thẻ hero, "Bonus nổi bật", chữ phụ rail (K16, K18, K24, K25); link Điều khoản, Bảo mật ở footer.
+
 ## 11. Cách làm việc (vibe coding có kỷ luật)
 - Trước khi code: đọc đúng phần cần, nêu kế hoạch ngắn trong đầu; không đoán, xem file thật.
 - Chia nhỏ theo lát dọc: làm một việc, chạy thử, rồi mới sang việc tiếp theo. Không viết nhiều rồi mới test.

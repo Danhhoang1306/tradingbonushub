@@ -232,11 +232,8 @@ try:
     for i in range(25):
         h.post("/admin/posts/new", {"title": f"Trang {i:02d}", "category": "Kiến thức" if i % 2 else "Tin sàn", "status": "published", "body_md": "x"})
     t = pub.get("/tin-tuc").text
-    c("C11.4", "Trang 1 có 12 bài và link sang trang 2", len(set(re.findall(r'href="/tin-tuc/(trang-\d+)"', t))) == 12 and "page=2" in t)
-    t3 = pub.get("/tin-tuc?page=3").text
-    c("C11.5", "Trang 3 có 1 bài", len(set(re.findall(r'href="/tin-tuc/(trang-\d+)"', t3))) == 1)
-    r = pub.get("/tin-tuc?page=999")
-    c("C11.6", "page=999 không 500, kẹp về trang cuối", r.status_code == 200 and len(set(re.findall(r'href="/tin-tuc/(trang-\d+)"', r.text))) == 1)
+    c("C11.4", "Tin tức bỏ phân trang: hiện đủ 25 bài", len(set(re.findall(r'href="/tin-tuc/(trang-\d+)', t))) == 25, len(set(re.findall(r'href="/tin-tuc/(trang-\d+)', t))))
+    c("C11.6", "?page=999 (link cũ đã index) vẫn 200, không 500", pub.get("/tin-tuc?page=999").status_code == 200)
     for q in ("0", "-5", "99999999999999999999999999", "1.5", "abc", "", "%00"):
         r = pub.get(f"/tin-tuc?page={q}")
         c(f"C11.p{q}", f"/tin-tuc?page={q}: trang HTML 200 hoặc 404 (khách không thấy JSON lỗi)", r.status_code in (200, 404) and "text/html" in r.headers["content-type"], f"{r.status_code} {r.headers['content-type']} {r.text[:120]}")
@@ -349,8 +346,8 @@ try:
     t = pub.get("/").text
     i = t.find("/go/ad/")
     frag = t[max(0, i - 300):i + 500]
-    txt = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", frag))
-    c("C19.1", "Banner không ảnh, không sàn: vẫn có link và nội dung nhìn thấy (tên banner), không phải hộp trống", "QC chỉ link" in txt, txt[:220])
+    link = re.search(r'<a href="/go/ad/\d+"[^>]*>(.*?)</a>', frag, re.S)
+    c("C19.1", "Banner không ảnh (khối nền theo brief 13): link vẫn có tên cho trình đọc màn hình", link and (link.group(1).strip() or "aria-label" in link.group(0)), link and link.group(0)[:160])
     c("C19.2", "Banner luôn có nhãn Tài trợ", "Tài trợ" in frag)
     # đặt link đúng 1000 ký tự
     url = "https://x.test/" + "a" * 985

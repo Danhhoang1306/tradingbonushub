@@ -7,4 +7,4 @@ Brief: docs/TEAM_BRIEF.md. Bản sao code cũ: F:\Tradingbonushub_old_2026-11-04
 - [x] Phase 3: QA xong 05/11. Báo cáo: docs/QA_REPORT.md. Chạy lại: qa/run_all.py, qa/mock/run_audit.py
 - [x] Phase 4: QA 2 vòng + đợt sửa cuối xong 05/11 (395 test). Báo cáo: docs/QA_REPORT.md
 - [x] Phase 5: lên tradingbonushub.com 05/11 (start.bat, stop.bat). SMTP chưa cấu hình: backend console, section signup tắt
-- [ ] Phase 6: trả về đúng thiết kế theo brief mục 13 (revert-backend, revert-public, revert-admin), rồi agent so sánh lại, restart site  <- đang chạy
+- [ ] Phase 6: QA vòng 3 + đo lại xong. Đang sửa đợt cuối (brief 13.1): revert-backend, revert-public, revert-admin. Sau đó restart và bật section signup trong DB thật

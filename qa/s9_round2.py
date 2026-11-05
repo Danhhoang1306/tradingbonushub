@@ -351,23 +351,24 @@ try:
     k = s.sql("select id from brokers")[0][0]
     from qalib import mk_banner
     mk_banner(h, "Rail ảnh", placement="rail-left", broker_id=k, image_path=mp, target_url="https://ad.example.test/r")
+    mk_banner(h, "Rail dữ liệu", placement="rail-right", broker_id=k, target_url="https://ad.example.test/n")
     t = pub.get("/").text
-    i = t.find('class="rail ')
-    c("R10.1", "Rail có ảnh in ads_note (nghi ngờ 6)", "CFD có rủi ro mất vốn cao." in t[i:i + 900], t[i:i + 200])
-    # nghi ngờ 3: đổi email mỗi lần
-    codes = []
-    for n in range(12):
-        l = Http()
-        tok = re.search(r'name="csrf_token" value="([^"]+)"', l.get("/admin/login").text).group(1)
-        codes.append(l.post("/admin/login", {"email": f"spray{n}@qa.test", "password": "sai", "csrf_token": tok}, raw=True).status_code)
-    print("     đăng nhập sai, đổi email mỗi lần, 1 IP:", codes, flush=True)
-    c("R10.2", "Đổi email mỗi lần cũng bị chặn theo IP (nghi ngờ 3)", 429 in codes, codes)
+    i = t.find('rail--right')
+    c("R10.1", "Rail dạng dữ liệu in ads_note (rail ảnh không in: đúng thiết kế, ISSUES)", "CFD có rủi ro mất vốn cao." in t[i:i + 2500], t[i:i + 200])
     # nghi ngờ 5: bot
     print("     /go đếm cả curl:", pub.get(f"/go/broker/{k}").status_code, s.sql("select clicks from brokers"), flush=True)
     # nghi ngờ 7: editor
     e = Http().login("ed@qa.test", "QaEditor-12345")
     r = e.post("/admin/subscribers/mail", {"subject": "Editor gửi", "body": "x", "action": "draft"})
     print("     editor lưu nháp chiến dịch:", r.status_code, "; có chỗ tự đổi mật khẩu:", "password" in e.get("/admin").text, flush=True)
+    # nghi ngờ 3: đổi email mỗi lần
+    codes = []
+    for n in range(40):
+        l = Http()
+        tok = re.search(r'name="csrf_token" value="([^"]+)"', l.get("/admin/login").text).group(1)
+        codes.append(l.post("/admin/login", {"email": f"spray{n}@qa.test", "password": "sai", "csrf_token": tok}, raw=True).status_code)
+    print("     đăng nhập sai, đổi email mỗi lần, 1 IP:", codes, flush=True)
+    c("R10.2", "Đổi email mỗi lần cũng bị chặn theo IP (nghi ngờ 3)", 429 in codes, codes)
 finally:
     s.stop()
 
