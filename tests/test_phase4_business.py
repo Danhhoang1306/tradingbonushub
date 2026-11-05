@@ -174,6 +174,92 @@ def test_progress_saved_per_batch_and_stops_on_failure(admin, db, monkeypatch):
     assert calls == [2, 2] and c.status == "partial" and len(c.sent_to) == 2 and c.sent_count == 2
 
 
+def test_refused_address_does_not_stop_the_rest(admin, db, monkeypatch):
+    monkeypatch.setattr(admin_people, "SEND_BATCH", 2)
+    _confirmed(db, *[f"u{i}@example.test" for i in range(5)])
+    refused = db.query(Subscriber).first().email
+
+    def refuse_one(messages):  # SMTP vẫn sống, chỉ một địa chỉ bị từ chối
+        good = [m for m in messages if m["To"] != refused]
+        for m in good:
+            m.delivered = True
+        return len(good)
+
+    with mock.patch.object(admin_people, "send_many", refuse_one):
+        admin.post("/admin/subscribers/mail", {"subject": "S", "body": "B", "action": "send"})
+    c = db.query(Campaign).one()
+    assert c.status == "partial" and c.sent_count == 4 and refused not in c.sent_to
+
+
+def test_partial_with_nobody_left_finishes(admin, db):
+    _confirmed(db, "a@example.test")
+    c = Campaign(subject="S", body="B", status="partial", sent_to=["a@example.test"], sent_count=1)
+    db.add(c)
+    db.commit()
+    r = admin.post("/admin/subscribers/mail", {"subject": "S", "body": "B", "draft_id": c.id, "action": "send"})
+    db.expire_all()
+    assert r.status_code == 303 and db.get(Campaign, c.id).status == "sent" and mailer.outbox == []
+
+
+def test_resume_count_excludes_people_already_mailed(admin, db):
+    _confirmed(db, "a@example.test", "b@example.test")
+    c = Campaign(subject="S", body="B", status="partial", sent_to=["a@example.test"], sent_count=1)
+    db.add(c)
+    db.commit()
+    assert admin.get(f"/admin/subscribers?tab=mail&draft={c.id}").context["audience_count"] == 1
+
+
+def test_concurrent_send_only_one_wins(admin, db):
+    _confirmed(db, "a@example.test")
+    c = Campaign(subject="S", body="B", status="sent")
+    db.add(c)
+    db.commit()
+    # Request thứ hai đã qua kiểm tra _draft trước khi request đầu đổi trạng thái.
+    with mock.patch.object(admin_people, "_draft", lambda session, cid: session.get(Campaign, cid)):
+        r = admin.post("/admin/subscribers/mail", {"subject": "S", "body": "B", "draft_id": c.id, "action": "send"})
+    assert r.status_code == 404 and mailer.outbox == []
+
+
+def test_shared_connection_logs_in_once(monkeypatch):
+    server = mock.MagicMock()
+    connect = mock.MagicMock(return_value=server)
+    monkeypatch.setattr(mailer, "_connect", connect)
+    monkeypatch.setattr(mailer.config, "smtp_backend", "smtp")
+    with mailer.shared_connection():
+        assert mailer.send_many([mailer.build("a@example.test", "S", "B")]) == 1
+        assert mailer.send_many([mailer.build("b@example.test", "S", "B")]) == 1
+    assert connect.call_count == 1 and server.send_message.call_count == 2 and server.quit.called
+
+
+def test_unsubscribed_can_resubscribe_next_day(client, db):
+    subscribe(client)
+    client.post(f"/huy-dang-ky/{db.query(Subscriber).one().token}")
+    db.expire_all()
+    db.query(Subscriber).one().confirm_sent_at = utcnow() - timedelta(days=1, minutes=1)
+    db.commit()
+    mailer.outbox.clear()
+    subscribe(client)
+    db.expire_all()
+    assert len(mailer.outbox) == 1 and db.query(Subscriber).one().status == "pending"
+
+
+def test_excerpt_is_not_double_escaped(client, db):
+    db.add(Post(slug="bai", title="T", category="Kiến thức", status="published", body_md="A & B"))
+    db.commit()
+    r = client.get("/tin-tuc/bai")
+    assert r.context["meta"]["description"] == "A & B" and "&amp;amp;" not in r.text
+
+
+def test_bad_referer_on_expired_post_is_not_500(client):
+    r = client.post("/admin/bonus/5/toggle", data={}, follow_redirects=False, headers={"referer": "http://[bad"})
+    assert r.status_code == 303 and r.headers["location"] == "/admin/login?next=/admin"
+
+
+def test_get_on_post_only_admin_url_goes_to_overview(admin):
+    r = admin.get("/admin/subscribers/mail", follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/admin"
+
+
 def test_no_recipients_keeps_typed_text(admin, db):
     r = admin.post("/admin/subscribers/mail", {"subject": "Tiêu đề", "body": "Nội dung", "action": "send"})
     assert r.status_code == 400 and flash_code(r) == "no_recipients"
@@ -610,3 +696,8 @@ def test_legal_defaults_render_and_are_honest(client):
 def test_login_still_works(client, db):
     make_user(db)
     assert login(client).status_code == 303
+
+
+def test_about_subpage_label_shows_in_breadcrumb(admin, client):
+    admin.post("/admin/pages/method", {"title": "Cách đánh giá", "label": "Nhãn riêng"})
+    assert "Nhãn riêng" in client.get("/gioi-thieu/cach-danh-gia").text

@@ -2,6 +2,8 @@
 import logging
 import smtplib
 import ssl
+import threading
+from contextlib import contextmanager
 from email.message import EmailMessage
 
 from app.config import config
@@ -10,6 +12,7 @@ log = logging.getLogger("app.mailer")
 
 # Bộ nhớ email đã "gửi" ở chế độ console, để test kiểm tra.
 outbox: list[EmailMessage] = []
+_local = threading.local()
 
 
 def build(to: str, subject: str, text: str, unsubscribe_url: str | None = None) -> EmailMessage:
@@ -36,6 +39,39 @@ def _connect() -> smtplib.SMTP:
     return server
 
 
+@contextmanager
+def shared_connection():
+    """Các lần send_many trong khối này dùng chung một kết nối SMTP (gửi chiến dịch theo lô, không đăng nhập lại mỗi lô)."""
+    server = None
+    if config.smtp_backend == "smtp":
+        try:
+            server = _connect()
+        except (OSError, smtplib.SMTPException):
+            log.exception("Không mở được kết nối SMTP")
+    _local.server = server
+    try:
+        yield
+    finally:
+        _local.server = None
+        if server is not None:
+            try:
+                server.quit()
+            except (OSError, smtplib.SMTPException):
+                pass
+
+
+def _send_all(server, messages: list[EmailMessage]) -> int:
+    sent = 0
+    for msg in messages:
+        try:
+            server.send_message(msg)
+            msg.delivered = True
+            sent += 1
+        except smtplib.SMTPRecipientsRefused:
+            log.warning("SMTP từ chối người nhận %s", msg["To"])
+    return sent
+
+
 def send_many(messages: list[EmailMessage]) -> int:
     """Gửi cả lô qua một kết nối SMTP. Trả về số email gửi thành công; email đã gửi có `msg.delivered = True`."""
     if config.smtp_backend != "smtp":
@@ -44,19 +80,15 @@ def send_many(messages: list[EmailMessage]) -> int:
             msg.delivered = True
             log.info("[console email] to=%s subject=%s\n%s", msg["To"], msg["Subject"], msg.get_content())
         return len(messages)
-    sent = 0
     try:
+        shared = getattr(_local, "server", None)
+        if shared is not None:
+            return _send_all(shared, messages)
         with _connect() as server:
-            for msg in messages:
-                try:
-                    server.send_message(msg)
-                    msg.delivered = True
-                    sent += 1
-                except smtplib.SMTPRecipientsRefused:
-                    log.warning("SMTP từ chối người nhận %s", msg["To"])
+            return _send_all(server, messages)
     except (OSError, smtplib.SMTPException):
-        log.exception("SMTP gửi thất bại sau %s/%s email", sent, len(messages))
-    return sent
+        log.exception("SMTP gửi thất bại, lô %s email", len(messages))
+    return sum(1 for m in messages if getattr(m, "delivered", False))
 
 
 def send_email(to: str, subject: str, text: str, unsubscribe_url: str | None = None) -> bool:

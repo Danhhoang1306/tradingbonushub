@@ -3,7 +3,7 @@ import mimetypes
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -29,6 +29,7 @@ CSP_SCRIPTS_ANALYTICS = ("script-src 'self' 'unsafe-inline' https://www.googleta
 
 PUBLIC_BODY_LIMIT = 1024 * 1024
 ADMIN_BODY_LIMIT = 64 * 1024 * 1024  # upload nhiều ảnh, mỗi ảnh tối đa 5MB
+BUFFERED_BODY_LIMIT = 8 * 1024 * 1024  # không có Content-Length phải đệm vào RAM trước khi xác thực: trần thấp hơn
 
 
 class SafeStaticFiles(StaticFiles):
@@ -86,6 +87,7 @@ class BodyLimit:
             if length.isdigit() and int(length) > limit:
                 return await too_large(scope, receive, send)
             return await self.app(scope, receive, send)
+        limit = min(limit, BUFFERED_BODY_LIMIT)
         messages, total = [], 0
         while True:
             message = await receive()
@@ -153,6 +155,8 @@ def create_app() -> FastAPI:
     async def http_error(request: Request, exc: StarletteHTTPException):
         if exc.status_code == 404 and not request.url.path.startswith(("/static/", "/media/")):
             return _error_page(request, 404)
+        if exc.status_code == 405 and request.method == "GET" and request.url.path.startswith("/admin"):
+            return RedirectResponse("/admin", status_code=303)  # URL chỉ có POST (tải lại/đăng nhập lại sau trang lỗi form)
         return PlainTextResponse(str(exc.detail), status_code=exc.status_code)
 
     @app.exception_handler(RequestValidationError)

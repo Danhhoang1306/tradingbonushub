@@ -52,7 +52,7 @@ def test_resubscribe_after_unsubscribe(client, db):
 
     from app.models import utcnow
     db.expire_all()
-    db.query(Subscriber).one().confirm_sent_at = utcnow() - timedelta(days=31)  # quá hạn chờ dành cho người đã hủy
+    db.query(Subscriber).one().confirm_sent_at = utcnow() - timedelta(days=2)  # quá hạn chờ dành cho người đã hủy
     db.commit()
     subscribe(client, email="KHACH@example.test")
     db.expire_all()

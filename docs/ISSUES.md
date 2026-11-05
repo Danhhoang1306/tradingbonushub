@@ -22,7 +22,7 @@ Editor mở `/admin/settings` nhận 403. Ẩn mục này trong sidebar khi `not
   `bonus_types[].short` (nhãn ngắn cho tab/chip vì thiết kế dùng hai bộ nhãn), `pages.terms/privacy`, `contact_page.success_text`.
 - `Campaign.status` có thêm giá trị `sending` (ghi lại trước khi gửi, đổi thành `sent` khi xong).
 - Bonus "Sắp hết hạn" = đang hiển thị và hết hạn trong ≤ 14 ngày.
-- Phase 4: thêm cột `Subscriber.confirm_sent_at`, `confirm_count`, `Campaign.sent_to` (migration 0002); `Campaign.status` thêm `partial`; bỏ `/docs` ở mọi môi trường; người đã hủy đăng ký chỉ nhận lại tối đa 1 email xác nhận mỗi 30 ngày.
+- Phase 4: thêm cột `Subscriber.confirm_sent_at`, `confirm_count`, `Campaign.sent_to` (migration 0002); `Campaign.status` thêm `partial`; bỏ `/docs` ở mọi môi trường; người đã hủy đăng ký chỉ nhận lại tối đa 1 email xác nhận mỗi 24 giờ.
 - Mô tả trang Liên hệ mặc định ("Gửi câu hỏi, báo lỗi thông tin bonus hoặc đề nghị hợp tác.") do backend đặt vì
   thiết kế không có header riêng cho trang này; admin sửa được ở Trang › Liên hệ.
 - Gửi email chiến dịch chạy đồng bộ trong request (một kết nối SMTP cho cả lô). Đủ cho danh sách nhỏ; danh sách lớn
@@ -166,3 +166,8 @@ Chi tiết trong `docs/VIEW_CONTEXT.md`.
 
 **QA**
 - Production giờ cần đủ `SECRET_KEY` (≥ 32 ký tự), `BASE_URL`, `SMTP_BACKEND`, nếu không `run.py` thoát mã 2. `/xac-nhan`, `/huy-dang-ky` phải POST. Broker cần `license`. Script `qa/` cần cập nhật.
+
+## [Admin FE → Backend] Phát hiện khi chạy đầu cuối Phase 4 (05/11)
+17. **[ĐÃ XỬ LÝ 05/11]** **Ô `label` ở Trang › Cách đánh giá và Công bố affiliate lưu được nhưng không hiện trên site**: `_about()` trong `app/routes/public.py` luôn tạo
+    breadcrumb bằng `_crumb(ctx, "gioithieu", "/gioi-thieu")`, nên nhãn của `pages.method`, `pages.affiliate` không được dùng. Đề nghị thêm crumb theo `tab`, hoặc bỏ ô này khỏi hai tab đó.
+

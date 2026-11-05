@@ -155,7 +155,10 @@ def admin_api(request: Request, db: Session = Depends(get_db)) -> Admin:
 
 def _return_path_after_login(request: Request) -> str:
     """POST hết phiên: quay lại trang đang đứng (route POST không mở được bằng GET sau khi đăng nhập)."""
-    ref = urlsplit(request.headers.get("referer", ""))
+    try:
+        ref = urlsplit(request.headers.get("referer", ""))
+    except ValueError:  # header do client gửi, có thể sai cú pháp
+        return "/admin"
     if ref.netloc == request.url.netloc and ref.path.startswith("/admin") and ref.path != "/admin/login":
         return ref.path + (f"?{ref.query}" if ref.query else "")
     return "/admin"

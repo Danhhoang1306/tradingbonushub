@@ -201,6 +201,14 @@ def test_body_limit_without_content_length(client):
     assert r.status_code == 413
 
 
+def test_chunked_admin_body_has_lower_limit_before_auth(client):
+    def chunks():
+        for _ in range(9):
+            yield b"x" * (1024 * 1024)
+    r = client.post("/admin/media/upload", content=chunks(), headers={"content-type": "application/x-www-form-urlencoded"})
+    assert r.status_code == 413
+
+
 def test_small_chunked_body_still_works(client, db):
     from app.models import ContactMessage
 

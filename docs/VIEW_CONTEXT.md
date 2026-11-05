@@ -263,7 +263,7 @@ Form đăng ký (section `signup`, nên đặt `id="dang-ky"`):
 ```
 Sau POST luôn redirect 303 về `next#dang-ky` kèm flash `sub_ok|sub_invalid|sub_rate`.
 Hành vi: email mới → gửi mail xác nhận; đã xác nhận → không gửi lại (vẫn báo `sub_ok`); đang chờ → gửi lại cùng link, tối đa
-3 email/24 giờ cho một địa chỉ; đã hủy → tối đa 1 email/30 ngày. Vượt giới hạn vẫn báo `sub_ok`. SMTP lỗi → `sub_failed`.
+3 email/24 giờ cho một địa chỉ; đã hủy → tối đa 1 email/24 giờ. Vượt giới hạn vẫn báo `sub_ok`. SMTP lỗi → `sub_failed`.
 
 ### `GET /bonus?type=&sort=` → `public/bonus_list.html`
 `type ∈ nodep|deposit|cashback|contest|crypto` (khác → all), `sort ∈ new|value|expiry` (khác → new).
@@ -536,7 +536,7 @@ Chỉ gửi người **đã xác nhận**; mỗi email tự kèm link hủy.
 Lưu nháp → 303 về `?tab=mail&draft=<id>` (lưu tiếp sẽ cập nhật đúng bản nháp đó). Xóa người đăng ký: `POST delete_url`.
 
 **SMTP lỗi**: gửi hỏng hết → chiến dịch về `draft`, flash `send_failed`, redirect về form nháp. Gửi được một phần → `partial`,
-flash `send_partial`, gửi lại chỉ tới người chưa nhận. `sent` nghĩa là mọi người đã nhận. Không có người nhận → 400, giữ chữ đang soạn, flash `no_recipients`.
+flash `send_partial`, gửi lại chỉ tới người chưa nhận (`audience_count` khi mở lại không đếm người đã nhận; hết người còn lại thì thành `sent`). Địa chỉ bị SMTP từ chối không chặn người khác, chiến dịch ở `partial`. `sent` nghĩa là mọi người đã nhận. Không có người nhận → 400, giữ chữ đang soạn, flash `no_recipients`.
 Chiến dịch kẹt `sending` (server tắt giữa lúc gửi) tự về `partial`/`draft` khi khởi động lại hoặc sau 15 phút không có tiến độ. Tiến độ ghi theo lô 20 email, nên gửi tiếp có thể trùng tối đa một lô.
 
 **Mở lại bản nháp**: `GET /admin/subscribers?tab=mail&draft=<id>` (= `c.edit_url`) nạp nháp vào `mail_form`. Campaign không
@@ -590,7 +590,7 @@ Trường:
 - Banner `after-bonus`/`before-blog`: mỗi lần trang chủ render, `views` +1. Rail: `views` +1 qua beacon (mục 2.2).
   Click qua `/go/ad/{id}` → `clicks` +1.
 - Tham số sai kiểu hoặc id quá lớn ở GET → trang 404. HEAD dùng được mọi nơi trừ `/go/*` và không đếm lượt. `/docs` không có ở môi trường nào.
-- Thân request tối đa 1MB ở public và `/admin/login`, 64MB ở admin; vượt → 413.
+- Thân request tối đa 1MB ở public và `/admin/login`, 64MB ở admin (8MB nếu không có Content-Length); vượt → 413.
 - Chạy local cho FE: đặt `APP_ENV=development` (mặc định là production, cần đủ `SECRET_KEY`, `BASE_URL`, `SMTP_BACKEND`), `PORT=8011`/`8012`,
   `DATABASE_URL=sqlite:///<thư mục tạm>/fe.db`, `UPLOAD_DIR=<thư mục tạm>/up`, rồi `python run.py`.
   Tạo tài khoản: `python -m app.cli create-admin --email ban@example.test`. Không tương tác: đặt biến môi trường

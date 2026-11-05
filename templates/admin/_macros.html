@@ -71,11 +71,11 @@
   <div class="rows-cells" style="--n: {{ cols|length }}{{ _tpl(cols) }}">
     {% for key, label, kind in cols %}
       {% if kind == 'textarea' %}
-      <textarea name="{{ prefix }}_{{ key }}" rows="3" maxlength="1000" placeholder="{{ label }}" aria-label="{{ label }}">{{ r[key] if r and r[key] is not none else '' }}</textarea>
+      <textarea name="{{ prefix }}_{{ key }}" rows="3" maxlength="5000" placeholder="{{ label }}" aria-label="{{ label }}">{{ r[key] if r and r[key] is not none else '' }}</textarea>
       {% elif kind == 'pairlines' %}
-      <textarea name="{{ prefix }}_{{ key }}" rows="4" maxlength="{{ LIMITS.get(prefix ~ '_' ~ key, 1000) }}" placeholder="Nhãn | /duong-dan (mỗi dòng một link)" aria-label="{{ label }}" data-lines="pair" data-add-label="+ Thêm link">{{ r[key] if r and r[key] is not none else '' }}</textarea>
+      <textarea name="{{ prefix }}_{{ key }}" rows="4" maxlength="{{ LIMITS.get(prefix ~ '_' ~ key, 5000) }}" placeholder="Nhãn | /duong-dan (mỗi dòng một link)" aria-label="{{ label }}" data-lines="pair" data-add-label="+ Thêm link">{{ r[key] if r and r[key] is not none else '' }}</textarea>
       {% else %}
-      <input type="text" name="{{ prefix }}_{{ key }}" value="{{ r[key] if r and r[key] is not none else '' }}" maxlength="{{ LIMITS.get(prefix ~ '_' ~ key, 1000) }}" placeholder="{{ label }}" aria-label="{{ label }}">
+      <input type="text" name="{{ prefix }}_{{ key }}" value="{{ r[key] if r and r[key] is not none else '' }}" maxlength="{{ LIMITS.get(prefix ~ '_' ~ key, 5000) }}" placeholder="{{ label }}" aria-label="{{ label }}">
       {% endif %}
     {% endfor %}
   </div>

@@ -25,7 +25,7 @@ router = APIRouter()
 
 POSTS_PER_PAGE = 12
 CONFIRM_EMAILS_PER_DAY = 3      # email xác nhận tối đa cho một địa chỉ trong 24 giờ
-UNSUBSCRIBED_RESEND_DAYS = 30   # người đã hủy: nhập lại địa chỉ của họ chỉ gây tối đa 1 email mỗi 30 ngày
+UNSUBSCRIBED_RESEND_DAYS = 1    # người đã hủy: tối đa 1 email/ngày, ngắn để người hủy nhầm vẫn đăng ký lại được
 BONUS_SORTS = (("new", "Mới nhất"), ("value", "Giá trị cao"), ("expiry", "Sắp hết hạn"))
 BROKER_TABS = (("overview", "Tổng quan"), ("bonus", "Bonus"), ("accounts", "Tài khoản & phí"), ("pay", "Nạp & rút"))
 ABOUT_TABS = (("about", "Về chúng tôi", "/gioi-thieu"), ("method", "Cách đánh giá", "/gioi-thieu/cach-danh-gia"),
@@ -343,6 +343,8 @@ def _about_tabs(active: str) -> list[dict]:
 def _about(request: Request, db: Session, tab: str):
     ctx = page_ctx(request, db, page_key="gioithieu" if tab == "about" else tab)
     ctx["crumbs"].append(_crumb(ctx, "gioithieu", "/gioi-thieu"))
+    if tab != "about":
+        ctx["crumbs"].append(_crumb(ctx, tab, str(request.url.path)))
     data = ctx["site"]["about_blocks"][tab]
     ctx.update(current_tab=tab, about_image=data.get("image", ""),
                about_blocks=[{"n": f"0{i + 1}.", "title": b.get("title", ""), "text": b.get("text", "")}

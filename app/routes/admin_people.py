@@ -1,10 +1,10 @@
 """Quản trị khách: Người đăng ký (+ gửi email chiến dịch) và Tin nhắn liên hệ."""
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, update
 
 from app import content, queries
 from app.config import config
-from app.mailer import build, send_email, send_many
+from app.mailer import build, send_email, send_many, shared_connection
 from app.models import BONUS_TYPES, CAMPAIGN_RESUMABLE, Campaign, ContactMessage, Subscriber, utcnow
 from app.routes.admin_base import Admin, admin_api, admin_get, admin_post, done, get_or_404, render_admin, subtabs
 from app.templating import FLASH_MESSAGES
@@ -60,6 +60,10 @@ def _subs_page(a: Admin, tab: str = "list", status: str = "all", q: str = "", au
             for s in db.scalars(stmt)] if tab == "list" else []
     mail = mail_form or {"subject": "", "body": "", "audience": _valid_audience(aud or []), "draft_id": None, "errors": {}}
     confirmed = confirmed_subscribers(db)
+    if mail.get("draft_id"):  # gửi tiếp chiến dịch dở: không đếm người đã nhận
+        resumed = db.get(Campaign, mail["draft_id"])
+        received = set(resumed.sent_to or []) if resumed else set()
+        confirmed = [s for s in confirmed if s.email not in received]
     campaigns = [{"id": c.id, "subject": c.subject, "audience_labels": [labels.get(i, i) for i in c.audience],
                   "status": c.status, "sent_count": c.sent_count, "sent_at": c.sent_at, "created_at": c.created_at,
                   "edit_url": f"/admin/subscribers?tab=mail&draft={c.id}" if c.status in CAMPAIGN_RESUMABLE else None,
@@ -130,30 +134,43 @@ def subs_mail(a: Admin = Depends(admin_post)):
     campaign = _draft(a.db, mail["draft_id"]) if mail["draft_id"] else Campaign(status="draft")
     campaign.subject, campaign.body, campaign.audience = subject, body, audience
     a.db.add(campaign)
+    a.db.flush()
     if a.text("action") == "draft":
         a.db.commit()
         return done(f"/admin/subscribers?tab=mail&draft={campaign.id}")
+    # Giành quyền gửi bằng UPDATE có điều kiện: hai request gửi cùng chiến dịch thì chỉ một request được đi tiếp.
+    claimed = a.db.execute(update(Campaign).where(Campaign.id == campaign.id, Campaign.status.in_(CAMPAIGN_RESUMABLE))
+                           .values(status="sending"))
+    if claimed.rowcount == 0:
+        a.db.rollback()
+        raise HTTPException(404)
+    a.db.refresh(campaign)
     already = set(campaign.sent_to or [])  # gửi tiếp chiến dịch gửi dở: không gửi lại người đã nhận
     targets = [s for s in recipients(confirmed_subscribers(a.db), audience) if s.email not in already]
+    if not targets and already:  # người còn lại đã hủy hoặc bị xóa: chiến dịch đã xong
+        campaign.status, campaign.sent_at = "sent", utcnow()
+        a.db.commit()
+        return done("/admin/subscribers?tab=mail", "sent")
     if not targets:
         a.db.rollback()
         kind, text = FLASH_MESSAGES["no_recipients"]  # render lại, không mất nội dung đang soạn
         return _subs_page(a, "mail", mail_form=mail, status_code=400,
                           flash={"kind": kind, "text": text, "code": "no_recipients"})
-    campaign.status = "sending"  # ghi lại trước khi gửi: nếu request đứt giữa chừng vẫn thấy trong lịch sử
-    a.db.commit()
+    a.db.commit()  # ghi `sending` trước khi gửi: nếu request đứt giữa chừng vẫn thấy trong lịch sử
+    received_before = len(already)
     messages = [build(s.email, subject, body, f"{config.base_url}/huy-dang-ky/{s.token}") for s in targets]
     sent = 0
-    for start in range(0, len(messages), SEND_BATCH):
-        batch = messages[start:start + SEND_BATCH]
-        ok = send_many(batch)
-        sent += ok
-        already |= {m["To"] for m in batch if getattr(m, "delivered", False)}
-        campaign.sent_to = sorted(already)
-        campaign.sent_count = len(campaign.sent_to) if len(campaign.sent_to) >= sent else sent
-        a.db.commit()  # cũng làm mới updated_at, để phân biệt đang gửi với đã chết
-        if ok < len(batch):
-            break
+    with shared_connection():
+        for start in range(0, len(messages), SEND_BATCH):
+            batch = messages[start:start + SEND_BATCH]
+            ok = send_many(batch)
+            sent += ok
+            already |= {m["To"] for m in batch if getattr(m, "delivered", False)}
+            campaign.sent_to = sorted(already)
+            campaign.sent_count = received_before + sent
+            a.db.commit()  # cũng làm mới updated_at, để phân biệt đang gửi với đã chết
+            if ok == 0:  # cả lô hỏng là SMTP có vấn đề; vài địa chỉ bị từ chối thì gửi tiếp cho người khác
+                break
     if sent == len(messages):
         campaign.status, campaign.sent_at = "sent", utcnow()
         a.db.commit()

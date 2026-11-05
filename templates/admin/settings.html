@@ -25,7 +25,7 @@
             {% for r in role_options %}<option value="{{ r.id }}"{% if r.id == row_role %} selected{% endif %}>{{ r.label }}</option>{% endfor %}
           </select>
           {% if u.is_self %}<input type="hidden" name="role" value="{{ u.role }}">{% endif %}
-          <input type="password" name="password" placeholder="Mật khẩu mới" autocomplete="new-password" aria-label="Mật khẩu mới cho {{ u.email }}">
+          <input type="password" name="password" maxlength="200" placeholder="Mật khẩu mới" autocomplete="new-password" aria-label="Mật khẩu mới cho {{ u.email }}">
           <button type="submit" class="btn-sm">Lưu</button>
         </form>
         {{ ui.err(row_err, 'edit_role') }}{{ ui.err(row_err, 'edit_password') }}
@@ -49,7 +49,7 @@
     <div class="form-block-title">Thêm tài khoản quản trị</div>
     <div class="fields-3">
       {{ ui.field('email', 'Email', '' if form.errors_user_id else fd.get('email', ''), e, type='email', required=true, attrs='autocomplete="off"') }}
-      {{ ui.field('password', 'Mật khẩu', '', e, type='password', required=true, hint='Tối thiểu 10 ký tự.', attrs='autocomplete="new-password" minlength="10"') }}
+      {{ ui.field('password', 'Mật khẩu', '', e, type='password', required=true, hint='Từ 10 đến 200 ký tự.', max=200, attrs='autocomplete="new-password" minlength="10"') }}
       {{ ui.select('role', 'Vai trò', role_options, 'editor' if form.errors_user_id else fd.get('role', 'editor'), e) }}
     </div>
     <div><button type="submit" class="btn-primary">+ Thêm tài khoản</button></div>
