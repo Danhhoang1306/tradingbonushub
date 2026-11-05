@@ -50,3 +50,4 @@ design/
 mail to/
 .venv/
 .pytest_cache/
+qa/results/

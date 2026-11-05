@@ -164,6 +164,7 @@ with sync_playwright() as p:
     c("B7.11", "Bấm nút: hủy thành công", "Đã hủy" in pg.inner_text("body") and s.sql("select status from subscribers")[0][0] == "unsubscribed")
     r = pub.post(f"/xac-nhan/{tk[0]}")
     c("B7.12", "Link xác nhận cũ sau khi hủy: không kích hoạt lại", r.status_code == 404 and s.sql("select status from subscribers")[0][0] == "unsubscribed")
+    s.sql("update subscribers set confirm_sent_at=datetime('now','-2 days')")  # giới hạn 24 giờ: kiểm riêng ở s9 R1.6
     pub.post("/api/subscribe", data={"email": "khach.mot@qa.test", "interests": ["crypto"], "next": "/"}, headers={"CF-Connecting-IP": "6.6.6.2"})
     tk2 = s.tokens("khach.mot@qa.test")
     c("B7.13", "Đăng ký lại sau khi hủy: pending, mail mới, token mới", len(tk2) == 2 and tk2[1] != tk[0] and s.sql("select status from subscribers")[0][0] == "pending")
@@ -178,6 +179,7 @@ with sync_playwright() as p:
     tv = s.tokens("hailan@x.co")[-1]
     pub.post(f"/xac-nhan/{tv}")
     pub.post(f"/huy-dang-ky/{tv}")
+    s.sql("update subscribers set confirm_sent_at=datetime('now','-2 days') where email='hailan@x.co'")
     pub.post("/api/subscribe", data={"email": "hailan@x.co", "next": "/"}, headers={"CF-Connecting-IP": "6.6.6.4"})
     print("     đã hủy vẫn nhận mail xác nhận khi ai đó đăng ký lại:", len(s.tokens("hailan@x.co")), flush=True)
     # sai định dạng, không JS validate

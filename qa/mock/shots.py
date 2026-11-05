@@ -35,6 +35,10 @@ def rail_shots(browser, srv):
     page.on("request", lambda r: beacons.append(r.url) if "/api/ad-view/" in r.url else None)
     page.goto(BASE + "/", wait_until="networkidle")
     page.screenshot(path=str(OUT / "shots" / "rail_1700.png"))
+    page.evaluate("window.scrollTo(0, 780)")
+    page.wait_for_timeout(300)
+    page.screenshot(path=str(OUT / "shots" / "rail_1700_scroll.png"))
+    page.evaluate("window.scrollTo(0, 0)")
     state = page.evaluate("""() => [...document.querySelectorAll('.rail')].map(r => {
         const b = r.getBoundingClientRect();
         return {cls: r.className, display: getComputedStyle(r).display, x: Math.round(b.x), w: Math.round(b.width),

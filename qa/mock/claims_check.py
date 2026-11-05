@@ -62,6 +62,8 @@ def main():
         out["cookie_khi_chi_xem"] = [c["name"] for c in fresh.cookies()]
         r = fresh.request.post(BASE + "/api/contact", form={"topic": "x", "name": "QA", "email": "qa-c@example.test", "body": "QAFIC", "website": ""},
                                headers={"CF-Connecting-IP": FAKE_IP}, max_redirects=0)
+        out["contact_status"] = r.status
+        out["set_cookie_form"] = r.headers.get("set-cookie", "")[:120]
         out["cookie_sau_form"] = [{"name": c["name"], "expires_in_s": round(c["expires"] - __import__("time").time())} for c in fresh.cookies()]
         fonts = fresh.new_page()
         reqs = []

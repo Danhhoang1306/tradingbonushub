@@ -51,7 +51,7 @@ try:
     n = s.sql("select length(body_md) from posts where title='Bài rất dài'")
     c("P3.1", "Bài > 100.000 ký tự: báo lỗi hoặc lưu đủ, không cắt thầm", r.status_code == 400 or (n and "CHỐT-CUỐI-BÀI" in s.sql("select body_md from posts where title='Bài rất dài'")[0][0]), f"HTTP {r.status_code}, lưu {n}")
     r = h.post("/admin/bonus/new", {"broker_id": 1, "type": "deposit", "title": "T" * 400, "is_active": "1"})
-    n = s.sql("select length(title) from bonuses order by id desc limit 1")[0][0]
+    n = s.sql("select max(length(title)) from bonuses")[0][0]
     c("P3.2", "Tiêu đề bonus 400 ký tự: báo lỗi, không cắt thầm còn 255", r.status_code == 400, f"HTTP {r.status_code}, lưu {n} ký tự")
     r = h.post("/admin/pages/gioithieu", [("title", "Về"), ("about_block_title", "Khối"), ("about_block_text", "x" * 1500 + "CUỐI")])
     t = pub.get("/gioi-thieu").text
@@ -117,6 +117,7 @@ try:
         mp = s.sql("select path from media_files order by id desc limit 1")[0][0]
         pg.goto(BASE + "/admin/brokers/new")
         pg.fill(".drawer input[name=name]", "Sàn Picker")
+        pg.fill(".drawer input[name=license]", "FCA")
         pg.locator("button:has-text('thư viện')").first.click()
         pg.wait_for_selector("#media-picker[open]")
         pg.locator(f".picker-item[data-path='{mp}']").click()

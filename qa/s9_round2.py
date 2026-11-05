@@ -32,12 +32,14 @@ def seed_subs(s, n, prefix="u"):
         s.sql("insert into subscribers(name,email,interests,status,token,confirm_count,created_at,updated_at) values('',?,'[]','confirmed',?,0,'2026-01-01 00:00:00','2026-01-01 00:00:00')", (e, t))
 
 
-def raw(method, path, headers, body=b"", chunks=None, timeout=15):
+def raw(method, path, headers, body=b"", chunks=None, timeout=15, declared=None):
     """HTTP thô để điều khiển Content-Length/chunked."""
     s = socket.create_connection(("127.0.0.1", PORT), timeout=timeout)
     head = f"{method} {path} HTTP/1.1\r\nHost: 127.0.0.1:{PORT}\r\nConnection: close\r\n" + "".join(f"{k}: {v}\r\n" for k, v in headers.items())
     try:
-        if chunks is not None:
+        if declared is not None:  # chỉ khai báo Content-Length, không gửi thân: trần phải chặn ngay từ header
+            s.sendall((head + f"Content-Length: {declared}\r\n\r\n").encode("latin-1"))
+        elif chunks is not None:
             s.sendall((head + "Transfer-Encoding: chunked\r\n\r\n").encode("latin-1"))
             for ch in chunks:
                 s.sendall(f"{len(ch):x}\r\n".encode() + ch + b"\r\n")
@@ -290,7 +292,7 @@ try:
     c("R7.7", "/admin/login/ (có /) không lách trần thành xử lý thân lớn", st in (307, 404, 405, 413), st)
     st, head = raw("POST", "/admin/bonus/new", ip, b"", chunks=[b"x" * 65536] * 160)
     c("R7.8", "Admin chunked > 8MB chưa đăng nhập: 413", st == 413, st)
-    st, _ = raw("POST", "/admin/media/upload", {"CF-Connecting-IP": "2.2.2.2", "Content-Type": "multipart/form-data; boundary=x"}, b"x" * (65 * MB))
+    st, _ = raw("POST", "/admin/media/upload", {"CF-Connecting-IP": "2.2.2.2", "Content-Type": "multipart/form-data; boundary=x"}, declared=65 * MB)
     c("R7.9", "Admin > 64MB: 413", st == 413, st)
     # upload 8 ảnh gần 5MB = 40MB hợp lệ, chạy qua được giới hạn 64MB
     big = png_bytes(extra=b"\x00" * (4 * MB + 900 * 1024))

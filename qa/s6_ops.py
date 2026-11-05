@@ -155,6 +155,7 @@ try:
         c("F4.2", "Cookie phiên Secure+HttpOnly+Lax trong trình duyệt", ck["tbh_session"]["secure"] and ck["tbh_session"]["httpOnly"] and ck["tbh_session"]["sameSite"] == "Lax", ck.get("tbh_session"))
         pg.goto(PBASE + "/admin/brokers/new")
         pg.fill("input[name=name]", "Sàn Proxy")
+        pg.fill("input[name=license]", "FCA")
         pg.fill("input[name=affiliate_url]", "https://aff.example.test/p")
         with pg.expect_navigation():
             pg.click(".drawer-foot .btn-save")

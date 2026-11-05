@@ -474,7 +474,9 @@ try:
         r = an.c.get(BASE + p)
         miss = [k for k in ("content-security-policy", "x-content-type-options", "x-frame-options", "referrer-policy", "permissions-policy", "strict-transport-security") if k not in r.headers]
         c(f"D13.{name}", f"Header bảo mật đủ ở {p}", not miss, miss)
-    r = an.c.get(BASE + "/go/broker/99999999999999999999999")
+    s.sql("alter table bonuses rename to bonuses_tmp")  # id khổng lồ giờ ra 404: gây 500 thật bằng thiếu bảng
+    r = an.c.get(BASE + "/bonus")
+    s.sql("alter table bonuses_tmp rename to bonuses")
     miss = [k for k in ("content-security-policy", "x-content-type-options", "x-frame-options", "strict-transport-security") if k not in r.headers]
     c("D13.500", "Header bảo mật có cả ở trang 500", r.status_code == 500 and not miss, (r.status_code, miss))
     c("D13.500b", "Trang 500 production không lộ traceback", "Traceback" not in r.text and "OverflowError" not in r.text)

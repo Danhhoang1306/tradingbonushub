@@ -285,7 +285,9 @@ with sync_playwright() as p:
     corpus["confirm"] = pub.post(f"/xac-nhan/{tk}").text
     corpus["unsub"] = pub.post(f"/huy-dang-ky/{tk}").text
     corpus["contact_ok"] = httpx.get(BASE + "/lien-he", cookies={"tbh_flash": "contact_ok"}).text
-    corpus["500"] = pub.get("/go/broker/99999999999999999999999").text
+    s.sql("alter table bonuses rename to bonuses_tmp")
+    corpus["500"] = pub.get("/bonus").text
+    s.sql("alter table bonuses_tmp rename to bonuses")
     all_html = "\n".join(corpus.values())
     missing = [(a, n, m) for a, n, m in markers if m not in all_html and m.lower() not in all_html]
     missing = [x for x in missing if x[1] != "ads_note"]  # ads_note chỉ in ở rail không có ảnh; rail ở đây có ảnh

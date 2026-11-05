@@ -246,3 +246,205 @@ Lượt mở trang: 1.043 (DB rỗng 282, có dữ liệu 325, sau xóa 266, sen
 - Hộp chọn ảnh, chép link và các trạng thái chỉ sinh ra bằng JS trong admin không được bấm hết; chỉ quét DOM ban đầu.
 - Lịch sử git không quét. `design/` đã gitignore, nhưng chưa xác minh các commit cũ có từng chứa mock hay không.
 - Tính đúng sự thật của 45 tuyên bố: chỉ đối chiếu với code, không đối chiếu thực tế vận hành.
+
+## Audit mock vòng 2
+
+Người kiểm: qa-mock, 05/11/2026, trên commit 2e4229e. Chạy lại: `qa/mock/run_audit.py` (10 phút), `qa/mock/shots.py`, `qa/mock/claims_check.py`, `qa/mock/secret_scan.py`. Script đã cập nhật theo hành vi mới: xác nhận và hủy đăng ký qua POST, xóa bản nháp chiến dịch, đo sentinel cả các trạng thái form. Hai script vòng này mới thêm: `claims_check.py`, `secret_scan.py`.
+
+### Kết luận
+
+**KHÔNG còn dữ liệu mock trên web.** DB rỗng: 0 hit trong 305 token mock ở public và admin, kể cả `100%`. Ảnh Microsoft đã gỡ, xem ảnh chụp 1440 và 390 xác nhận hero nền navy, không còn ảnh bên thứ ba. Dữ liệu hư cấu xóa xong thì public và admin trùng từng dòng với DB rỗng.
+
+**Lịch sử git: không tìm thấy secret thật** trong phạm vi quét (xem mục Secret). 11 phát hiện vòng 1 đều đã sửa. Còn 2 phát hiện mức trung bình mới (N1, N2), không phải mock.
+
+### M1–M11
+
+| # | Trạng thái | Bằng chứng thực tế |
+|---|---|---|
+| M1 ảnh Microsoft | ĐÃ SỬA | `static/img/hero-bg.webp` không còn ở HEAD, `hero.image_path` mặc định rỗng, hero `hero--plain`. Đã nhìn `home_1440.png`, `home_390.png`. File cũ vẫn tải được từ lịch sử repo public (N7) |
+| M2 `100%` | ĐÃ SỬA | `stat_value` rỗng, khối số ẩn. Quét DB rỗng: 0 số cứng dạng `%`, `$`, `+` |
+| M3 câu "khối lượng yêu cầu" | ĐÃ SỬA | Câu đã đổi thành mức nạp, phần rút được, thời hạn. Câu mới vẫn chưa được đảm bảo (N2) |
+| M4 "Nhận tư vấn" | ĐÃ SỬA | Nút trang con là "Xem bonus", trỏ `/bonus` |
+| M5 breadcrumb "Sàn uy tín" | ĐÃ SỬA | Không còn "uy tín" trong template và route; breadcrumb lấy `pages.san.label`, pha sentinel không còn thấy chữ cứng. Tiêu đề trang vẫn có chữ "uy tín" (mục duyệt) |
+| M6 không xóa được nháp | ĐÃ SỬA | Xóa qua nút trên `/admin/subscribers?tab=mail`, `campaigns` còn 0 dòng |
+| M7 click sót | ĐÃ SỬA | Xóa sàn và banner, `click_logs` còn 0 dòng, biểu đồ về "Chưa có click nào" |
+| M8 placeholder mock | ĐÃ SỬA | `/admin/bonus/new`: 0 hit `$4/lot`, `$30`, `50%` |
+| M9 số 0 ở admin | ĐÃ SỬA | DB rỗng: số 0 đứng riêng chỉ còn trong câu hướng dẫn "bằng 0 thì ẩn" ở `/admin/home?tab=about` |
+| M10 năm cứng | ĐÃ SỬA | `footer.copyright` dùng `{year}`, render 2026 từ `today_vn()`. Không giả lập năm 2027 |
+| M11 Điều khoản, Bảo mật | ĐÃ SỬA, cần duyệt | Có bản nháp, hiện đúng định dạng (`privacy_1440.png`, `terms_1440.png`). Đối chiếu ở dưới |
+
+### Phát hiện còn lại
+
+| # | Mức | Ở đâu | Bằng chứng | Tái hiện |
+|---|---|---|---|---|
+| N1 | Trung bình | `/` màn ≥1572px, rail phải có ảnh; `static/css/site.css:374-375` | Câu cảnh báo rủi ro dưới banner ảnh gần như không đọc được: chữ xanh nhạt 10px trên nền sáng. `.rail--right .rail__note` mạnh hơn `.rail__note--plain` nên ghi đè màu. Rail trái (nền navy) đọc được | Banner ảnh ở `rail-right`, mở `/` ở 1700px, xem `qa/mock/out/shots/rail_1700_scroll.png` |
+| N2 | Trung bình | `/`, `/bonus`, `app/content.py:107,178,207`; `app/routes/admin_data.py:104-125` | "Mỗi ưu đãi ghi rõ mức nạp tối thiểu, phần rút được và thời hạn" không được đảm bảo: bonus chỉ có tiêu đề vẫn đăng, thẻ hiện `Nạp tối thiểu — Rút được —` | Đã thử thật trong `claims_check.py`. Cách xử lý: bắt buộc hai trường, hoặc user tự đảm bảo khi nhập |
+| N3 | Thấp | `app/routes/admin_data.py:255` | Giấy phép chỉ kiểm khác rỗng: thiếu thì 400 (đúng), nhưng `-` vẫn lưu được. "Chỉ sàn có giấy phép" vẫn phụ thuộc người nhập | `claims_check.py` |
+| N4 | Thấp | `/admin/pages?tab=terms`, `?tab=privacy` | Ô "Nhãn breadcrumb" của hai tab này lưu được nhưng public không dùng; breadcrumb hiện tiêu đề trang | Pha sentinel: `pages.terms.label`, `pages.privacy.label` không xuất hiện ở public |
+| N5 | Thấp | `templates/public/home.html`, `_macros.html` | Chữ cứng mang tính nhận định, không sửa được từ admin: badge "Phổ biến". Mặc định "Nổi bật tuần này" thực chất là sàn nổi bật, không đổi theo tuần | Mở `/` với sàn featured |
+| N6 | Thấp | `app/content.py:69` | Bảo mật hứa nhận yêu cầu "sửa" dữ liệu, admin không có màn sửa người đăng ký, chỉ xóa. Người dùng vẫn đăng ký lại được | Xem `/admin/subscribers` |
+| N7 | Thấp | Lịch sử repo public | `qa/results/s4_security.json`, `s6_ops.json` chứa giá trị cookie phiên của server test tạm (vô giá trị, DB đã bỏ), và ảnh Microsoft ở commit e9cf9dd đến trước 789490d. Nên thêm `qa/results/` vào gitignore | Xem mục Secret |
+
+Không phải lỗi: trang chủ khi chưa có ảnh có 7 khối xám trống (đúng brief, nhưng trông như chưa xong). Cần tải ảnh trước khi lên public.
+
+### Đã kiểm và đạt
+
+- **DB rỗng, 1440 và 390:** 12 bảng 0 dòng khi khởi động. 0 biến Jinja chưa render, 0 link chết, 0 ảnh hỏng, 0 request lỗi, 0 nhãn trống, 0 tràn ngang, 0 lỗi JS. Domain ngoài chỉ Google Fonts.
+- **Runtime thiết kế:** 0 request tới unpkg, `support.js`, `image-slot.js`. 28 URL thăm dò: chỉ `/sitemap.xml`, `/robots.txt`, `/health` trả 200; `/docs`, `/openapi.json` nay 404 cả ở development.
+- **Vòng đời dữ liệu:** "Sàn A" hiện ở 128 URL. Xóa hết: mọi bảng dữ liệu về 0, file upload 0, 0 dấu vết. Khác biệt duy nhất là tài khoản editor do QA tạo ở pha A.
+- **Máy quét:** thêm "Sàn A" thì bắt được, nên 0 hit là 0 thật. 4 cảnh báo ảnh hỏng ở pha có dữ liệu vẫn là ảnh lazy đang ẩn như vòng 1.
+- **Trạng thái:** trang hỏi xác nhận, hỏi hủy, đã xác nhận, đã hủy, 404, 500 thật (status 500), editor 403: không có mock.
+- **Rail ≥1572px:** hiện đủ hai bên ở 1700px, có nhãn "Tài trợ", gọi beacon `/api/ad-view/3` và `/4`. Bản native rail trái đúng, bản ảnh rail phải lỗi chữ cảnh báo (N1).
+- **Mục 12:** 200 sentinel, 184 hiện ở public. 14 không phải chữ public, 2 là N4. Mọi chuỗi public đều có ô sửa ở admin.
+
+### Đối chiếu Điều khoản, Bảo mật với hành vi thật
+
+| Câu | Kết quả | Bằng chứng |
+|---|---|---|
+| Chỉ nhận email sau khi xác nhận | Đúng, trừ chính email xác nhận | Chiến dịch chỉ tới người đã xác nhận, người pending không nhận |
+| Mỗi email có liên kết hủy | Đúng | Cả email xác nhận và chiến dịch đều có. Email "Gửi thử" chỉ tới admin |
+| Nội dung tài trợ có nhãn "Tài trợ" | Đúng | Thấy ở banner và rail |
+| Dữ liệu đăng ký, liên hệ thu thập | Đúng, còn thiếu chi tiết kỹ thuật | Thêm token, thời điểm và số lần gửi email xác nhận, không đáng kể |
+| Thống kê click không gắn danh tính, IP | Đúng | `click_logs` chỉ có loại, id, ngày, số đếm; bảng không có cột IP |
+| IP chỉ trong bộ nhớ, không vào DB | Đúng | Gửi đăng ký với IP giả: không có trong DB, không có trong log. Access log ghi 127.0.0.1 |
+| Cookie kỹ thuật ngắn hạn, không cookie quảng cáo | Đúng | Xem trang: 0 cookie. Cookie flash 60 giây (đọc code). Cookie admin chỉ ở khu quản trị |
+| Bên thứ ba: Google Fonts, email, hạ tầng mạng, link ngoài, công cụ đo lường | Đúng | Request ngoài chỉ có Google Fonts |
+| Yêu cầu xem, sửa, xóa qua Liên hệ | Một phần | Xóa có, sửa không có màn admin (N6) |
+| Dữ liệu giữ đến khi yêu cầu xóa | Đúng | Người hủy đăng ký vẫn còn dòng, trạng thái `unsubscribed` |
+| Không bán dữ liệu, tự chịu rủi ro, thay đổi điều khoản | Không kiểm bằng code | User tự xác nhận |
+
+Không có câu nào nói sai hành vi thật, trừ chữ "sửa" (N6). Tuyên bố trang chủ sai duy nhất về mặt bảo đảm là N2.
+
+### Danh sách user phải tự xác nhận
+
+175 chuỗi: 109 giao diện, 23 kiến thức và cảnh báo, 43 tuyên bố. Những câu chỉ user biết đúng hay sai:
+
+1. **Chỉ sàn có giấy phép**, "ít nhất một giấy phép từ cơ quan quản lý được công bố công khai": phải đúng với từng sàn nhập vào.
+2. **Từ các sàn đối tác**: có quan hệ đối tác thật với các sàn không.
+3. **Sàn giao dịch uy tín** (tiêu đề `/san`): có muốn khẳng định vậy không.
+4. **Hoa hồng không làm thay đổi điều kiện bonus bạn nhận được**: đúng với từng sàn không. Link affiliate có thể có điều kiện riêng.
+5. **Chúng tôi đọc điều khoản của từng chương trình và tóm tắt**: có làm vậy cho mọi ưu đãi không.
+6. **Thay đổi điều khoản được ghi lại trong mục Tin sàn**: có duy trì được không. Không có cơ chế tự động.
+7. **Chúng tôi sẽ trả lời qua email**: có người trả lời không. Khi chưa nhập email liên hệ, trang vẫn nhận tin.
+8. **Không bán dữ liệu**, Điều khoản và Bảo mật nói chung: nên đọc lại toàn bộ, cân nhắc nhờ người có chuyên môn pháp lý. Vòng này chỉ đối chiếu với code, không đánh giá pháp lý.
+9. **Mô tả 5 loại bonus** ("Thường rút được ngay", "Tính theo lot đã đóng"...): kiến thức chung, nên đọc lại cho khớp cách tính thật.
+
+### Secret trong lịch sử git
+
+Quét 51 commit trên mọi ref, 43 commit của tag `old-project-final`, 615 blob text, cộng commit message. Giá trị không ghi vào báo cáo. Chi tiết đã che ở `qa/mock/out/secret_scan.json`.
+
+- **File nhạy cảm:** chưa từng commit `.env`, `cloudflared.yml`, `*.db`, `*.pem`, `*.key`. Chỉ có `.env.example`.
+- **Định dạng đặc trưng:** 0 khớp (private key, AWS, GitHub, Google, Slack, SendGrid, Stripe, Telegram bot, sk-, JWT, Cloudflare tunnel).
+- **34 dòng gán giá trị nghi vấn, đã phân loại hết:** mật khẩu giả trong `tests/` và `qa/` cho DB tạm (28); `FERNET_KEY` trong `.github/workflows/ci.yml` cũ, giải mã ra chuỗi ASCII có chữ "test", là khóa CI; `DEMO_PASSWORD` trong `scripts/seed_demo_commission.py` cũ, giá trị dạng demo; 2 dòng `setup-cloudflare.ps1` là code sinh hoặc nhập khóa lúc chạy; 2 dòng `token_uri` là URL công khai của Google.
+- **Chuỗi dài ngẫu nhiên (54):** mã hash commit, tên hàm test, slug bài cũ, và 3 cookie phiên test (N7).
+- **Việc nên làm:** nếu DB cũ từng có tài khoản dùng `DEMO_PASSWORD`, đổi mật khẩu đó vì script đã public.
+
+Giới hạn: không so với giá trị trong `.env` thật (brief cấm đọc), nên không phát hiện được secret thật bị dán vào file mà không có tên khóa hay định dạng đặc trưng. 163 khớp yếu dạng code không xem từng dòng. Giá trị dưới 6 ký tự không quét. Không kiểm phía GitHub: fork, log Actions, secret của PR.
+
+### Quy mô
+
+1.068 lượt mở trang: DB rỗng 292, có dữ liệu 331, sau xóa 270, sentinel 175. DB rỗng có 56 URL public và 81 URL admin khác nhau, mỗi URL ở cả 1440 và 390. Không trang nào lỗi khi crawl.
+
+### Chưa kiểm được
+
+- Ảnh chụp đã xem: trang chủ 1440, 390, trang chủ đầy đủ, rail 1700, Bảo mật 1440. Các trang con còn lại đã chụp nhưng chưa xem.
+- `claims_check.py`: POST liên hệ trực tiếp trả 400 nên phép thử IP chỉ qua form đăng ký; form liên hệ được đối chiếu bằng cấu trúc bảng (không có cột IP). Luồng liên hệ qua giao diện đã chạy đúng trong crawl.
+- Log server ở production thật, log của Cloudflare và nhà cung cấp email: nằm ngoài code.
+- Sentinel chỉ ở 1440. Không giả lập năm 2027.
+- Rail chỉ xem ở 1700px, chưa thử sát ngưỡng 1572px.
+
+### Ghi chú thời điểm
+
+Trong lúc audit, commit 896b241 (start.bat, stop.bat) được thêm và site lên cổng 8000 lúc 13:12:57 (Phase 5). Đó không phải do qa-mock: audit chỉ chạy ở 8013 với DB tạm, không đụng `data/app.db` và server thật. Kết quả crawl ở trên đo trên 2e4229e với cấu hình mặc định, chưa đo site đang chạy thật (nơi section đăng ký đã tắt). Quét secret đã chạy lại sau commit này. N1, N2 và danh sách user xác nhận vẫn còn áp dụng cho site đang chạy.
+
+Quét lại trên 52 commit (gồm 896b241): `start.bat`, `stop.bat` không có secret. 2 khớp định dạng là chính regex trong `qa/mock/secret_scan.py`. 10 dòng nghi vấn mới đều ở script `qa/`, chưa xem từng dòng; cookie phiên test trong `qa/results/s4_security.json` tăng lên 4 (N7).
+
+## Kiểm thử chức năng – Vòng 2
+
+Người kiểm: qa-func, 05/11/2026, trên commit 2e4229e. HEAD chuyển sang 896b241 trong lúc chạy, nhưng commit đó không đổi `app/`, `templates/`, `static/`, chỉ thêm `start.bat`, `stop.bat` và 7 dòng README.
+Chạy lại: `.venv\Scripts\python qa\run_all.py --full`. Hai bộ mới: `qa/s9_round2.py` (hồi quy), `qa/s10_upgrade_prod.py` (nâng cấp từ DB tạo bằng code 9c29ee1, quy trình production theo README).
+
+**Kết quả: 666 kiểm tra, 647 đạt, 19 không đạt. Toàn bộ 3 lỗi Cao và 10 lỗi Trung bình của vòng 1 đã sửa thật. 22/23 lỗi Thấp đã sửa, 1 lỗi sửa một phần. Phát hiện mới: 2 Trung bình, 9 Thấp. Không có lỗi Nghiêm trọng hay Cao.**
+Dòng không đạt còn lại: 18 dòng quy về các lỗi dưới đây, 1 dòng (C9.3, xuống dòng đơn trong Markdown) không tính là lỗi.
+
+### Lỗi CÒN từ vòng 1
+
+**Thấp 18 (sửa một phần). Chuỗi liền rất dài tràn ở admin** (E2.stress.*)
+- Bước: tên sàn/tiêu đề 170+ ký tự không có dấu cách, mở `/admin` và `/admin/ads`.
+- Mong đợi: không tràn. Thực tế: lệch 664px và 720px ở 360px; còn lệch ở 1920px (192px, 220px). Thẻ tổng quan `.row-link-inline` và dòng banner.
+- Public đã đạt cả 5 khổ. Dữ liệu thực tế ở admin đạt.
+
+### Lỗi MỚI
+
+#### Trung bình
+
+**N-1. Giới hạn 3 email/24 giờ bị vượt khi gửi đồng thời** (R1.4)
+- Bước: 20 POST `/api/subscribe` song song cùng địa chỉ, khác IP.
+- Mong đợi: tối đa 3 email. Thực tế: 4 đến 6 email qua các lần chạy; `confirm_count` chỉ ghi 3. Với SMTP thật, thời gian gửi dài hơn nên khe hở rộng hơn.
+- Vị trí: `app/routes/public.py:subscribe`, kiểm `_may_send_confirm` rồi gửi, sau đó mới `_note_confirm_sent`. Nội dung email đã cố định nên không còn là kênh phishing.
+
+**N-2. Người đã hủy nhận tới 3 email, tài liệu ghi tối đa 1/24 giờ** (R1.5)
+- Bước: địa chỉ đã hủy, lần gửi xác nhận cuối quá 24 giờ. Người khác nhập địa chỉ đó 6 lần.
+- Mong đợi: tối đa 1 email (VIEW_CONTEXT). Thực tế: 3 email, trạng thái bị đổi từ `unsubscribed` thành `pending` dù chủ địa chỉ không làm gì.
+- Vị trí: `subscribe`, nhánh `unsubscribed` đặt lại `confirm_sent_at`, `confirm_count` rồi rơi vào giới hạn của `pending`.
+
+#### Thấp
+
+| Mã | Lỗi | Bước → thực tế (mong đợi) | Vị trí |
+|---|---|---|---|
+| N-3 | Hủy rồi tự đăng ký lại trong 24 giờ không có email (R1.6) | Hủy, gửi lại form → báo "Kiểm tra hộp thư", không email, vẫn `unsubscribed` (cần báo thử lại sau) | `subscribe` |
+| N-4 | Gửi trùng địa chỉ có dấu phẩy khi gửi tiếp (R5.8) | Chiến dịch partial có `a,b@x.co` → `sent_to` lưu `a, b@x.co`, gửi tiếp nhận lần 2 (mỗi người 1 email) | `admin_people.py:subs_mail`, dùng `m["To"]` thay vì email gốc |
+| N-5 | Người lạ ghi đè tên, sở thích của địa chỉ đang chờ | Gửi form với cùng email, khác tên → tên `Chủ thật` thành `Kẻ lạ`, sở thích đổi (giữ dữ liệu đến khi xác nhận) | `subscribe` |
+| N-6 | Slug bỏ mất chữ Ð (R8) | "Ðồng Eth" (U+00D0, hay gặp khi gõ/dán) → `ong-eth` (mong `dong-eth`) | `app/utils.py:slugify` |
+| N-7 | `PORT=abc`, `SMTP_PORT=abc` in traceback (R9.10, R9.11) | Thoát mã 1 kèm traceback (mong mã 2, báo rõ như lỗi cấu hình khác) | `app/config.py:27,33` |
+| N-8 | `SECRET_KEY` 40 dấu cách được chấp nhận (R9.12) | Server chạy (mong từ chối) | `Config.problems` |
+| N-9 | Ô Nhãn của Trang › Điều khoản, Bảo mật không có tác dụng (A6.1) | Sửa nhãn → breadcrumb vẫn dùng tiêu đề (mong nhãn mới) | `public.py:_legal` |
+| N-10 | README: bước phục hồi ảnh sai khi thư mục còn (P16) | `Copy-Item -Recurse backup-uploads data\uploads` lồng thành `data\uploads\backup-uploads`, ảnh vẫn 404 (cần lệnh có `\*` hoặc xóa trước) | README mục Phục hồi |
+| N-11 | README: chạy khối Production trong cửa sổ vừa chạy dev (P17) | `APP_ENV=development` còn sót, server chạy dev: không HSTS, cookie không Secure, không cảnh báo (cần đặt `APP_ENV` trong khối Production) | README mục Chạy |
+
+Ghi chú U12: DB từng lưu tab Hero với `/static/img/hero-bg.webp` sẽ gãy ảnh vì file đã bị xóa khỏi repo. Tôi tái hiện được trên DB tạo bằng code cũ; cần kiểm nếu có DB thật nào lưu tab Hero trước khi nâng cấp.
+
+### Đã sửa (đã tự xác minh)
+
+**Cao:** C-1 (thiếu BASE_URL, SMTP_BACKEND: thoát 2, liệt kê đủ; console có cảnh báo). C-2 (tên không vào email; 6 lần tuần tự chỉ 3 email; xem N-1, N-2). C-3 (0 email: flash `send_failed`, về nháp; `sub_failed` cho khách).
+
+**Trung bình:** T-1 banner chết. T-2 view khi tắt section. T-3 token giữ nguyên khi đang chờ. T-4 SEO riêng từng trang. T-5 cấm `so-sanh` mọi dạng viết. T-6 id khổng lồ, CSRF không ASCII, đường dẫn Windows đều 4xx. T-7 trang 500 đủ header (gây 500 thật bằng thiếu bảng). T-8 `APP_ENV` lạ bị từ chối, README đúng. T-9 CLI giữ vai trò. T-10 quá dài báo 400, không cắt.
+
+**Thấp (22):** 1 đua slug, 2 slug dài, 3 JSON 422, 4 HEAD, 5 suất so sánh, 6 `inf`, 7 Markdown h1/h5/fence, 8 lastmod, 9 ClickLog, 10 chủ đề liên hệ, 11 canonical lỗi liên hệ, 12 EXIF, 13 trang 405 sau đăng nhập lại, 14 mật khẩu, 15 redirect http, 16 Esc menu, 17 tương phản, 19 avatar trống, 20 đường dẫn ảnh, 21 SECRET_KEY ngắn, 22 `/docs`, 23 README phục hồi có rồi (xem N-10).
+
+### Mục Nghi ngờ vòng 1
+
+| # | Mục | Kết quả |
+|---|---|---|
+| 1 | Sao lưu nóng | Đã sửa: README dùng `sqlite3 backup`; 40 lần dưới tải toàn vẹn, lệnh README chạy được |
+| 2 | Máy quét link | Đã sửa: GET, HEAD không đổi trạng thái; có `List-Unsubscribe-Post`, POST one-click hủy được |
+| 3 | Đăng nhập đổi email | Còn, đúng brief: 12 lần sai từ 1 IP, đổi email, không bị chặn (R10.2). Chưa đo CPU |
+| 4 | Bài ngày tương lai | Đã sửa, xem Hồi quy |
+| 5 | Click không lọc bot | Còn, cần quyết định: `curl /go/*` vẫn đếm; HEAD không đếm |
+| 6 | Rail ảnh thiếu `ads_note` | Đã sửa |
+| 7 | Editor | Còn, cần quyết định: gửi được chiến dịch, không tự đổi được mật khẩu |
+| 8 | Xuống dòng đơn Markdown | Không phải lỗi, đúng chuẩn |
+| 9 | POST thân lớn | Đã sửa: BodyLimit đạt |
+
+### Hồi quy phần mới: đạt
+
+- **Khóa theo email:** tuần tự đúng 3 lần/24 giờ, cùng token, quá 24 giờ gửi tiếp được. Lỗi ở N-1, N-2, N-3.
+- **Chiến dịch gửi dở:** lô đầu đi, lô sau hỏng thành `partial` (20/45); gửi tiếp đúng 25 người còn lại, không ai nhận 2 lần, thành `sent`. Gửi lại chiến dịch đã xong 404. 5 POST đồng thời cùng nháp: mỗi người 1 email.
+- **Kẹt sending:** chưa quá 15 phút không gỡ nhầm; quá 15 phút và sau restart về `draft`/`partial` đúng.
+- **BodyLimit:** Content-Length và chunked đều chặn đúng 1MB/8MB/64MB; 413 có header bảo mật; form nhỏ, chunked nhỏ qua được và phát lại đúng thân; upload 8 ảnh 40MB được.
+- **Trang xác nhận POST:** GET, HEAD không đổi trạng thái; nút chạy thật trên Chromium và qua https; `form-action` không chặn; noindex; token sai 404; link xác nhận cũ sau khi hủy không kích hoạt lại. POST không có CSRF theo thiết kế, cần biết token 43 ký tự.
+- **Hẹn giờ:** dùng đồng hồ giả, 23:59 VN không xuất hiện ở danh sách, trang chủ, sitemap, trang bài, số đếm chuyên mục; 00:01 VN (ngày UTC cũ) hiện đủ; admin có nhãn Hẹn giờ; xóa ngày rồi lưu thì đăng ngay.
+- **Slug tiếng Việt:** Đ, Ư, Ơ, Ỷ, dấu tổ hợp, ký tự đặc biệt đúng; tiêu đề dài lưu được. Lỗi ở N-6.
+- **Chặn production:** `APP_ENV` rỗng/lạ, SECRET_KEY 31 ký tự, BASE_URL rác, SMTP_BACKEND lạ, smtp thiếu host/from đều thoát 2, không traceback, chưa tạo DB. `APP_ENV=Production` chạy được.
+- **Migration 0002:** DB tạo bằng code 9c29ee1 có dữ liệu thật qua form: số dòng mọi bảng không đổi, token, trạng thái giữ nguyên, phiên cũ còn, link trong email cũ dùng được, chiến dịch kẹt về nháp, UNIQUE và FK cascade còn, `alembic check` sạch, downgrade rồi upgrade đều được.
+
+### Quy trình production trong README (cổng 8014)
+
+Bản `git archive`, venv mới, `SMTP_BACKEND=console`, `BASE_URL=https://localhost:8016`, proxy TLS tự viết. Đạt: thiếu cấu hình báo đủ, cảnh báo console, create-admin, đăng nhập https, cookie Secure/HttpOnly/Lax, thêm sàn cần license, khách đăng ký và bấm xác nhận, email/canonical/sitemap dùng https, HSTS, `/docs` 404, không lỗi CSP, sao lưu nguyên văn lệnh README khi đang chạy, phục hồi database. Lỗi ở N-10, N-11.
+
+### Chưa kiểm được
+
+- `start.bat`, `stop.bat`, site thật ở cổng 8000: cấm chạy cổng 8000, cấm đọc `.env`. Lúc 13:12 có `python run.py` nghe 127.0.0.1:8000 kèm `data/app.db`, không do QA bật, QA không đụng vào.
+- SMTP thật, Cloudflare Tunnel thật; lô SMTP bị từ chối từng địa chỉ chỉ giả lập.
+- Firefox, Safari, thiết bị thật, trình đọc màn hình.
+- CPU khi spam đăng nhập; chạy dài ngày, DB lớn.
