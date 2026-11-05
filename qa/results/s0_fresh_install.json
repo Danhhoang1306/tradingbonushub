@@ -1,0 +1,80 @@
+[
+ {
+  "id": "F0.1",
+  "desc": "py -3.12 -m venv .venv",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "F0.2",
+  "desc": "pip install -r requirements.txt",
+  "ok": true,
+  "detail": "0.0.5 annotated-types-0.8.0 anyio-4.16.0 argon2-cffi-25.1.0 argon2-cffi-bindings-26.1.0 cffi-2.1.1 click-8.5.0 fastapi-0.162.0 h11-0.16.0 idna-3.20 jinja2-3.1.6 markdown-3.11.2 nh3-0.3.7 opentelemetry-api-1.45.2 pillow-13.0.0 pycparser-3.12 pydantic-2.14.2 pydantic-core-2.50.2 python-multipart-0.0.33 sqlalchemy-2.1.8 starlette-1.10.0 typing-extensions-4.16.0 typing-inspection-0.4.5 uvicorn-0.54.0\n\n[notice] A new release of pip is available: 24.2 -> 26.3\n[notice] To update, run: C:\\Users\\danhh\\AppData\\Local\\Temp\\claude\\17ec8c0066fedc03\\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\\scratchpad\\qa-func\\fresh\\.venv\\Scripts\\python.exe -m pip install --upgrade pip\n"
+ },
+ {
+  "id": "F0.3",
+  "desc": "README nói mặc định development: chạy được khi không đặt SECRET_KEY",
+  "ok": false,
+  "detail": "aude\\17ec8c0066fedc03\\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\\scratchpad\\qa-func\\fresh\\app\\config.py\", line 32, in require_secret\r\n    raise RuntimeError(\"Thiếu SECRET_KEY khi APP_ENV=production\")\r\nRuntimeError: Thiếu SECRET_KEY khi APP_ENV=production\r\n"
+ },
+ {
+  "id": "F0.4",
+  "desc": "python run.py (chỉ PORT + SECRET_KEY theo README) lên được, /health 200",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "F0.5",
+  "desc": "DB rỗng: trang chủ 200",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "F0.6",
+  "desc": "Tự tạo data/app.db trong bản sao",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "F0.7",
+  "desc": "create-admin bằng ADMIN_PASSWORD",
+  "ok": true,
+  "detail": "Đã tạo tài khoản ban@example.com (admin).\n"
+ },
+ {
+  "id": "F0.8",
+  "desc": "create-admin không console, không biến: báo lỗi sạch, không treo",
+  "ok": true,
+  "detail": "Không có console để nhập mật khẩu: đặt biến môi trường ADMIN_PASSWORD.\n"
+ },
+ {
+  "id": "F0.9-127.0.0.1",
+  "desc": "Đăng nhập theo đúng các bước README qua http://127.0.0.1:8014",
+  "ok": true,
+  "detail": "url=http://127.0.0.1:8014/admin text='TradingBonusHub\\nQuản trị\\nTổng quan\\nDỮ LIỆU\\nBonus\\nSàn\\nBài viết\\nQuảng cáo\\nNỘI DUNG\\nTrang chủ\\nTrang\\nThư viện ảnh\\nKHÁCH\\nNgười đăng ký\\nTin nhắn\\nHỆ THỐNG\\nCài đặt\\nXem trang chủ ↗\\nban@example.com\\nĐăng xuất\\nQu'"
+ },
+ {
+  "id": "F0.9-localhost",
+  "desc": "Đăng nhập theo đúng các bước README qua http://localhost:8014",
+  "ok": true,
+  "detail": "url=http://localhost:8014/admin text='TradingBonusHub\\nQuản trị\\nTổng quan\\nDỮ LIỆU\\nBonus\\nSàn\\nBài viết\\nQuảng cáo\\nNỘI DUNG\\nTrang chủ\\nTrang\\nThư viện ảnh\\nKHÁCH\\nNgười đăng ký\\nTin nhắn\\nHỆ THỐNG\\nCài đặt\\nXem trang chủ ↗\\nban@example.com\\nĐăng xuất\\nQu'"
+ },
+ {
+  "id": "F0.10",
+  "desc": "python <đường dẫn tuyệt đối>/run.py từ thư mục khác vẫn chạy",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "F0.11",
+  "desc": "pip install -r requirements-dev.txt",
+  "ok": true,
+  "detail": "\n[notice] A new release of pip is available: 24.2 -> 26.3\n[notice] To update, run: C:\\Users\\danhh\\AppData\\Local\\Temp\\claude\\17ec8c0066fedc03\\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\\scratchpad\\qa-func\\fresh\\.venv\\Scripts\\python.exe -m pip install --upgrade pip\n"
+ },
+ {
+  "id": "F0.12",
+  "desc": "README Test: pytest xanh trên bản sao sạch",
+  "ok": true,
+  "detail": "........................................................................ [ 33%]\n........................................................................ [ 66%]\n........................................................................ [ 99%]\n.                                                                        [100%]\n217 passed in 20.48s\n"
+ }
+]

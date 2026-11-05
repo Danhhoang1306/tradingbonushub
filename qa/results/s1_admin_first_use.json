@@ -1,0 +1,362 @@
+[
+ {
+  "id": "A0.1",
+  "desc": "Vào /admin chuyển về đăng nhập",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A0.2",
+  "desc": "Đăng nhập vào Tổng quan DB rỗng",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A0.3",
+  "desc": "DB rỗng: public không có dữ liệu mock",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A1.1",
+  "desc": "Thêm sàn: flash Đã thêm",
+  "ok": true,
+  "detail": "Đã thêm"
+ },
+ {
+  "id": "A1.2",
+  "desc": "Tổng quan sàn: đủ fact",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A1.3",
+  "desc": "Logo upload hiện",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A1.5",
+  "desc": "summary nhiều đoạn: có xuống dòng (white-space pre-line hoặc nhiều <p>)",
+  "ok": true,
+  "detail": "pre-line"
+ },
+ {
+  "id": "A1.6",
+  "desc": "Tab Tài khoản & phí",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A1.7",
+  "desc": "Tab Nạp & rút",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A1.8",
+  "desc": "Sàn trong /san và so sánh mặc định",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A1.9",
+  "desc": "/go/broker chuyển đúng link + đếm",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A2.1",
+  "desc": "Thêm bonus",
+  "ok": true,
+  "detail": "Đã thêm"
+ },
+ {
+  "id": "A2.2",
+  "desc": "Bonus hiện ở /bonus đủ trường",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A2.3",
+  "desc": "Trang chủ: thẻ hero nổi bật là bonus giá trị cao nhất của sàn featured",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A2.4",
+  "desc": "Trang chủ: số ưu đãi đang hoạt động 2+",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A2.5",
+  "desc": "Tab Bonus sàn",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A3.1",
+  "desc": "Thêm bài",
+  "ok": true,
+  "detail": "Đã thêm"
+ },
+ {
+  "id": "A3.2",
+  "desc": "Bài public: markdown, ảnh bìa",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A3.3",
+  "desc": "Bài ở /tin-tuc và trang chủ",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A4.after-bonus",
+  "desc": "Thêm banner after-bonus",
+  "ok": true,
+  "detail": "Đã thêm"
+ },
+ {
+  "id": "A4.before-blog",
+  "desc": "Thêm banner before-blog",
+  "ok": true,
+  "detail": "Đã thêm"
+ },
+ {
+  "id": "A4.rail-left",
+  "desc": "Thêm banner rail-left",
+  "ok": true,
+  "detail": "Đã thêm"
+ },
+ {
+  "id": "A4.rail-right",
+  "desc": "Thêm banner rail-right",
+  "ok": true,
+  "detail": "Đã thêm"
+ },
+ {
+  "id": "A4.1",
+  "desc": "4 banner lên trang chủ",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A4.2",
+  "desc": "Màn ≥1572px: rail hiển thị thật và beacon đếm view",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A5.home.sections",
+  "desc": "Lưu nguyên trạng home/sections: Đã lưu",
+  "ok": true,
+  "detail": "'Đã lưu' url=http://127.0.0.1:8014/admin/home?tab=sections"
+ },
+ {
+  "id": "A5.home.hero",
+  "desc": "Lưu nguyên trạng home/hero: Đã lưu",
+  "ok": true,
+  "detail": "'Đã lưu' url=http://127.0.0.1:8014/admin/home?tab=hero"
+ },
+ {
+  "id": "A5.home.about",
+  "desc": "Lưu nguyên trạng home/about: Đã lưu",
+  "ok": true,
+  "detail": "'Đã lưu' url=http://127.0.0.1:8014/admin/home?tab=about"
+ },
+ {
+  "id": "A5.home.why",
+  "desc": "Lưu nguyên trạng home/why: Đã lưu",
+  "ok": true,
+  "detail": "'Đã lưu' url=http://127.0.0.1:8014/admin/home?tab=why"
+ },
+ {
+  "id": "A5.home.types",
+  "desc": "Lưu nguyên trạng home/types: Đã lưu",
+  "ok": true,
+  "detail": "'Đã lưu' url=http://127.0.0.1:8014/admin/home?tab=types"
+ },
+ {
+  "id": "A5.home.contact",
+  "desc": "Lưu nguyên trạng home/contact: Đã lưu",
+  "ok": true,
+  "detail": "'Đã lưu' url=http://127.0.0.1:8014/admin/home?tab=contact"
+ },
+ {
+  "id": "A5.home.menu",
+  "desc": "Lưu nguyên trạng home/menu: Đã lưu",
+  "ok": true,
+  "detail": "'Đã lưu' url=http://127.0.0.1:8014/admin/home?tab=menu"
+ },
+ {
+  "id": "A5.pages.bonus",
+  "desc": "Lưu nguyên trạng pages/bonus: Đã lưu",
+  "ok": true,
+  "detail": "'Đã lưu' url=http://127.0.0.1:8014/admin/pages?tab=bonus"
+ },
+ {
+  "id": "A5.pages.san",
+  "desc": "Lưu nguyên trạng pages/san: Đã lưu",
+  "ok": true,
+  "detail": "'Đã lưu' url=http://127.0.0.1:8014/admin/pages?tab=san"
+ },
+ {
+  "id": "A5.pages.tin",
+  "desc": "Lưu nguyên trạng pages/tin: Đã lưu",
+  "ok": true,
+  "detail": "'Đã lưu' url=http://127.0.0.1:8014/admin/pages?tab=tin"
+ },
+ {
+  "id": "A5.pages.gioithieu",
+  "desc": "Lưu nguyên trạng pages/gioithieu: Đã lưu",
+  "ok": true,
+  "detail": "'Đã lưu' url=http://127.0.0.1:8014/admin/pages?tab=gioithieu"
+ },
+ {
+  "id": "A5.pages.lienhe",
+  "desc": "Lưu nguyên trạng pages/lienhe: Đã lưu",
+  "ok": true,
+  "detail": "'Đã lưu' url=http://127.0.0.1:8014/admin/pages?tab=lienhe"
+ },
+ {
+  "id": "A5.pages.terms",
+  "desc": "Lưu nguyên trạng pages/terms: Đã lưu",
+  "ok": true,
+  "detail": "'Đã lưu' url=http://127.0.0.1:8014/admin/pages?tab=terms"
+ },
+ {
+  "id": "A5.pages.privacy",
+  "desc": "Lưu nguyên trạng pages/privacy: Đã lưu",
+  "ok": true,
+  "detail": "'Đã lưu' url=http://127.0.0.1:8014/admin/pages?tab=privacy"
+ },
+ {
+  "id": "A5.pages.system",
+  "desc": "Lưu nguyên trạng pages/system: Đã lưu",
+  "ok": true,
+  "detail": "'Đã lưu' url=http://127.0.0.1:8014/admin/pages?tab=system"
+ },
+ {
+  "id": "A5.settings.general",
+  "desc": "Lưu nguyên trạng settings/general: Đã lưu",
+  "ok": true,
+  "detail": "'Đã lưu' url=http://127.0.0.1:8014/admin/settings?tab=general"
+ },
+ {
+  "id": "A5.settings.seo",
+  "desc": "Lưu nguyên trạng settings/seo: Đã lưu",
+  "ok": true,
+  "detail": "'Đã lưu' url=http://127.0.0.1:8014/admin/settings?tab=seo"
+ },
+ {
+  "id": "A5.settings.social",
+  "desc": "Lưu nguyên trạng settings/social: Đã lưu",
+  "ok": true,
+  "detail": "'Đã lưu' url=http://127.0.0.1:8014/admin/settings?tab=social"
+ },
+ {
+  "id": "A5.settings.tracking",
+  "desc": "Lưu nguyên trạng settings/tracking: Đã lưu",
+  "ok": true,
+  "detail": "'Đã lưu' url=http://127.0.0.1:8014/admin/settings?tab=tracking"
+ },
+ {
+  "id": "A5.0",
+  "desc": "Sau khi lưu nguyên trạng mọi tab, HTML public không đổi",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A6.0",
+  "desc": "Lưu 186 ô qua UI không lỗi",
+  "ok": true,
+  "detail": "[]"
+ },
+ {
+  "id": "A6.1",
+  "desc": "Mọi ô đã sửa xuất hiện ở public (186 ô)",
+  "ok": true,
+  "detail": "[]"
+ },
+ {
+  "id": "A6.2",
+  "desc": "Mọi ảnh đặt trong Trang chủ/Trang/Cài đặt hiện ở public (14 ảnh)",
+  "ok": true,
+  "detail": "[]"
+ },
+ {
+  "id": "A7.1",
+  "desc": "Sửa bonus: public đổi",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A7.2",
+  "desc": "Ẩn bonus: biến khỏi public",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A7.3",
+  "desc": "Xóa bonus qua hộp xác nhận",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A7.4",
+  "desc": "Chuyển bài về nháp: 404, khỏi danh sách, sitemap, trang chủ",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A7.5",
+  "desc": "Tắt banner: /go/ad 404, không còn ở trang chủ",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A7.6",
+  "desc": "Thư viện ảnh: ảnh đang dùng khóa nút Xóa",
+  "ok": true,
+  "detail": "20"
+ },
+ {
+  "id": "A7.7",
+  "desc": "Sửa tên sàn: public đổi, slug giữ hay đổi đều không 404 tại link đang hiển thị",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A7.8",
+  "desc": "Sửa tên sàn nhưng ô Slug giữ nguyên: slug không đổi (link cũ còn sống)",
+  "ok": true,
+  "detail": "hai-au-markets"
+ },
+ {
+  "id": "A7.9",
+  "desc": "Xóa sàn: biến khỏi /san, 404 trang sàn, /go 404",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "A8.1",
+  "desc": "Bấm đúp nút Lưu bonus: chỉ tạo 1 bản ghi",
+  "ok": true,
+  "detail": "1 bản ghi"
+ },
+ {
+  "id": "A8.2",
+  "desc": "Bấm đúp xác nhận gửi email: chỉ gửi 1 chiến dịch",
+  "ok": true,
+  "detail": "1 chiến dịch"
+ },
+ {
+  "id": "A8.3",
+  "desc": "Không có lỗi console/JS khi admin thao tác",
+  "ok": true,
+  "detail": "[]"
+ }
+]

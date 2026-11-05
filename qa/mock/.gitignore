@@ -1,0 +1,3 @@
+# Kết quả crawl, chứa chuỗi mock trích từ design/ (design/ cũng bị gitignore, repo public)
+out/
+__pycache__/

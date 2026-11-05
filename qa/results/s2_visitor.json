@@ -1,0 +1,422 @@
+[
+ {
+  "id": "B1.1",
+  "desc": "5 bonus, mới nhất trước",
+  "ok": true,
+  "detail": "['B-cashback', 'B-gia-trong', 'B-gia-500', 'B-gia-900', 'B-gia-100']"
+ },
+ {
+  "id": "B1.2",
+  "desc": "Sort Giá trị cao: 900, 500, 100, 10, rồi bonus không có giá trị",
+  "ok": true,
+  "detail": "['B-gia-900', 'B-gia-500', 'B-gia-100', 'B-cashback', 'B-gia-trong']"
+ },
+ {
+  "id": "B1.3",
+  "desc": "Đổi tab giữ sort, chỉ deposit",
+  "ok": true,
+  "detail": "('http://127.0.0.1:8014/bonus?type=deposit&sort=value', ['B-gia-900', 'B-gia-100'])"
+ },
+ {
+  "id": "B1.4",
+  "desc": "Đổi sort giữ tab, hạn sớm trước",
+  "ok": true,
+  "detail": "('http://127.0.0.1:8014/bonus?type=deposit&sort=expiry', ['B-gia-900', 'B-gia-100'])"
+ },
+ {
+  "id": "B1.5",
+  "desc": "Sắp hết hạn: bonus Liên tục xuống cuối",
+  "ok": true,
+  "detail": "['B-gia-trong', 'B-gia-900', 'B-gia-100', 'B-cashback', 'B-gia-500']"
+ },
+ {
+  "id": "B1.6",
+  "desc": "Không có bonus loại đó: câu trống",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B2.1",
+  "desc": "Có nút lọc crypto",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B2.2",
+  "desc": "Lọc tại chỗ còn 1 thẻ",
+  "ok": true,
+  "detail": "1"
+ },
+ {
+  "id": "B2.3",
+  "desc": "Tất cả: 5 thẻ",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B2.4",
+  "desc": "Tab Loại bonus đổi panel",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B3.1",
+  "desc": "5 sàn",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B3.2",
+  "desc": "Lọc crypto",
+  "ok": true,
+  "detail": "http://127.0.0.1:8014/san?kind=crypto"
+ },
+ {
+  "id": "B4.0",
+  "desc": "ids rỗng: câu trống",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B4.1",
+  "desc": "Chọn 1 sàn",
+  "ok": true,
+  "detail": "1"
+ },
+ {
+  "id": "B4.2",
+  "desc": "Chọn 2 sàn",
+  "ok": true,
+  "detail": "2"
+ },
+ {
+  "id": "B4.3",
+  "desc": "Chọn 3 sàn",
+  "ok": true,
+  "detail": "3"
+ },
+ {
+  "id": "B4.4",
+  "desc": "Đủ 3: pill khác bị khóa",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B4.5",
+  "desc": "Bỏ chọn còn 2 và không còn khóa",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B4.6",
+  "desc": "8 dòng thông tin + nút mở tài khoản",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B4.7",
+  "desc": "Mặc định: sàn admin bật so sánh",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B5.Bonus",
+  "desc": "Tab Bonus",
+  "ok": true,
+  "detail": "http://127.0.0.1:8014/san/forex-mot?tab=bonus"
+ },
+ {
+  "id": "B5.Tài khoản & phí",
+  "desc": "Tab Tài khoản & phí",
+  "ok": true,
+  "detail": "http://127.0.0.1:8014/san/forex-mot?tab=accounts"
+ },
+ {
+  "id": "B5.Nạp & rút",
+  "desc": "Tab Nạp & rút",
+  "ok": true,
+  "detail": "http://127.0.0.1:8014/san/forex-mot?tab=pay"
+ },
+ {
+  "id": "B5.Tổng quan",
+  "desc": "Tab Tổng quan",
+  "ok": true,
+  "detail": "http://127.0.0.1:8014/san/forex-mot"
+ },
+ {
+  "id": "B5.1",
+  "desc": "Nút Mở tài khoản: tab mới, rel sponsored nofollow noopener",
+  "ok": true,
+  "detail": "sponsored nofollow noopener"
+ },
+ {
+  "id": "B5.2",
+  "desc": "Có dòng công bố affiliate dưới nút",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B5.3",
+  "desc": "Chưa có tài khoản: câu trống, không lỗi",
+  "ok": true,
+  "detail": "Chưa có thông tin tài khoản.\nFO\nForex Một\nFCA\n\n1 ưu đãi đang hoạt động. Nạp tối thiểu $10.\n\nMở tài khoản Forex Một\n\nLiên kết affiliate. CFD có rủi ro mất vốn cao do đòn bẩy."
+ },
+ {
+  "id": "B6.1",
+  "desc": "12 bài trang 1",
+  "ok": true,
+  "detail": "12"
+ },
+ {
+  "id": "B6.2",
+  "desc": "Sang trang 2",
+  "ok": true,
+  "detail": "http://127.0.0.1:8014/tin-tuc?page=2"
+ },
+ {
+  "id": "B6.3",
+  "desc": "Trang 3 còn 2 bài",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B6.4",
+  "desc": "Lọc chuyên mục: 12 bài, có trang 2 giữ cat",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B6.5",
+  "desc": "Chuyên mục rỗng: câu trống",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B6.6",
+  "desc": "Bài chi tiết có bài liên quan cùng chuyên mục",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B6.7",
+  "desc": "Lượt xem tăng",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B7.1",
+  "desc": "Đăng ký: khối thành công, về #dang-ky",
+  "ok": true,
+  "detail": "http://127.0.0.1:8014/#dang-ky"
+ },
+ {
+  "id": "B7.2",
+  "desc": "Email chuẩn hóa thường, trạng thái pending, sở thích đúng",
+  "ok": true,
+  "detail": "[('khach.mot@qa.test', 'pending', '[\"cashback\"]', 'Khách Một 😀')]"
+ },
+ {
+  "id": "B7.3",
+  "desc": "Tải lại trang: thông báo một lần rồi mất",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B7.4",
+  "desc": "Email xác nhận gửi đúng 1 lần",
+  "ok": true,
+  "detail": "1"
+ },
+ {
+  "id": "B7.5",
+  "desc": "Email có link hủy",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B7.6",
+  "desc": "Xác nhận thành công",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B7.7",
+  "desc": "Bấm lại link xác nhận: vẫn trang xác nhận",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B7.8",
+  "desc": "Đăng ký lại khi đã xác nhận: không gửi mail",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B7.9",
+  "desc": "Token sai: 404 trang rõ ràng",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B7.10",
+  "desc": "Token hủy sai: 404",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B7.11",
+  "desc": "Hủy thành công",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B7.12",
+  "desc": "Link xác nhận cũ sau khi hủy: không kích hoạt lại",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B7.13",
+  "desc": "Đăng ký lại sau khi hủy: pending, mail mới, token mới",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B7.14",
+  "desc": "Xác nhận lại được; sở thích là cái vừa chọn",
+  "ok": true,
+  "detail": "[('confirmed', '[\"crypto\"]')]"
+ },
+ {
+  "id": "B7.15",
+  "desc": "Gửi form 2 lần: link trong email thứ nhất vẫn dùng được (người dùng mở email nào cũng xác nhận được)",
+  "ok": false,
+  "detail": "email 1 -> 404, có 2 email"
+ },
+ {
+  "id": "B7.16",
+  "desc": "Email sai: flash sub_invalid",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B7.17",
+  "desc": "Lần thứ 6 trong 10 phút: sub_rate",
+  "ok": true,
+  "detail": "tbh_flash=sub_rate; HttpOnly; Max-Age=60; Path=/; SameSite=l"
+ },
+ {
+  "id": "B7.18",
+  "desc": "Honeypot: không lưu",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B8.1",
+  "desc": "Email sai: báo lỗi tại ô, giữ chữ đã nhập",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B8.2",
+  "desc": "Nội dung trống: báo lỗi",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B8.3",
+  "desc": "Gửi xong: khối Đã gửi",
+  "ok": true,
+  "detail": "http://127.0.0.1:8014/lien-he"
+ },
+ {
+  "id": "B8.4",
+  "desc": "Tin lưu đúng",
+  "ok": true,
+  "detail": "[('Hợp tác', 'Khách 2', 'khach2@qa.test', 'Câu hỏi của tôi\\r\\nDòng hai 😀', 0)]"
+ },
+ {
+  "id": "B8.5",
+  "desc": "Admin thấy tin chưa đọc",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B8.6",
+  "desc": "Mở tin: nội dung nhiều dòng, đánh dấu đã đọc",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B8.7",
+  "desc": "Liên hệ quá 5 lần: 429 có thông báo",
+  "ok": true,
+  "detail": "[303, 303, 303, 303, 303, 429]"
+ },
+ {
+  "id": "B8.8",
+  "desc": "Bấm đúp Gửi tin nhắn: 1 tin",
+  "ok": true,
+  "detail": "1 tin"
+ },
+ {
+  "id": "B9.1",
+  "desc": "Nhận bonus mở tab mới tới link affiliate",
+  "ok": true,
+  "detail": "['http://127.0.0.1:8014/static/img/logo.png', 'http://127.0.0.1:8014/go/broker/2', 'https://aff.example.test/i']"
+ },
+ {
+  "id": "B9.2",
+  "desc": "Click affiliate +1 đúng",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B9.3",
+  "desc": "Một lượt tải trang chủ: banner ngang +1; rail không tính ở màn 1440",
+  "ok": true,
+  "detail": "{'QC1': 1, 'QC2': 1, 'Rail1': 0}"
+ },
+ {
+  "id": "B9.4",
+  "desc": "Click quảng cáo +1 đúng banner",
+  "ok": true,
+  "detail": "[('QC1', 1)]"
+ },
+ {
+  "id": "B9.5",
+  "desc": "Màn 1700: rail +1 qua beacon",
+  "ok": true,
+  "detail": "[('QC1', 2), ('QC2', 2), ('Rail1', 1)]"
+ },
+ {
+  "id": "B9.6",
+  "desc": "Thống kê quảng cáo hiện CTR",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B9.7",
+  "desc": "Tổng quan có click affiliate/quảng cáo 30 ngày",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B9.8",
+  "desc": "ClickLog theo ngày khớp",
+  "ok": true,
+  "detail": "[('ad', 1), ('broker', 1)]"
+ },
+ {
+  "id": "B9.9",
+  "desc": "/go có X-Robots-Tag noindex",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "id": "B9.10",
+  "desc": "Không có lỗi console/JS phía khách (bỏ qua 400/404/429 cố ý)",
+  "ok": true,
+  "detail": "[('console', 'http://127.0.0.1:8014/api/contact', 'Failed to load resource: the server responded with a status of 400 (Bad Request)'), ('console', 'http://127.0.0.1:8014/api/contact', 'Failed to load resource: the server responded with a status of 400 (Bad Request)')]"
+ }
+]
