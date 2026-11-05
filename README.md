@@ -69,6 +69,10 @@ Site tắt khi tắt máy hoặc khi đóng các cửa sổ đó.
 
 `.env` đang dùng `SMTP_BACKEND=console`: email chỉ ghi log. Khi có SMTP, đặt `SMTP_BACKEND=smtp` + `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `FROM_EMAIL`, rồi bật lại section "Form đăng ký" ở Trang chủ.
 
+## Tự chạy và sao lưu hằng ngày
+
+Chạy một lần trong PowerShell: `powershell -ExecutionPolicy Bypass -File scripts\setup_autostart.ps1`. Site tự bật khi đăng nhập Windows; sao lưu lúc 03:17 vào `..\Tradingbonushub_backups`, giữ 14 bản. Gỡ bằng `scriptsemove_autostart.ps1`. Sao lưu tay: `.venv\Scripts\python scriptsackup.py`.
+
 ## Test
 
 ```powershell
