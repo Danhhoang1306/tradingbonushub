@@ -71,7 +71,7 @@ Site tắt khi tắt máy hoặc khi đóng các cửa sổ đó.
 
 ## Tự chạy và sao lưu hằng ngày
 
-Chạy một lần trong PowerShell: `powershell -ExecutionPolicy Bypass -File scripts\setup_autostart.ps1`. Site tự bật khi đăng nhập Windows; sao lưu lúc 03:17 vào `..\Tradingbonushub_backups`, giữ 14 bản. Gỡ bằng `scriptsemove_autostart.ps1`. Sao lưu tay: `.venv\Scripts\python scriptsackup.py`.
+Chạy một lần trong PowerShell: `powershell -ExecutionPolicy Bypass -File scripts\setup_autostart.ps1`. Site tự bật khi đăng nhập Windows; sao lưu lúc 03:17 vào `..\Tradingbonushub_backups`, giữ 14 bản. Gỡ bằng `scripts\remove_autostart.ps1`. Sao lưu tay: `.venv\Scripts\python scripts\backup.py`.
 
 ## Test
 
