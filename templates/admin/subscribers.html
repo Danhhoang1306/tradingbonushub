@@ -1,98 +1,105 @@
 {% extends "admin/_base.html" %}
 {% import "admin/_macros.html" as ui with context %}
+{% if current_tab == 'mail' %}{% set page_form = 'mail-form' %}{% set publish_draft = true %}{% endif %}
+{% set filtering = current_tab != 'mail' and (q or current_status != 'all') %}
+{% block subtab_tools %}{% if current_tab != 'mail' %}<div class="subtab-tools"><a class="btn-sm{% if filtering %} is-filtering{% endif %}" href="#loc">{{ 'Đang lọc' if filtering else 'Lọc' }}</a></div>{% endif %}{% endblock %}
 {% block content %}
 {% if current_tab == 'mail' %}
 {% set mf = mail_form %}{% set e = mf.errors %}
 {% set retry = campaigns|selectattr('id', 'equalto', mf.draft_id)|selectattr('status', 'equalto', 'partial')|first %}
-<div class="stack-lg">
-  <form class="card stack mail-card" method="post" action="{{ mf.action }}" data-audience-form data-audience-url="{{ audience_count_url }}"{% if retry %} data-retry{% endif %}>
-    {{ ui.csrf() }}
-    <input type="hidden" name="draft_id" value="{{ mf.draft_id or '' }}">
-    {{ ui.form_errors(e, ['subject', 'body']) }}
-    {% if retry %}<div class="alert alert-info">Chiến dịch gửi dở: đã gửi {{ retry.sent_count|num }} người. Gửi lại chỉ tới người chưa nhận.</div>{% endif %}
-    <fieldset class="field pills-field">
-      <legend class="field-label">Gửi tới nhóm quan tâm <span class="field-hint">(không chọn = tất cả người đã xác nhận)</span></legend>
-      <div class="pills">
-        {% for o in audience_options %}
-        <label class="pill-opt"><input type="checkbox" name="audience" value="{{ o.id }}"{% if o.selected %} checked{% endif %}><span>{{ o.label }}{% if o.count %} <span class="pill-count">{{ o.count|num }}</span>{% endif %}</span></label>
-        {% endfor %}
-      </div>
-    </fieldset>
-    <label class="field{% if e.subject %} has-error{% endif %}"><span class="field-label">Tiêu đề</span>
-      <input type="text" name="subject" value="{{ mf.subject }}" maxlength="255" placeholder="Bonus mới tuần này" class="input-lg">
-      {{ ui.err(e, 'subject') }}
-    </label>
-    <label class="field{% if e.body %} has-error{% endif %}"><span class="field-label">Nội dung</span>
-      <textarea name="body" rows="8" placeholder="Nội dung email…" class="input-lg">{{ mf.body }}</textarea>
-      <span class="field-hint">Văn bản thuần. Mỗi email tự kèm link hủy đăng ký. Chỉ gửi người đã xác nhận email.</span>
-      {{ ui.err(e, 'body') }}
-    </label>
-    {# Nút đầu tiên là nút mặc định khi nhấn Enter: Lưu nháp đứng trước trong DOM cho an toàn, CSS đảo thứ tự hiển thị. #}
-    <div class="mail-actions">
-      <button type="submit" name="action" value="draft" class="btn-secondary btn-lg">Lưu nháp</button>
-      <button type="submit" formaction="{{ mf.test_action }}" class="btn-secondary btn-lg">Gửi thử cho tôi</button>
-      <button type="submit" name="action" value="send" class="btn-primary btn-lg"{% if not audience_count and not retry %} disabled{% endif %}
-        data-confirm="{{ 'Gửi lại tới những người chưa nhận?' if retry else 'Gửi email này tới ' ~ audience_count|num ~ ' người đăng ký?' }}" data-confirm-ok="Gửi" data-confirm-variant="primary">{% if retry %}<span>Gửi lại người chưa nhận</span>{% else %}<span class="js-only"><span data-send-some{% if not audience_count %} hidden{% endif %}>Gửi tới <span data-audience-count>{{ audience_count|num }}</span> người</span><span data-send-none{% if audience_count %} hidden{% endif %}>Chưa có người nhận</span></span><span class="nojs-only">{{ 'Gửi email' if audience_count else 'Chưa có người nhận' }}</span>{% endif %}</button>
-    </div>
-  </form>
-
-  {% set cols = 'minmax(0,1fr) 180px 100px 80px 130px 150px' %}
-  <div>
-    <div class="card-title section-title">Lịch sử gửi</div>
-    <div class="table-wrap">
-      <div class="table" style="--min: 860px; --cols: {{ cols }}">
-        <div class="t-head"><span>Tiêu đề</span><span>Nhóm</span><span>Trạng thái</span><span>Đã gửi</span><span>Ngày</span><span></span></div>
-        {% for c in campaigns %}
-        <div class="t-row">
-          <span class="cell-medium cell-ellipsis" title="{{ c.subject }}">{{ c.subject }}</span>
-          <span class="cell-muted cell-ellipsis">{{ c.audience_labels|join(', ') or 'Tất cả' }}</span>
-          <span class="{{ 'status-ok' if c.status == 'sent' else 'status-bad' if c.status == 'partial' else 'status-muted' }}">{{ {'sent': 'Đã gửi', 'sending': 'Đang gửi', 'draft': 'Nháp', 'partial': 'Gửi dở'}.get(c.status, c.status) }}</span>
-          <span>{% if c.status in ('sent', 'partial') %}{{ c.sent_count|num }}{% else %}—{% endif %}</span>
-          <span class="cell-muted">{{ (c.sent_at or c.created_at)|datetime_vn }}</span>
-          <span class="t-actions">
-            {% if c.edit_url %}<a class="btn-sm" href="{{ c.edit_url }}">{{ 'Gửi lại' if c.status == 'partial' else 'Mở' }}</a>{% endif %}
-            {% if c.delete_url %}{{ ui.delete_form(c.delete_url, 'Xóa chiến dịch "' ~ c.subject ~ '"?', back='/admin/subscribers?tab=mail') }}{% endif %}
-          </span>
-        </div>
-        {% else %}
-        {{ ui.empty('Chưa gửi email nào.') }}
-        {% endfor %}
-      </div>
-    </div>
-  </div>
-</div>
-
-{% else %}
-{% set cols = '180px minmax(0,1fr) minmax(0,1fr) 120px 110px 70px' %}
-<div class="stack">
-  <div class="toolbar">
-    {% for f in status_filters %}
-      <a class="pill{% if f.active %} is-active{% endif %}" href="{{ f.url }}">{{ f.label }}{% if f.count %} <span class="pill-count">{{ f.count|num }}</span>{% endif %}</a>
-    {% endfor %}
-    <form class="search" method="get" action="/admin/subscribers" role="search">
-      <input type="hidden" name="tab" value="list">
-      <input type="hidden" name="status" value="{{ current_status }}">
-      <input type="search" name="q" value="{{ q }}" placeholder="Tìm tên hoặc email…" aria-label="Tìm người đăng ký">
-    </form>
-  </div>
-  <div class="table-wrap">
-    <div class="table" style="--min: 860px; --cols: {{ cols }}">
-      <div class="t-head"><span>Họ tên</span><span>Email</span><span>Quan tâm</span><span>Trạng thái</span><span>Ngày</span><span></span></div>
-      {% for u in subscribers %}
-      <div class="t-row">
-        <span class="cell-medium cell-ellipsis">{{ u.name or '—' }}</span>
-        <span class="cell-ellipsis">{{ u.email }}</span>
-        <span class="cell-muted cell-ellipsis">{{ u.interest_labels|join(', ') or 'Tất cả' }}</span>
-        <span class="{{ {'confirmed': 'status-ok', 'unsubscribed': 'status-bad'}.get(u.status, 'status-muted') }}">{{ u.status|subscriber_status_label }}</span>
-        <span class="cell-muted">{{ u.created_at|date_vn }}</span>
-        <span class="t-actions">{{ ui.delete_form(u.delete_url, 'Xóa người đăng ký ' ~ u.email ~ '?') }}</span>
-      </div>
-      {% else %}
-        {% if q or current_status != 'all' %}{{ ui.empty('Không có người đăng ký phù hợp.') }}
-        {% else %}{{ ui.empty('Chưa có người đăng ký nào.') }}{% endif %}
+<form id="mail-form" class="card stack mail-card" method="post" action="{{ mf.action }}" data-audience-form data-audience-url="{{ audience_count_url }}"{% if retry %} data-retry{% endif %}>
+  {{ ui.csrf() }}
+  <input type="hidden" name="draft_id" value="{{ mf.draft_id or '' }}">
+  {{ ui.form_errors(e, ['subject', 'body']) }}
+  {% if retry %}<div class="alert alert-info">Chiến dịch gửi dở: đã gửi {{ retry.sent_count|num }} người. Gửi lại chỉ tới người chưa nhận.</div>{% endif %}
+  <fieldset class="field pills-field">
+    <legend class="field-label">Gửi tới nhóm quan tâm</legend>
+    <div class="pills">
+      {% for o in audience_options %}
+      <label class="pill-opt"><input type="checkbox" name="audience" value="{{ o.id }}"{% if o.selected %} checked{% endif %}><span>{{ o.label }}</span></label>
       {% endfor %}
     </div>
+  </fieldset>
+  <label class="field{% if e.subject %} has-error{% endif %}"><span class="field-label">Tiêu đề</span>
+    <input type="text" name="subject" value="{{ mf.subject }}" maxlength="255" placeholder="Bonus mới tuần này" class="input-lg">
+    {{ ui.err(e, 'subject') }}
+  </label>
+  <label class="field{% if e.body %} has-error{% endif %}"><span class="field-label">Nội dung</span>
+    <textarea name="body" rows="8" placeholder="Nội dung email…" class="input-lg">{{ mf.body }}</textarea>
+    {{ ui.err(e, 'body') }}
+  </label>
+  {# Nút mặc định khi nhấn Enter là "Xuất bản thay đổi" (lưu nháp) ở đầu trang: đứng trước trong DOM, không gửi nhầm. #}
+  <div class="mail-actions">
+    <button type="submit" name="action" value="send" class="btn-primary btn-lg"{% if not audience_count and not retry %} disabled{% endif %}
+      data-confirm="{{ 'Gửi lại tới những người chưa nhận?' if retry else 'Gửi email này tới ' ~ audience_count|num ~ ' người đăng ký?' }}" data-confirm-ok="Gửi" data-confirm-variant="primary">{% if retry %}Gửi lại người chưa nhận{% else %}<span>Gửi tới <span data-audience-count>{{ audience_count|num }}</span> người</span>{% endif %}</button>
+    <button type="submit" formaction="{{ mf.test_action }}" class="btn-secondary btn-lg">Gửi thử cho tôi</button>
+    <a class="mail-history" href="#lich-su">Lịch sử gửi</a>
+  </div>
+</form>
+
+{% else %}
+{% set cols = '180px minmax(0,1fr) minmax(0,1fr) 110px' %}
+<div class="table-wrap">
+  <div class="table" style="--min: 760px; --cols: {{ cols }}">
+    <div class="t-head"><span>Họ tên</span><span>Email</span><span>Quan tâm</span><span>Ngày</span></div>
+    {% for u in subscribers %}
+    <div class="t-row">
+      <span class="cell-medium cell-ellipsis">{{ u.name or '—' }}</span>
+      <span class="cell-ellipsis" title="{{ u.status|subscriber_status_label }}">{{ u.email }}</span>
+      <span class="cell-muted cell-ellipsis">{{ u.interest_labels|join(', ') or 'Tất cả' }}</span>
+      <span class="cell-muted has-tools">{{ u.created_at|date_vn }}<span class="row-tools">{{ ui.delete_form(u.delete_url, 'Xóa người đăng ký ' ~ u.email ~ '?') }}</span></span>
+    </div>
+    {% else %}
+      {{ ui.empty('Không có người đăng ký phù hợp.' if q or current_status != 'all' else 'Chưa có người đăng ký nào.') }}
+    {% endfor %}
   </div>
 </div>
+{% endif %}
+{% endblock %}
+
+{% block panels %}
+{% if current_tab == 'mail' %}
+{% call ui.panel('lich-su', 'Lịch sử gửi') %}
+<div class="drawer-body">
+  {% for c in campaigns %}
+  <div class="hist-row">
+    <div class="cell-medium">{{ c.subject }}</div>
+    <div class="hist-meta">
+      <span class="{{ 'status-ok' if c.status == 'sent' else 'status-bad' if c.status == 'partial' else 'status-muted' }}">{{ {'sent': 'Đã gửi', 'sending': 'Đang gửi', 'draft': 'Nháp', 'partial': 'Gửi dở'}.get(c.status, c.status) }}</span>
+      {% if c.status in ('sent', 'partial') %}<span>{{ c.sent_count|num }} người</span>{% endif %}
+      <span>{{ c.audience_labels|join(', ') or 'Tất cả' }}</span>
+      <span>{{ (c.sent_at or c.created_at)|datetime_vn }}</span>
+    </div>
+    {% if c.edit_url or c.delete_url %}
+    <div class="t-actions">
+      {% if c.edit_url %}<a class="btn-sm" href="{{ c.edit_url }}">{{ 'Gửi lại' if c.status == 'partial' else 'Mở' }}</a>{% endif %}
+      {% if c.delete_url %}{{ ui.delete_form(c.delete_url, 'Xóa chiến dịch "' ~ c.subject ~ '"?', back='/admin/subscribers?tab=mail') }}{% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% else %}
+  {{ ui.empty('Chưa gửi email nào.') }}
+  {% endfor %}
+</div>
+{% endcall %}
+{% else %}
+{% call ui.panel('loc', 'Lọc người đăng ký') %}
+<div class="drawer-body">
+  <div class="field"><span class="field-label">Trạng thái</span>
+    <div class="pills">
+    {% for f in status_filters %}<a class="pill{% if f.active %} is-active{% endif %}" href="{{ f.url }}">{{ f.label }}{% if f.count %} <span class="pill-count">{{ f.count|num }}</span>{% endif %}</a>{% endfor %}
+    </div>
+  </div>
+  <form id="loc-form" method="get" action="/admin/subscribers" role="search">
+    <input type="hidden" name="tab" value="list">
+    <input type="hidden" name="status" value="{{ current_status }}">
+    {{ ui.field('q', 'Tìm tên hoặc email', q, type='search') }}
+  </form>
+</div>
+<div class="drawer-foot">
+  <button type="submit" form="loc-form" class="btn-primary btn-save">Áp dụng</button>
+  {% if filtering %}<a class="btn-secondary btn-clear" href="/admin/subscribers?tab=list">Bỏ lọc</a>{% endif %}
+</div>
+{% endcall %}
 {% endif %}
 {% endblock %}

@@ -6,55 +6,33 @@
     {% for s in stats %}
     <div class="stat">
       <div class="stat-label">{{ s.label }}</div>
-      <div class="stat-value">{{ '—' if s.value in ('0', '0/0') else s.value }}</div>
+      <div class="stat-value">{% if s.value in ('0', '0/0') %}&nbsp;{% else %}{{ s.value }}{% endif %}</div>
     </div>
     {% endfor %}
   </div>
 
-  {% if unread_messages %}
-  <a class="notice-link" href="/admin/messages?tab=unread">
-    <span><strong>{{ unread_messages|num }}</strong> tin nhắn liên hệ chưa đọc</span><span>Xem →</span>
-  </a>
-  {% endif %}
-
   <div class="grid-2">
     <div class="card">
-      <div class="card-title">Bonus sắp hết hạn <a href="/admin/bonus?tab=exp">Xem tất cả</a></div>
+      <div class="card-title">Bonus sắp hết hạn</div>
       {% for b in expiring %}
       <div class="card-list-row">
         <span><strong>{{ b.broker.name }}</strong> · {{ b.title }}</span>
-        <span class="end-danger">{{ b.expiry_date|date_vn }}</span>
+        <span class="end-danger">{{ b.expiry_date|short_date }}</span>
       </div>
       {% else %}
-      <div class="empty empty-inline"><p>Không có bonus nào hết hạn trong 14 ngày tới.</p></div>
+      <div class="empty empty-inline"><p>Không có bonus nào sắp hết hạn.</p></div>
       {% endfor %}
     </div>
-    {% if banners %}
     <div class="card">
-      <div class="card-title">Banner quảng cáo <a href="/admin/ads?tab=stats">Thống kê</a></div>
+      <div class="card-title">Banner quảng cáo</div>
       {% for b in banners %}
       <div class="card-list-row">
-        <span><a class="row-link-inline" href="{{ b.edit_url }}"><strong>{{ b.name }}</strong></a> · {{ b.placement|placement_label }}<span class="cell-sub{% if b.state in ('no_link', 'broker_hidden') %} cell-warn{% endif %}">{{ b.state|banner_state_label }}</span></span>
+        <span><strong>{{ b.broker or b.name }}</strong> · {{ b.placement|placement_label }}</span>
         <span class="end">{{ b.clicks|num }} click · CTR {{ ctr(b.clicks, b.views) }}</span>
       </div>
-      {% endfor %}
-    </div>
-    {% endif %}
-    <div class="card">
-      <div class="card-title">Sàn nhiều click nhất <a href="/admin/brokers?tab=links">Link affiliate</a></div>
-      {% for k in top_brokers %}
-      <div class="card-list-row">
-        <span><strong>{{ k.name }}</strong></span>
-        <span class="end">{{ k.clicks|num }} click</span>
-      </div>
       {% else %}
-      <div class="empty empty-inline"><p>Chưa có click affiliate nào.</p></div>
+      <div class="empty empty-inline"><p>Chưa có banner nào.</p></div>
       {% endfor %}
-    </div>
-    {# Có thẻ Banner thì biểu đồ nằm cạnh thẻ sàn, không thì chiếm cả hàng. #}
-    <div class="card{% if not banners %} grid-full{% endif %}">
-      <div class="card-title">Click theo ngày (30 ngày){% if click_total %}<span class="cell-muted">{{ click_total|num }} click</span>{% endif %}</div>
-      {{ ui.bars(click_days, click_total) }}
     </div>
   </div>
 </div>

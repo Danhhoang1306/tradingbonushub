@@ -5,16 +5,16 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app import content, queries
 from app.db import get_db
-from app.models import AdminUser, Banner, Bonus, Broker, ContactMessage, Subscriber
+from app.models import AdminUser, Banner, Bonus, Subscriber
 from app.routes.admin_base import Admin, admin_get, admin_post, render_admin
 from app.security import (LOGIN_CSRF_COOKIE, SESSION_COOKIE, SESSION_DAYS, client_ip, cookie_kwargs, create_session,
                           csrf_ok, destroy_session, is_local_path, load_session, login_ip_limiter, login_limiter, verify_dummy,
                           verify_password)
-from app.templating import render, set_flash
+from app.templating import num, render, set_flash
 from app.utils import today_vn
 
 router = APIRouter(prefix="/admin")
@@ -80,37 +80,27 @@ def overview(a: Admin = Depends(admin_get)):
     labels = content.type_labels(content.get_all(db))
     total_bonus = db.scalar(select(func.count()).select_from(Bonus))
     visible = sum(queries.visible_bonus_counts(db).values())
-    banners = db.scalars(select(Banner)).all()
+    banners = db.scalars(select(Banner).options(joinedload(Banner.broker))
+                         .order_by(Banner.created_at.desc(), Banner.id.desc())).all()
     running = sum(1 for b in banners if queries.banner_state(b, today) == "running")
-
-    def clicks(kind):
-        return sum(d["clicks"] for d in queries.daily_clicks(db, 30, kind=kind))
-
-    confirmed = db.scalar(select(func.count()).select_from(Subscriber).where(Subscriber.status == "confirmed"))
+    ad_clicks = sum(d["clicks"] for d in queries.daily_clicks(db, 30, kind="ad"))
+    subscribers = db.scalar(select(func.count()).select_from(Subscriber))
     expiring = db.scalars(
         select(Bonus).join(Bonus.broker).where(queries.bonus_visible_clause(today), Bonus.expiry_date.is_not(None),
                                                Bonus.expiry_date <= today + timedelta(days=queries.EXPIRING_DAYS))
-        .order_by(Bonus.expiry_date)).all()
-    top = db.scalars(select(Broker).where(Broker.clicks > 0).order_by(Broker.clicks.desc()).limit(5)).all()
-    days = queries.daily_clicks(db, 30)
-    unread = db.scalar(select(func.count()).select_from(ContactMessage).where(ContactMessage.is_read.is_(False)))
+        .order_by(Bonus.created_at.desc(), Bonus.id.desc()).limit(4)).all()
     return render_admin(
         a, "admin/overview.html", "overview", "Tổng quan",
         stats=[
-            {"id": "bonus", "label": "Bonus đang hiển thị", "value": f"{visible}/{total_bonus}"},
-            {"id": "banners", "label": "Banner đang chạy", "value": str(running)},
-            {"id": "ad_clicks", "label": "Click quảng cáo (30 ngày)", "value": str(clicks("ad"))},
-            {"id": "broker_clicks", "label": "Click affiliate (30 ngày)", "value": str(clicks("broker"))},
-            {"id": "subscribers", "label": "Người đăng ký", "value": str(confirmed)},
+            {"id": "bonus", "label": "Bonus đang hiển thị", "value": f"{num(visible)}/{num(total_bonus)}"},
+            {"id": "banners", "label": "Banner đang chạy", "value": num(running)},
+            {"id": "ad_clicks", "label": "Click quảng cáo (tháng)", "value": num(ad_clicks)},
+            {"id": "subscribers", "label": "Người đăng ký", "value": num(subscribers)},
         ],
         expiring=[queries.bonus_view(b, labels) for b in expiring],
-        click_days=days,
-        click_total=sum(d["clicks"] for d in days),
-        top_brokers=[{"id": k.id, "name": k.name, "clicks": k.clicks} for k in top],
-        banners=[{"id": b.id, "name": b.name, "placement": b.placement, "state": queries.banner_state(b, today),
-                  "views": b.views, "clicks": b.clicks, "edit_url": f"/admin/ads/{b.id}/edit"}
-                 for b in sorted(banners, key=lambda b: (-b.clicks, -b.views, b.id))[:5]],
-        unread_messages=unread,
+        banners=[{"id": b.id, "name": b.name, "broker": b.broker.name if b.broker else None, "placement": b.placement,
+                  "state": queries.banner_state(b, today), "views": b.views, "clicks": b.clicks,
+                  "edit_url": f"/admin/ads/{b.id}/edit"} for b in banners],
     )
 
 

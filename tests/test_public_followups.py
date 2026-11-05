@@ -45,14 +45,10 @@ def test_canonical_keeps_meaningful_query(client, url, canonical):
     assert client.get(url).context["meta"]["canonical"] == "http://testserver" + canonical
 
 
-def test_canonical_pagination_and_category(client, db):
-    db.add_all([Post(slug=f"bai-{i}", title=f"Bài {i}", category="Kiến thức", status="published") for i in range(13)])
-    db.commit()
-    assert client.get("/tin-tuc?page=2").context["meta"]["canonical"] == "http://testserver/tin-tuc?page=2"
-    assert client.get("/tin-tuc?page=1").context["meta"]["canonical"] == "http://testserver/tin-tuc"
-    assert client.get("/tin-tuc?page=99").context["meta"]["canonical"] == "http://testserver/tin-tuc?page=2"  # đã kẹp
-    url = client.get("/tin-tuc?cat=Kiến thức&page=2").context["meta"]["canonical"]
-    assert url == "http://testserver/tin-tuc?cat=Ki%E1%BA%BFn+th%E1%BB%A9c&page=2"
+def test_canonical_category(client, db):
+    assert client.get("/tin-tuc?page=2").context["meta"]["canonical"] == "http://testserver/tin-tuc"  # không còn phân trang
+    url = client.get("/tin-tuc?cat=Kiến thức").context["meta"]["canonical"]
+    assert url == "http://testserver/tin-tuc?cat=Ki%E1%BA%BFn+th%E1%BB%A9c"
 
 
 def test_canonical_broker_tab(client, db):
@@ -156,18 +152,18 @@ def test_404_page_survives_broken_settings(plain_client):
 
 # 5. Setting mặc định và admin sửa được
 
-def test_footer_default_links_legal_pages(db):
-    links = [x["url"] for col in content.get(db, "footer")["columns"] for x in col["links"]]
-    assert "/dieu-khoan" in links and "/bao-mat" in links
+def test_footer_default_links_match_design(db):
+    columns = content.get(db, "footer")["columns"]
+    assert [x["label"] for x in columns[1]["links"]] == ["So sánh sàn", "Tin tức", "Giới thiệu", "Liên hệ"]
 
 
 def test_new_default_text(client):
     site = client.get("/").context["site"]
     assert site["footer"]["affiliate_note"] == "Một số liên kết là liên kết affiliate."
     assert site["cta_note"].startswith("Liên kết affiliate.") and site["ads_note"] == "CFD có rủi ro mất vốn cao."
-    assert site["hero"]["card_label"] == "Nổi bật"
+    assert site["hero"]["card_label"] == "Nổi bật tuần này"
     assert site["contact_page"]["success_title"] == "Đã gửi"
-    assert site["system_text"]["header_cta_page"] == "Xem bonus"
+    assert site["system_text"]["header_cta_page"] == "Nhận tư vấn"
 
 
 def test_bonus_types_have_url_but_it_is_not_stored(client, admin, db):
@@ -193,7 +189,7 @@ def test_old_form_without_new_fields_keeps_values(admin, db):
     admin.post("/admin/pages/lienhe", {"title": "Liên hệ"})
     s = content.get_all(db)
     assert s["cta_note"] and s["ads_note"] and s["footer"]["affiliate_note"]
-    assert s["hero"]["card_label"] == "Nổi bật" and s["contact_page"]["success_title"] == "Đã gửi"
+    assert s["hero"]["card_label"] == "Nổi bật tuần này" and s["contact_page"]["success_title"] == "Đã gửi"
 
 
 def test_admin_can_edit_system_text(admin, client, db):

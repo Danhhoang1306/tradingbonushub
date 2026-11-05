@@ -28,7 +28,7 @@ App chỉ đọc biến môi trường (không tự đọc `.env`). Danh sách t
 | `PORT` | Cổng (luôn bind 127.0.0.1) | `8000` | `8000` |
 | `ADMIN_PASSWORD` | Chỉ cho `create-admin` khi chạy không tương tác | | |
 
-Thiếu cấu hình bắt buộc thì `run.py` in danh sách cần đặt và thoát mã 2. `SMTP_BACKEND=console` ở production được phép
+Thiếu cấu hình bắt buộc thì `run.py` in danh sách cần đặt và thoát mã 2. `SMTP_BACKEND=console` ở production: form đăng ký báo `sub_failed`, không lưu người đăng ký. Cấu hình này được phép
 nhưng log cảnh báo khi khởi động: email không được gửi thật.
 
 ## Chạy

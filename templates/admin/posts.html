@@ -1,39 +1,42 @@
 {% extends "admin/_base.html" %}
 {% import "admin/_macros.html" as ui with context %}
-{% set close_url = '/admin/posts' %}
 {% set drawer_inline = ['title','slug','category','excerpt','body_md','cover_path','status','published_at'] %}
-{% set cols = 'minmax(0,1fr) 120px 110px 110px 90px 110px' %}
+{% set cols = 'minmax(0,1fr) 120px 110px 110px 90px' %}
+{% block subtab_tools %}<div class="subtab-tools"><a class="btn-sm{% if q %} is-filtering{% endif %}" href="#loc">{{ 'Đang lọc' if q else 'Lọc' }}</a></div>{% endblock %}
 {% block content %}
-<div class="stack">
-  <div class="toolbar">
-    <form class="search" method="get" action="/admin/posts" role="search">
-      <input type="hidden" name="tab" value="{{ current_tab }}">
-      <input type="search" name="q" value="{{ q }}" placeholder="Tìm theo tiêu đề…" aria-label="Tìm bài viết">
-    </form>
-  </div>
-  <div class="table-wrap">
-    <div class="table" style="--min: 840px; --cols: {{ cols }}">
-      <div class="t-head"><span>Tiêu đề</span><span>Chuyên mục</span><span>Ngày</span><span>Trạng thái</span><span>Trang chủ</span><span></span></div>
-      {% for p in posts %}
-      <div class="t-row">
-        <span class="cell-ellipsis"><a class="row-link cell-medium cell-ellipsis" href="{{ p.edit_url }}" title="{{ p.title }}">{{ p.title }}</a>
-          {% if p.views %}<span class="cell-sub">{{ p.views|num }} lượt xem</span>{% endif %}</span>
-        <span class="cell-muted">{{ p.category }}</span>
-        <span class="cell-muted">{{ p.published_at|date_vn or '—' }}</span>
-        <span class="{{ 'status-ok' if p.status == 'published' else 'status-muted' }}">{{ p.status|post_status_label }}{% if p.scheduled %}<span class="cell-sub">Hẹn giờ</span>{% endif %}</span>
-        {{ ui.toggle(p.toggle_url, p.show_home, 'Hiện ở trang chủ: ' ~ p.title) }}
-        <span class="t-actions">
-          {% if p.view_url %}<a class="btn-sm" href="{{ p.view_url }}" target="_blank" rel="noopener" title="Xem trên site" aria-label="Xem trên site">↗</a>{% endif %}
-          <a class="btn-sm" href="{{ p.edit_url }}">Sửa</a>
-        </span>
-      </div>
-      {% else %}
-        {% if q or current_tab != 'all' %}{{ ui.empty('Không có bài viết phù hợp.') }}
-        {% else %}{{ ui.empty('Chưa có bài viết nào.', add_url, '+ Thêm bài viết') }}{% endif %}
-      {% endfor %}
+<div class="table-wrap">
+  <div class="table" style="--min: 760px; --cols: {{ cols }}">
+    <div class="t-head"><span>Tiêu đề</span><span>Chuyên mục</span><span>Ngày</span><span>Trạng thái</span><span>Trang chủ</span></div>
+    {% for p in posts %}
+    <div class="t-row">
+      <span class="cell-medium has-tools">
+        <a class="row-link" href="{{ p.edit_url }}"{% if p.views %} title="{{ p.views|num }} lượt xem"{% endif %}>{{ p.title }}</a>
+        <span class="row-tools"><a class="btn-sm" href="{{ p.edit_url }}">Sửa</a></span>
+      </span>
+      <span class="cell-muted">{{ p.category }}</span>
+      <span class="cell-muted">{{ p.published_at|date_vn or '—' }}</span>
+      {% if p.scheduled %}<span class="status-muted">Hẹn giờ</span>
+      {% else %}<span class="{{ 'status-ok' if p.status == 'published' else 'status-muted' }}">{{ p.status|post_status_label }}</span>{% endif %}
+      {{ ui.toggle(p.toggle_url, p.show_home, 'Hiện ở trang chủ: ' ~ p.title) }}
     </div>
+    {% else %}
+      {{ ui.empty('Không có bài viết phù hợp.' if q or current_tab != 'all' else 'Chưa có bài viết nào.') }}
+    {% endfor %}
   </div>
 </div>
+{% endblock %}
+
+{% block panels %}
+{% call ui.panel('loc', 'Lọc bài viết') %}
+<form id="loc-form" class="drawer-body" method="get" action="/admin/posts" role="search">
+  <input type="hidden" name="tab" value="{{ current_tab }}">
+  {{ ui.field('q', 'Tìm theo tiêu đề', q, type='search') }}
+</form>
+<div class="drawer-foot">
+  <button type="submit" form="loc-form" class="btn-primary btn-save">Áp dụng</button>
+  {% if q %}<a class="btn-secondary btn-clear" href="/admin/posts?tab={{ current_tab|urlencode }}">Bỏ lọc</a>{% endif %}
+</div>
+{% endcall %}
 {% endblock %}
 
 {% block drawer_fields %}

@@ -212,10 +212,10 @@ def _bonus(admin, broker, **data):
 
 
 @pytest.mark.parametrize("field", ["min_deposit", "withdrawable"])
-@pytest.mark.parametrize("value", ["", "-", "—", "N/A"])
-def test_bonus_requires_conditions(admin, db, field, value):
-    r = _bonus(admin, make_broker(db), **{field: value})
-    assert r.status_code == 400 and field in errors_of(r) and db.query(Bonus).count() == 0
+@pytest.mark.parametrize("value", ["", "—"])
+def test_bonus_conditions_are_optional(admin, db, field, value):
+    assert _bonus(admin, make_broker(db), **{field: value}).status_code == 303
+    assert getattr(db.query(Bonus).one(), field) == value
 
 
 @pytest.mark.parametrize("value", ["$0", "Không", "Lợi nhuận"])
@@ -235,7 +235,7 @@ def test_license_rejects_placeholders(admin, db, value):
 
 def test_featured_labels_are_settings(admin, client, db):
     site = client.get("/").context["site"]
-    assert site["hero"]["card_label"] == "Nổi bật" and site["home_compare"]["featured_label"] == "Nổi bật"
+    assert site["hero"]["card_label"] == "Nổi bật tuần này" and site["home_compare"]["featured_label"] == "Phổ biến"
     admin.post("/admin/home/sections", {"compare_featured_label": "Được chọn nhiều"})
     assert content.get(db, "home_compare")["featured_label"] == "Được chọn nhiều"
     admin.post("/admin/home/sections", {"compare_title": "Tiêu đề"})  # form không gửi trường này: giữ nguyên

@@ -20,13 +20,13 @@ PAGE_TABS = (("bonus", "Bonus"), ("san", "Sàn"), ("compare", "So sánh"), ("tin
 PAGE_URLS = {"bonus": "/bonus", "san": "/san", "compare": "/san/so-sanh", "method": "/gioi-thieu/cach-danh-gia",
              "affiliate": "/gioi-thieu/affiliate", "tin": "/tin-tuc", "gioithieu": "/gioi-thieu", "lienhe": "/lien-he",
              "terms": "/dieu-khoan", "privacy": "/bao-mat", "system": "/"}
-SETTINGS_TABS = (("general", "Chung"), ("seo", "SEO"), ("social", "Mạng xã hội"), ("tracking", "Tracking"),
-                 ("users", "Tài khoản quản trị"))
+SETTINGS_TABS = (("general", "Chung"), ("seo", "SEO"), ("users", "Tài khoản quản trị"), ("brand", "Thương hiệu"),
+                 ("social", "Mạng xã hội"), ("tracking", "Tracking"))
 # Chỉ các tab có ô ảnh mới nhận media_library.
 HOME_IMAGE_TABS = ("hero", "about", "why", "types", "contact")
 PAGE_IMAGE_TABS = ("gioithieu",)
-SETTINGS_IMAGE_TABS = ("general", "seo")
-HOME_VIEW = {"sections": "/", "hero": "/", "about": "/", "why": "/", "types": "/", "contact": "/#dang-ky", "menu": "/"}
+SETTINGS_IMAGE_TABS = ("brand", "seo")
+HOME_VIEW = {"sections": "/", "hero": "/", "about": "/", "why": "/", "types": "/", "contact": "/#lien-he", "menu": "/"}
 
 
 def _check_links(rows: list[dict], errors: dict, field: str) -> None:
@@ -382,12 +382,15 @@ def settings_save(tab: str, a: Admin = Depends(admin_post)):
     s, errors, updates, parsed = content.get_all(a.db), {}, {}, {}
     if tab == "general":
         updates = {"site_name": a.text("site_name", 120), "contact_email": a.text("contact_email").lower(),
-                   "partner_email": a.text("partner_email").lower(), "telegram": a.text("telegram", 120)}
+                   "telegram": a.text("telegram", 120)}
         if not updates["site_name"]:
             errors["site_name"] = "Nhập tên website."
-        for k in ("contact_email", "partner_email"):
-            if updates[k] and not EMAIL_RE.match(updates[k]):
-                errors[k] = "Email không hợp lệ."
+        if updates["contact_email"] and not EMAIL_RE.match(updates["contact_email"]):
+            errors["contact_email"] = "Email không hợp lệ."
+    elif tab == "brand":
+        updates = {"partner_email": a.text("partner_email").lower()}
+        if updates["partner_email"] and not EMAIL_RE.match(updates["partner_email"]):
+            errors["partner_email"] = "Email không hợp lệ."
         updates["branding"] = s["branding"] | {
             "logo_path": a.image("logo_path", errors, s["branding"]["logo_path"]),
             "favicon_path": a.image("favicon_path", errors, s["branding"]["favicon_path"])}

@@ -1,8 +1,8 @@
 {# Macro dùng chung cho site public. Chỉ nhãn giao diện được viết cứng ở đây. #}
 
-{# Không có ảnh thì không in gì: bố cục tự co, không còn ô trống. #}
+{# Khung ảnh luôn được in: thiếu ảnh thì là khối nền trung tính đúng kích thước, không chữ. #}
 {% macro media(path, alt="", cls="", eager=false) -%}
-{% if path %}<div class="media {{ cls }}"><img src="{{ path }}" alt="{{ alt }}"{% if eager %} fetchpriority="high"{% else %} loading="lazy"{% endif %} decoding="async"></div>{% endif %}
+<div class="media {{ cls }}">{% if path %}<img src="{{ path }}" alt="{{ alt }}"{% if eager %} fetchpriority="high"{% else %} loading="lazy"{% endif %} decoding="async">{% endif %}</div>
 {%- endmacro %}
 
 {% macro eyebrow(text, tone="") -%}
@@ -59,59 +59,38 @@
 </article>
 {%- endmacro %}
 
-{# Banner quảng cáo ngang (vị trí after-bonus / before-blog). #}
-{% macro ad_block(ad, note="") -%}
+{# Banner ngang (after-bonus / before-blog): chỉ có dạng ảnh 970×250 như Admin.dc.html. #}
+{% macro ad_block(ad) -%}
 <aside class="ad" aria-label="Tài trợ">
   <div class="ad__label"><span>Tài trợ</span>{% if ad.broker %}<span>{{ ad.broker.name }}</span>{% endif %}</div>
-  {% if ad.image_path %}
-  <a href="{{ ad.url }}" class="ad__image" rel="sponsored nofollow noopener" target="_blank"><img src="{{ ad.image_path }}" alt="{{ ad.name }}" loading="lazy" decoding="async"></a>
-  {% else %}
-  <div class="ad__native">
-    {% if ad.broker %}<div class="ad__brand">{{ avatar(ad.broker, "avatar--48") }}<span>{{ ad.broker.name }}</span></div>{% endif %}
-    {% if ad.bonus %}
-    <div class="ad__offer">
-      {% if ad.bonus.amount %}<div class="ad__amount">{{ ad.bonus.amount }}</div>{% endif %}
-      <div class="ad__title">{{ ad.bonus.title }}</div>
-    </div>
-    <ul class="ad__facts">
-      {% if ad.bonus.min_deposit %}<li>Nạp từ {{ ad.bonus.min_deposit }}</li>{% endif %}
-      <li>Hạn: {{ ad.bonus.expiry_date|expiry_label }}</li>
-      {% if ad.broker and ad.broker.license %}<li>{{ ad.broker.license }}</li>{% endif %}
-    </ul>
-    {% else %}
-    <div class="ad__offer"><div class="ad__title">{{ ad.name }}</div></div>
-    {% endif %}
-    <a href="{{ ad.url }}" class="btn btn--blue ad__cta" rel="sponsored nofollow noopener" target="_blank">Mở tài khoản</a>
-    {% if note %}<p class="ad__note">{{ note }}</p>{% endif %}
-  </div>
-  {% endif %}
+  <a href="{{ ad.url }}" class="ad__image" rel="sponsored nofollow noopener" target="_blank">{% if ad.image_path %}<img src="{{ ad.image_path }}" alt="{{ ad.name }}" loading="lazy" decoding="async">{% endif %}</a>
 </aside>
 {%- endmacro %}
 
-{# Quảng cáo dọc hai bên hero (rail). tone: navy | blue #}
+{# Quảng cáo dọc hai bên (rail): trái nền navy, phải nền xanh, đúng hai dạng của thiết kế. #}
 {% macro rail(ad, side, note="") -%}
 <div class="rail rail--{{ side }}"{% if ad.view_url %} data-view-url="{{ ad.view_url }}"{% endif %}>
   <aside class="rail__inner" aria-label="Tài trợ">
     <div class="ad__label"><span>Tài trợ</span>{% if ad.broker %}<span>{{ ad.broker.name }}</span>{% endif %}</div>
     {% if ad.image_path %}
     <a href="{{ ad.url }}" class="rail__image" rel="sponsored nofollow noopener" target="_blank"><img src="{{ ad.image_path }}" alt="{{ ad.name }}" loading="lazy" decoding="async"></a>
-    {% if note %}<p class="rail__note rail__note--plain">{{ note }}</p>{% endif %}
     {% else %}
     <div class="rail__native">
       {% if ad.broker %}<div class="rail__brand">{{ avatar(ad.broker, "avatar--36") }}<span>{{ ad.broker.name }}</span></div>{% endif %}
-      {% if ad.bonus %}
-      <span class="rail__tag">{{ ad.bonus.type_label }}</span>
-      {% if ad.bonus.amount %}<div class="rail__amount{% if ad.bonus.amount|length > 4 %} rail__amount--long{% endif %}">{{ ad.bonus.amount }}</div>{% endif %}
-      <div class="rail__title">{{ ad.bonus.title }}</div>
+      {% set b = ad.bonus %}
+      {% if b %}
+      {% if side == "right" %}<span class="rail__tag">{{ b.type_label }}</span>{% endif %}
+      {% if b.amount %}<div class="rail__amount{% if b.amount|length > 4 %} rail__amount--long{% endif %}">{{ b.amount }}</div>{% endif %}
+      <div class="rail__title">{{ b.title }}</div>
       <ul class="rail__facts">
-        {% if ad.bonus.min_deposit %}<li>Nạp từ {{ ad.bonus.min_deposit }}</li>{% endif %}
-        <li>Hạn: {{ ad.bonus.expiry_date|expiry_label }}</li>
-        {% if ad.broker and ad.broker.license %}<li>{{ ad.broker.license }}</li>{% endif %}
+        {% if side == "left" and b.min_deposit %}<li>Nạp từ {{ b.min_deposit }}</li>{% endif %}
+        <li>{% if b.expiry_date %}Hạn đến {{ b.expiry_date|short_date }}{% else %}{{ b.expiry_date|expiry_label }}{% endif %}</li>
+        {% if side == "left" and ad.broker and ad.broker.license %}<li>{{ ad.broker.license }}</li>{% endif %}
       </ul>
       {% else %}
       <div class="rail__title">{{ ad.name }}</div>
       {% endif %}
-      <a href="{{ ad.url }}" class="rail__cta" rel="sponsored nofollow noopener" target="_blank">Mở tài khoản</a>
+      <a href="{{ ad.url }}" class="rail__cta" rel="sponsored nofollow noopener" target="_blank">{% if side == "right" and b and b.amount %}Nhận {{ b.amount }}{% else %}Mở tài khoản{% endif %}</a>
       {% if note %}<p class="rail__note">{{ note }}</p>{% endif %}
     </div>
     {% endif %}

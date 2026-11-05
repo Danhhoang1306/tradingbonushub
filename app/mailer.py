@@ -15,6 +15,11 @@ outbox: list[EmailMessage] = []
 _local = threading.local()
 
 
+def can_deliver() -> bool:
+    """Production với backend console: email chỉ vào log, không tới được người nhận."""
+    return not (config.is_production and config.smtp_backend == "console")
+
+
 def build(to: str, subject: str, text: str, unsubscribe_url: str | None = None) -> EmailMessage:
     msg = EmailMessage()
     msg["From"] = config.from_email or "no-reply@localhost"

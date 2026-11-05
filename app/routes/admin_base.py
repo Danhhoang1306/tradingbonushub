@@ -1,7 +1,7 @@
 """Nền tảng chung cho khu quản trị: xác thực, CSRF, sidebar, đọc form, trường ảnh."""
 import re
 from dataclasses import dataclass, field
-from urllib.parse import quote, urlsplit
+from urllib.parse import quote, urlencode, urlsplit
 
 from fastapi import Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
@@ -122,6 +122,10 @@ class Admin:
                 out[key] = vals if key in self._repeated else vals[-1]
         return {name: out.get(name, []) for name in self._repeated} | out | self._images | parsed
 
+    def filters(self, *names: str) -> dict[str, str]:
+        """Tab và lọc đang xem (trên URL của drawer), để mở, lưu và đóng drawer đều quay về đúng danh sách."""
+        return {n: self.request.query_params.get(n, "") for n in names}
+
     def back(self, default: str) -> str:
         """Trường ẩn `back`: quay lại đúng tab/lọc, chỉ nhận đường dẫn nội bộ thuộc khu `default`."""
         back = self.text("back", 500)
@@ -192,22 +196,20 @@ def nav_groups(db: Session, active: str) -> list[dict]:
     def item(id_, label, url, n=None):
         return {"id": id_, "label": label, "url": url, "count": n, "active": active == id_}
 
-    return [
-        {"label": None, "links": [item("overview", "Tổng quan", "/admin")]},
-        {"label": "Dữ liệu", "links": [
-            item("bonus", "Bonus", "/admin/bonus", count(Bonus)),
-            item("brokers", "Sàn", "/admin/brokers", count(Broker)),
-            item("posts", "Bài viết", "/admin/posts", count(Post)),
-            item("ads", "Quảng cáo", "/admin/ads", count(Banner))]},
-        {"label": "Nội dung", "links": [
-            item("home", "Trang chủ", "/admin/home"),
-            item("pages", "Trang", "/admin/pages"),
-            item("media", "Thư viện ảnh", "/admin/media", count(MediaFile))]},
-        {"label": "Khách", "links": [
-            item("subscribers", "Người đăng ký", "/admin/subscribers", count(Subscriber, Subscriber.status == "confirmed")),
-            item("messages", "Tin nhắn", "/admin/messages", count(ContactMessage, ContactMessage.is_read.is_(False)))]},
-        {"label": "Hệ thống", "links": [item("settings", "Cài đặt", "/admin/settings")]},
-    ]
+    # Một nhóm phẳng: 8 mục đúng tên và thứ tự thiết kế, rồi các mục mới của brief mục 12.
+    return [{"label": None, "links": [
+        item("overview", "Tổng quan", "/admin"),
+        item("bonus", "Bonus", "/admin/bonus", count(Bonus)),
+        item("brokers", "Sàn", "/admin/brokers", count(Broker)),
+        item("ads", "Quảng cáo", "/admin/ads", count(Banner)),
+        item("home", "Nội dung trang chủ", "/admin/home"),
+        item("posts", "Bài viết", "/admin/posts", count(Post)),
+        item("subscribers", "Người đăng ký", "/admin/subscribers", count(Subscriber)),
+        item("settings", "Cài đặt", "/admin/settings"),
+        item("pages", "Trang", "/admin/pages"),
+        item("media", "Thư viện ảnh", "/admin/media", count(MediaFile)),
+        item("messages", "Tin nhắn", "/admin/messages", count(ContactMessage, ContactMessage.is_read.is_(False))),
+    ]}]
 
 
 def _tab(value: str, tabs) -> str:
@@ -215,8 +217,15 @@ def _tab(value: str, tabs) -> str:
     return value if value in dict(tabs) else tabs[0][0]
 
 
-def subtabs(base_url: str, tabs: tuple[tuple[str, str], ...], active: str) -> list[dict]:
-    return [{"id": t, "label": label, "url": f"{base_url}?tab={t}", "active": t == active} for t, label in tabs]
+def with_query(path: str, **params) -> str:
+    """Ghép query, bỏ tham số rỗng."""
+    clean = {k: v for k, v in params.items() if v}
+    return f"{path}?{urlencode(clean)}" if clean else path
+
+
+def subtabs(base_url: str, tabs: tuple[tuple[str, str], ...], active: str, **keep) -> list[dict]:
+    """`keep`: lọc và tìm phải giữ khi đổi tab con."""
+    return [{"id": t, "label": label, "url": with_query(base_url, tab=t, **keep), "active": t == active} for t, label in tabs]
 
 
 def render_admin(a: Admin, template: str, active: str, title: str, status_code: int = 200, **ctx):

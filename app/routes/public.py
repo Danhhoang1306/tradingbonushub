@@ -1,5 +1,4 @@
 import logging
-import math
 from collections import Counter
 from datetime import datetime, timedelta
 from urllib.parse import urlencode
@@ -14,7 +13,7 @@ from sqlalchemy.orm import Session
 from app import content, queries
 from app.config import config
 from app.db import get_db
-from app.mailer import send_email
+from app.mailer import can_deliver, send_email
 from app.models import BONUS_TYPES, POST_CATEGORIES, Banner, Broker, ContactMessage, Post, Subscriber, utcnow
 from app.security import ad_view_limiter, client_ip, is_http_url, is_local_path, new_token, public_form_limiter
 from app.templating import FLASH_MESSAGES, render, set_flash
@@ -23,7 +22,6 @@ from app.utils import EMAIL_RE, plain_excerpt, render_markdown, to_int, today_vn
 log = logging.getLogger("app.public")
 router = APIRouter()
 
-POSTS_PER_PAGE = 12
 CONFIRM_EMAILS_PER_DAY = 3      # email xác nhận tối đa cho một địa chỉ trong 24 giờ
 UNSUBSCRIBED_RESEND_DAYS = 1    # người đã hủy: tối đa 1 email/ngày, ngắn để người hủy nhầm vẫn đăng ký lại được
 BONUS_SORTS = (("new", "Mới nhất"), ("value", "Giá trị cao"), ("expiry", "Sắp hết hạn"))
@@ -63,29 +61,36 @@ def site_ctx(db: Session) -> dict:
     return site
 
 
-def page_ctx(request: Request, db: Session, *, page_key: str | None = None, title: str | None = None,
-             desc: str | None = None, crumbs: list | None = None, noindex: bool = False,
+def page_ctx(request: Request, db: Session, *, page_key: str | None = None, head_key: str | None = None,
+             title: str | None = None, desc: str | None = None, crumbs: list | None = None, noindex: bool = False,
              system_title: str | None = None, **extra) -> dict:
+    """`page_key`: nguồn SEO của trang. `head_key`: mục cung cấp header chung (H1, mô tả, nhãn), mặc định chính nó."""
     site = site_ctx(db)
     page = site["pages"].get(page_key, {}) if page_key else {}
+    head = site["pages"].get(head_key, page) if head_key else page
     if system_title:
         title = site["system_text"][system_title]
     # Trang tự đặt tiêu đề (sàn, bài viết, trang lỗi): SEO chung của mục không được đè lên, mỗi trang có SEO riêng.
     page_seo = {} if title is not None else page
-    title = title if title is not None else page.get("title", "")
-    desc = desc if desc is not None else page.get("desc", "")
-    meta_title = page_seo.get("meta_title") or (f"{title} – {site['site_name']}" if title else site["meta_title"])
-    meta_desc = page_seo.get("meta_desc") or desc or site["meta_desc"]
+    seo_title = title if title is not None else page.get("title", "")
+    seo_desc = desc if desc is not None else page.get("desc", "")
+    title = title if title is not None else head.get("title", "")
+    desc = desc if desc is not None else head.get("desc", "")
+    meta_title = page_seo.get("meta_title") or (f"{seo_title} – {site['site_name']}" if seo_title else site["meta_title"])
+    meta_desc = page_seo.get("meta_desc") or seo_desc or site["meta_desc"]
+    if request.url.path != "/":  # thiết kế: menu trang chủ là "Sàn", menu trang con là nhãn mục "Sàn uy tín"
+        site["menu"] = [m | {"label": site["pages"]["san"]["label"]} if m["url"] == "/san" else m for m in site["menu"]]
     og = site["branding"]["og_image"]
     request.state.analytics = bool(site["analytics_head"].strip())
     return {
         "site": site,
-        "page": {"key": page_key, "title": title, "desc": desc, "label": page.get("label", "")},
+        "page": {"key": page_key, "title": title, "desc": desc, "label": head.get("label", "")},
         "meta": {"title": meta_title, "description": meta_desc, "keywords": site["meta_keywords"],
                  "canonical": config.base_url + request.url.path,
                  "og_image": (config.base_url + og) if og.startswith("/") else og, "noindex": noindex},
         "crumbs": [{"label": "Trang chủ", "url": "/"}] + (crumbs or []),
         "current_path": request.url.path,
+        "nav_path": request.url.path,
         **extra,
     }
 
@@ -103,6 +108,15 @@ def _qs(**params) -> str:
 def _crumb(ctx: dict, key: str, url: str) -> dict:
     """Mục breadcrumb lấy nhãn từ Setting pages (admin sửa được)."""
     return {"label": ctx["site"]["pages"][key]["label"], "url": url}
+
+
+def _featured_in_middle(brokers: list[Broker]) -> list[Broker]:
+    """Thiết kế đặt thẻ nổi bật ở giữa hàng 3 thẻ; còn lại giữ thứ tự nhập."""
+    pick = next((k for k in brokers if k.featured), None)
+    if pick is None or len(brokers) != 3:
+        return brokers
+    rest = [k for k in brokers if k is not pick]
+    return [rest[0], pick, rest[1]]
 
 
 def _is_head(request: Request) -> bool:
@@ -145,8 +159,8 @@ def home(request: Request, db: Session = Depends(get_db)):
         return queries.banner_view(b, labels, tops.get(b.broker_id))
 
     banners = {p: banner(p) for p in ("rail-left", "rail-right", "after-bonus", "before-blog")}
-    compare = db.scalars(select(Broker).where(Broker.in_compare.is_(True), Broker.is_active.is_(True))
-                         .order_by(Broker.featured.desc(), Broker.name).limit(3)).all()
+    compare = _featured_in_middle(list(db.scalars(
+        select(Broker).where(Broker.in_compare.is_(True), Broker.is_active.is_(True)).order_by(Broker.id).limit(3))))
     posts = db.scalars(queries.published_posts_query().where(Post.show_home.is_(True)).limit(3)).all()
     db.commit()
 
@@ -209,7 +223,7 @@ def _broker_tabs(brokers: list[Broker], active: str) -> list[dict]:
 
 
 def _active_brokers(db: Session) -> list[Broker]:
-    return list(db.scalars(select(Broker).where(Broker.is_active.is_(True)).order_by(Broker.featured.desc(), Broker.name)))
+    return list(db.scalars(select(Broker).where(Broker.is_active.is_(True)).order_by(Broker.id)))
 
 
 @router.get("/san")
@@ -229,7 +243,7 @@ def broker_list(request: Request, kind: str = "all", db: Session = Depends(get_d
 
 @router.get("/san/so-sanh")
 def broker_compare(request: Request, ids: str | None = None, db: Session = Depends(get_db)):
-    ctx = page_ctx(request, db, page_key="compare")
+    ctx = page_ctx(request, db, page_key="compare", head_key="san")
     labels = ctx["site"]["type_labels"]
     brokers = _active_brokers(db)
     by_id = {k.id: k for k in brokers}
@@ -239,7 +253,7 @@ def broker_compare(request: Request, ids: str | None = None, db: Session = Depen
             n = to_int(part)
             if n in by_id and n not in chosen:
                 chosen.append(n)
-        chosen = chosen[:3]
+        chosen = [k.id for k in brokers if k.id in chosen[:3]]  # cột luôn theo thứ tự danh sách
     else:
         chosen = [k.id for k in brokers if k.in_compare][:3]
     counts = queries.bonus_count_by_broker(db)
@@ -251,10 +265,10 @@ def broker_compare(request: Request, ids: str | None = None, db: Session = Depen
     for k in brokers:
         on = k.id in chosen
         target = [i for i in chosen if i != k.id] if on else chosen + [k.id]
-        pick.append({"id": k.id, "name": k.name, "selected": on,
-                     "url": url_for(target) if (on or len(chosen) < 3) else None})
+        pick.append({"id": k.id, "name": k.name, "selected": on,  # đủ 3 sàn: pill vẫn như thường, bấm không đổi gì
+                     "url": url_for(target if (on or len(chosen) < 3) else chosen)})
     cols = [queries.broker_view(by_id[i], labels, counts.get(i, 0)) for i in chosen]
-    ctx["crumbs"] += [_crumb(ctx, "san", "/san"), _crumb(ctx, "compare", "/san/so-sanh")]
+    ctx["crumbs"].append(_crumb(ctx, "san", "/san"))
     ctx.update(tabs=_broker_tabs(brokers, "compare"), compare_pick=pick, compare_brokers=cols,
                compare_rows=[{"label": label, "cells": [c[key] for c in cols]} for label, key in COMPARE_ROWS],
                max_compare=3)
@@ -272,7 +286,7 @@ def broker_detail(request: Request, slug: str, tab: str = "overview", db: Sessio
     ctx["crumbs"] += [_crumb(ctx, "san", "/san"), {"label": k.name, "url": f"/san/{k.slug}"}]
     _canonical(ctx, tab=None if tab == "overview" else tab)
     labels = ctx["site"]["type_labels"]
-    bonuses = [queries.bonus_view(b, labels) for b in queries.visible_bonuses(db, sort="value", broker_id=k.id)]
+    bonuses = [queries.bonus_view(b, labels) for b in queries.visible_bonuses(db, sort="input", broker_id=k.id)]
     view = queries.broker_view(k, labels, len(bonuses))
     if k.summary:
         ctx["meta"]["description"] = k.summary[:300]
@@ -289,7 +303,7 @@ def broker_detail(request: Request, slug: str, tab: str = "overview", db: Sessio
 # ---------- tin tức ----------
 
 @router.get("/tin-tuc")
-def post_list(request: Request, cat: str = "all", page: int = 1, db: Session = Depends(get_db)):
+def post_list(request: Request, cat: str = "all", db: Session = Depends(get_db)):
     cat = cat if cat in POST_CATEGORIES else "all"
     ctx = page_ctx(request, db, page_key="tin")
     counts = dict(db.execute(select(Post.category, func.count()).where(queries.post_public_clause())
@@ -297,41 +311,33 @@ def post_list(request: Request, cat: str = "all", page: int = 1, db: Session = D
     q = queries.published_posts_query()
     if cat != "all":
         q = q.where(Post.category == cat)
-    total = sum(counts.values()) if cat == "all" else counts.get(cat, 0)
-    pages = max(1, math.ceil(total / POSTS_PER_PAGE))
-    page = min(max(1, page), pages)
-    posts = db.scalars(q.offset((page - 1) * POSTS_PER_PAGE).limit(POSTS_PER_PAGE)).all()
     ctx["crumbs"].append(_crumb(ctx, "tin", "/tin-tuc"))
-    _canonical(ctx, cat=cat, page=page)
+    _canonical(ctx, cat=cat)
     ctx.update(
-        current_cat=cat, posts=[queries.post_view(p) for p in posts],
+        current_cat=cat,  # `?cat=` để nút "Về danh sách" của bài quay lại đúng chuyên mục đang lọc
+        posts=[queries.post_view(p) | {"url": f"/tin-tuc/{p.slug}" + _qs(cat=cat)} for p in db.scalars(q)],
         tabs=[{"id": "all", "label": "Tất cả", "count": sum(counts.values()), "url": "/tin-tuc", "active": cat == "all"}]
         + [{"id": c, "label": c, "count": counts.get(c, 0), "url": "/tin-tuc" + _qs(cat=c), "active": cat == c}
            for c in POST_CATEGORIES],
-        pagination={"page": page, "pages": pages,
-                    "prev_url": ("/tin-tuc" + _qs(cat=cat, page=page - 1)) if page > 1 else None,
-                    "next_url": ("/tin-tuc" + _qs(cat=cat, page=page + 1)) if page < pages else None},
     )
     return render(request, "public/post_list.html", ctx)
 
 
 @router.get("/tin-tuc/{slug}")
-def post_detail(request: Request, slug: str, db: Session = Depends(get_db)):
+def post_detail(request: Request, slug: str, cat: str = "all", db: Session = Depends(get_db)):
     p = db.scalar(select(Post).where(Post.slug == slug, queries.post_public_clause()))
     if p is None:
         return not_found(request, db)
     if not _is_head(request):
         queries.bump(db, Post, p.id, "views")
         db.commit()
-    related = db.scalars(queries.published_posts_query().where(Post.category == p.category, Post.id != p.id).limit(3)).all()
-    ctx = page_ctx(request, db, page_key="tin", title=p.title, desc=p.excerpt)
+    ctx = page_ctx(request, db, page_key="tin", title=p.title, desc=f"{p.category} · {p.read_minutes} phút đọc")
     ctx["crumbs"] += [_crumb(ctx, "tin", "/tin-tuc"), {"label": p.category, "url": "/tin-tuc" + _qs(cat=p.category)}]
-    if not p.excerpt:
-        ctx["meta"]["description"] = plain_excerpt(p.body_md) or ctx["meta"]["description"]
+    ctx["meta"]["description"] = p.excerpt or plain_excerpt(p.body_md) or ctx["site"]["meta_desc"]
     if p.cover_path:
         ctx["meta"]["og_image"] = config.base_url + p.cover_path
     ctx.update(post=queries.post_view(p) | {"body_html": render_markdown(p.body_md)},
-               related_posts=[queries.post_view(r) for r in related])
+               back_url="/tin-tuc" + _qs(cat=cat if cat in POST_CATEGORIES else "all"))
     return render(request, "public/post_detail.html", ctx)
 
 
@@ -342,10 +348,8 @@ def _about_tabs(active: str) -> list[dict]:
 
 
 def _about(request: Request, db: Session, tab: str):
-    ctx = page_ctx(request, db, page_key="gioithieu" if tab == "about" else tab)
+    ctx = page_ctx(request, db, page_key="gioithieu" if tab == "about" else tab, head_key="gioithieu")
     ctx["crumbs"].append(_crumb(ctx, "gioithieu", "/gioi-thieu"))
-    if tab != "about":
-        ctx["crumbs"].append(_crumb(ctx, tab, str(request.url.path)))
     data = ctx["site"]["about_blocks"][tab]
     ctx.update(current_tab=tab, about_image=data.get("image", ""),
                about_blocks=[{"n": f"0{i + 1}.", "title": b.get("title", ""), "text": b.get("text", "")}
@@ -370,10 +374,11 @@ def about_affiliate(request: Request, db: Session = Depends(get_db)):
 
 
 def _contact_ctx(request: Request, db: Session, values: dict | None = None, errors: dict | None = None) -> dict:
-    ctx = page_ctx(request, db, page_key="lienhe")
-    ctx["crumbs"].append(_crumb(ctx, "lienhe", "/lien-he"))
+    ctx = page_ctx(request, db, page_key="lienhe", head_key="gioithieu")
+    ctx["crumbs"].append(_crumb(ctx, "gioithieu", "/gioi-thieu"))
     ctx["meta"]["canonical"] = config.base_url + "/lien-he"  # còn render lại tại /api/contact khi lỗi
     ctx["current_path"] = "/lien-he"
+    ctx["nav_path"] = "/gioi-thieu"  # thiết kế: Liên hệ là tab của Giới thiệu nên mục Giới thiệu sáng
     ctx["meta"]["noindex"] = bool(errors)
     topics = ctx["site"]["contact_page"]["topics"]
     ctx.update(contact=ctx["site"]["contact_page"],
@@ -448,7 +453,7 @@ def _release_confirm_slot(db: Session, sub: Subscriber) -> None:
 @router.post("/api/subscribe")
 def subscribe(request: Request, db: Session = Depends(get_db), name: str = Form(""), email: str = Form(""),
               interests: list[str] = Form([]), website: str = Form(""), next: str = Form("/")):
-    target = (next if is_local_path(next) else "/").split("#")[0] + "#dang-ky"
+    target = (next if is_local_path(next) else "/").split("#")[0] + "#lien-he"
     resp = RedirectResponse(target, status_code=303)
     if website.strip():  # honeypot: giả vờ thành công
         return set_flash(resp, "sub_ok")
@@ -459,6 +464,8 @@ def subscribe(request: Request, db: Session = Depends(get_db), name: str = Form(
     if addr is None:
         return set_flash(resp, "sub_invalid")
     public_form_limiter.hit(key)
+    if not can_deliver():  # không có đường gửi thì không lưu, không báo "kiểm tra hộp thư"
+        return set_flash(resp, "sub_failed")
     sub = db.scalar(select(Subscriber).where(Subscriber.email == addr))
     if sub is None:
         # Tên và sở thích chỉ ghi lúc tạo: địa chỉ chưa xác minh thì người lạ không được ghi đè của chủ địa chỉ.

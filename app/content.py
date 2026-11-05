@@ -104,10 +104,10 @@ DEFAULTS: dict = {
     "hero": {
         "eyebrow": "Bonus Forex & Crypto",
         "headline": "Tổng hợp bonus sàn giao dịch, điều kiện rõ ràng",
-        "sub": "So sánh no-deposit, deposit bonus, cashback, cuộc thi giao dịch và khuyến mãi crypto từ các sàn có giấy phép. Mỗi ưu đãi ghi rõ mức nạp tối thiểu, phần rút được và thời hạn.",
+        "sub": "So sánh no-deposit, deposit bonus, cashback, cuộc thi giao dịch và khuyến mãi crypto từ các sàn có giấy phép. Mỗi ưu đãi ghi rõ khối lượng yêu cầu, thời hạn và giấy phép.",
         "cta": "Xem tất cả bonus",
-        "image_path": "",
-        "card_label": "Nổi bật",
+        "image_path": "/static/img/hero-bg.webp",
+        "card_label": "Nổi bật tuần này",
     },
     "sections": [
         {"id": "hero", "label": "Hero", "on": True},
@@ -124,7 +124,7 @@ DEFAULTS: dict = {
     "menu": [
         {"label": "Trang chủ", "url": "/"},
         {"label": "Bonus", "url": "/bonus"},
-        {"label": "Sàn", "url": "/san"},
+        {"label": "Sàn", "url": "/san"},  # trang con hiện site.pages.san.label như thiết kế (public.page_ctx)
         {"label": "Tin tức", "url": "/tin-tuc"},
         {"label": "Giới thiệu", "url": "/gioi-thieu"},
         {"label": "Liên hệ", "url": "/lien-he"},
@@ -144,8 +144,6 @@ DEFAULTS: dict = {
                 {"label": "Tin tức", "url": "/tin-tuc"},
                 {"label": "Giới thiệu", "url": "/gioi-thieu"},
                 {"label": "Liên hệ", "url": "/lien-he"},
-                {"label": "Điều khoản", "url": "/dieu-khoan"},
-                {"label": "Bảo mật", "url": "/bao-mat"},
             ]},
         ],
         "risk_note": "Cảnh báo rủi ro: CFD là công cụ phức tạp và có rủi ro mất tiền nhanh do đòn bẩy. Bonus không phải lời khuyên đầu tư.",
@@ -156,7 +154,7 @@ DEFAULTS: dict = {
     "ads_note": "CFD có rủi ro mất vốn cao.",  # dưới nút trong quảng cáo dọc
     "system_text": {
         "header_cta_home": "Xem bonus",
-        "header_cta_page": "Xem bonus",
+        "header_cta_page": "Nhận tư vấn",
         "not_found_title": "Không tìm thấy trang",
         "not_found_text": "Trang bạn tìm không tồn tại hoặc đã được gỡ.",
         "error_title": "Đã có lỗi xảy ra",
@@ -175,8 +173,9 @@ DEFAULTS: dict = {
         "sub_ask_unsubscribe_button": "Hủy đăng ký",
     },
     "pages": {
+        # compare, method, affiliate, lienhe dùng header chung của mục (san, gioithieu): title, desc ở đây chỉ làm SEO.
         "bonus": {"label": "Bonus", "title": "Tất cả bonus sàn giao dịch", "desc": "Lọc theo loại ưu đãi. Mỗi bonus ghi rõ mức nạp tối thiểu, phần rút được và thời hạn.", "meta_title": "", "meta_desc": ""},
-        "san": {"label": "Sàn", "title": "Sàn giao dịch uy tín", "desc": "Thông tin giấy phép, tài khoản, phí và phương thức nạp rút của từng sàn.", "meta_title": "", "meta_desc": ""},
+        "san": {"label": "Sàn uy tín", "title": "Sàn giao dịch uy tín", "desc": "Thông tin giấy phép, tài khoản, phí và phương thức nạp rút của từng sàn.", "meta_title": "", "meta_desc": ""},
         "tin": {"label": "Tin tức", "title": "Tin tức & hướng dẫn", "desc": "Giải thích điều khoản bonus, so sánh sàn và cập nhật chương trình mới.", "meta_title": "", "meta_desc": ""},
         "gioithieu": {"label": "Giới thiệu", "title": "Về TradingBonusHub", "desc": "Chúng tôi tổng hợp bonus từ các sàn có giấy phép và tóm tắt điều khoản bằng tiếng Việt.", "meta_title": "", "meta_desc": ""},
         "lienhe": {"label": "Liên hệ", "title": "Liên hệ", "desc": "Gửi câu hỏi, báo lỗi thông tin bonus hoặc đề nghị hợp tác.", "meta_title": "", "meta_desc": ""},
@@ -190,9 +189,9 @@ DEFAULTS: dict = {
     "home_about": {
         "eyebrow": "Về TradingBonusHub",
         "title": "Giúp trader chọn đúng bonus, hiểu rõ trước khi nhận",
-        "text": "Chúng tôi đọc điều khoản của từng chương trình và tóm tắt những gì trader cần biết: mức nạp tối thiểu, phần nào rút được và thời hạn.",
+        "text": "Chúng tôi đọc điều khoản của từng chương trình và tóm tắt những gì trader cần biết: khối lượng lot phải đạt, phần nào rút được, thời hạn và khu vực áp dụng.",
         "points": [{"title": "Chỉ sàn có giấy phép", "text": "Mỗi sàn đều ghi rõ cơ quan cấp phép để bạn tự đối chiếu."}],
-        "badge": "",
+        "badge": "Cập nhật ưu đãi hằng ngày",
         "count_label": "Ưu đãi đang hoạt động",
         "images": ["", "", ""],
     },
@@ -200,22 +199,22 @@ DEFAULTS: dict = {
     "home_why": {
         "eyebrow": "Tại sao chọn chúng tôi",
         "title": "Bonus minh bạch, không chỉ là con số quảng cáo",
-        "text": "Một khoản thưởng lớn chưa chắc có lợi. Chúng tôi chỉ ra phần nào rút được, mức nạp tối thiểu và thời hạn của ưu đãi.",
-        "stat_value": "",
-        "stat_label": "",
+        "text": "Một khoản thưởng lớn chưa chắc có lợi. Chúng tôi chỉ ra phần nào rút được, cần giao dịch bao nhiêu lot và bonus có bị trừ khi rút tiền hay không.",
+        "stat_value": "",  # số 100% của thiết kế cố ý bỏ: thẻ số ẩn tới khi admin nhập
+        "stat_label": "Ưu đãi có tóm tắt điều kiện rút tiền",
         "reasons": [
-            {"title": "Tóm tắt điều khoản", "text": "Mức nạp tối thiểu, phần rút được và thời hạn hiển thị ngay trên mỗi ưu đãi."},
+            {"title": "Tóm tắt điều khoản", "text": "Khối lượng yêu cầu, phần rút được và thời hạn hiển thị ngay trên mỗi ưu đãi."},
             {"title": "Chỉ sàn có giấy phép", "text": "Mỗi sàn được ghi rõ cơ quan cấp phép để bạn tự kiểm tra."},
             {"title": "Cập nhật khi ưu đãi thay đổi", "text": "Ưu đãi hết hạn được gỡ khỏi danh sách."},
         ],
         "images": ["", ""],
     },
     "home_types": {"eyebrow": "Loại ưu đãi", "title": "Hiểu từng loại bonus trước khi nhận", "image": ""},
-    "home_compare": {"eyebrow": "So sánh sàn", "title": "Chọn sàn phù hợp với cách bạn giao dịch", "featured_label": "Nổi bật"},
+    "home_compare": {"eyebrow": "So sánh sàn", "title": "Chọn sàn phù hợp với cách bạn giao dịch", "featured_label": "Phổ biến"},
     "home_contact": {
         "eyebrow": "Thông báo bonus",
         "title": "Nhận bonus mới qua email",
-        "text": "Chọn loại ưu đãi bạn quan tâm.",
+        "text": "Chọn loại ưu đãi bạn quan tâm. Tối đa một email mỗi tuần.",
         "image": "",
         "success_title": "Đã đăng ký",
         "success_text": "Kiểm tra hộp thư để xác nhận email.",
@@ -247,7 +246,7 @@ DEFAULTS: dict = {
         "method": {"image": "", "blocks": [
             {"title": "Giấy phép", "text": "Chỉ liệt kê sàn có ít nhất một giấy phép từ cơ quan quản lý được công bố công khai."},
             {"title": "Điều kiện rút tiền", "text": "Ghi rõ phần nào rút được: tiền thưởng, lợi nhuận, hay chỉ dùng làm ký quỹ."},
-            {"title": "Mức nạp và thời hạn", "text": "Ghi rõ mức nạp tối thiểu và thời hạn của từng ưu đãi để dễ so sánh giữa các sàn."},
+            {"title": "Khối lượng yêu cầu", "text": "Quy đổi yêu cầu khối lượng sang số lot cụ thể để dễ so sánh giữa các sàn."},
         ]},
         "affiliate": {"image": "", "blocks": [
             {"title": "Cách chúng tôi có thu nhập", "text": "Một số liên kết trên trang là liên kết affiliate. Khi bạn mở tài khoản qua liên kết này, sàn có thể trả hoa hồng cho chúng tôi."},
@@ -258,7 +257,7 @@ DEFAULTS: dict = {
     "contact_page": {
         "intro": "",
         "topics": ["Câu hỏi chung", "Báo lỗi thông tin bonus", "Hợp tác"],
-        "response_note": "Chúng tôi sẽ trả lời qua email. Chúng tôi không tư vấn đầu tư cá nhân.",
+        "response_note": "Chúng tôi phản hồi trong 1–2 ngày làm việc. Chúng tôi không tư vấn đầu tư cá nhân.",
         "success_title": "Đã gửi",
         "success_text": "Cảm ơn bạn. Chúng tôi sẽ trả lời qua email.",
     },

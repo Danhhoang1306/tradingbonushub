@@ -186,3 +186,130 @@ Chi tiết trong `docs/VIEW_CONTEXT.md`.
 **Vận hành**
 - Migration mới `0003` (cột `subscribers.reconfirm_token`), tự chạy khi khởi động lại `run.py`.
 - Site đang chạy có thể đã lưu `hero.card_label` cũ trong Setting: đổi mặc định không ghi đè giá trị đã lưu, phải sửa ở admin nếu muốn đổi.
+
+
+## [Phase 6 Backend → FE] Trả về đúng thiết kế: thay đổi context/route (05/11)
+Chi tiết cuối cùng nằm trong `docs/VIEW_CONTEXT.md`. Phần "bỏ biến" an toàn cho template đang dùng `{% if %}`/`{% for %}`, trừ `pagination.pages` (mục P6).
+
+**Public FE (revert-public)**
+- P1. `page.title`, `page.desc`, `page.label` của `/san/so-sanh` lấy từ mục Sàn; của `/gioi-thieu/cach-danh-gia`, `/gioi-thieu/affiliate`, `/lien-he` lấy từ mục Giới thiệu. Template không đổi. Meta SEO vẫn riêng.
+- P2. `crumbs`: So sánh = Trang chủ / Sàn uy tín. Cách đánh giá, Affiliate, Liên hệ = Trang chủ / Giới thiệu. Mục cuối có `url` thật: dùng để làm link (dòng A số 5 pages.md, `base_public.html:44`).
+- P3. `site.menu`: trang chủ giữ "Sàn" (đúng `Trang chu v2`, `Admin`), mọi trang khác mục `/san` lấy `site.pages.san.label` = "Sàn uy tín" (đúng `Cac trang`). Template không đổi.
+- P4. Biến mới `nav_path`: dùng thay `current_path` để tô menu trong `_header.html`. Ở `/lien-he`, `nav_path` = `/gioi-thieu`, nên sáng "Giới thiệu" như thiết kế (dòng C số 3). `current_path` giữ nguyên cho `next` của form.
+- P5. `x|expiry_label` trả `31/12` (dd/mm), `Liên tục` khi None. `home.html:32` "Hạn đến" giữ `date_vn` vì thiết kế ghi `31/12/2026` ở thẻ hero. Ngày ở meta bài viết dùng `short_date`.
+- P6. **Bỏ `pagination`** (thiết kế hiện hết bài, dòng C số 57): `/tin-tuc` trả toàn bộ, tham số `page` bị bỏ qua. Phải xóa khối `pagination` trong `post_list.html`, nếu không template lỗi. Bỏ `related_posts`: xóa khối ở `post_detail.html`.
+- P7. `/tin-tuc/{slug}`: biến mới `back_url` cho nút "← Về danh sách" (giữ chuyên mục đang lọc). `page.desc` = "{chuyên mục} · {n} phút đọc". `posts[].url` ở trang lọc có thêm `?cat=`.
+- P8. `compare_pick[].url` luôn là chuỗi: khi đủ 3 sàn, pill chưa chọn trỏ về đúng URL hiện tại (bấm không có tác dụng như thiết kế). Bỏ nhánh `is-disabled`.
+- P9. `compare_brokers` trang chủ: theo thứ tự nhập, đủ 3 sàn thì sàn `featured` đứng giữa. Cột `/san/so-sanh` luôn theo thứ tự danh sách.
+- P10. `POST /api/subscribe` redirect về `next#lien-he` (id thiết kế, K20): đổi `id="dang-ky"` trong `home.html` thành `id="lien-he"`. Production + `SMTP_BACKEND=console` → flash `sub_failed`, không lưu gì.
+- P11. `site.hero.image_path` mặc định `/static/img/hero-bg.webp`: cần file này trong `static/img/`.
+- P12. `site.hero.card_label`, `site.home_compare.featured_label`, `site.home_about.badge`, `site.home_why.stat_label`, `site.system_text.header_cta_page`... đã về chữ thiết kế. `stat_value` rỗng → ẩn thẻ số (`home.html:154` đã đúng), `stat_label` có sẵn chữ nhưng chỉ in khi có `stat_value`.
+- P13. Footer cột Liên kết về 4 link như thiết kế, `/dieu-khoan`, `/bao-mat` không còn link mặc định.
+
+**Admin FE (revert-admin)**
+- A1. `nav`: một nhóm duy nhất (`label` None), phẳng: Tổng quan, Bonus, Sàn, Quảng cáo, Nội dung trang chủ, Bài viết, Người đăng ký, Cài đặt, rồi Trang, Thư viện ảnh, Tin nhắn. Vòng lặp hiện tại vẫn chạy. Mục Người đăng ký đếm mọi người đăng ký.
+- A2. `/admin`: `stats` đúng 4 thẻ, `value` đã có dấu chấm nghìn. Bỏ `click_days`, `click_total`, `top_brokers`, `unread_messages`. `banners`: mọi banner theo thứ tự danh sách, thêm `broker` (tên sàn, None nếu banner không gắn sàn, khi đó dùng `name`). `expiring`: tối đa 4, theo thứ tự danh sách, ngưỡng 60 ngày. Câu rỗng "14 ngày" phải đổi.
+- A3. `ctr()` trả `1.7%` (dấu chấm như thiết kế).
+- A4. Bonus: bỏ `required` ở `min_deposit`, `withdrawable`; nhận "—" và ô trống. `license` của sàn vẫn bắt buộc.
+- A5. `subtabs` của Bonus giữ `type`, `q`; của Bài viết giữ `q`.
+- A6. `drawer.close_url` có ở mọi drawer: dùng thay biến `close_url` viết cứng. `edit_url`, `add_url`, `drawer.action` đã giữ tab và lọc.
+- A7. Thứ tự: Sàn theo thứ tự nhập; Bài viết nháp xuống cuối.
+- A8. Gửi email: soạn mới chọn sẵn nhóm `deposit` (`audience_options[].selected`, `audience_count`).
+- A9. Route lưu nhiều dòng cho nút "Xuất bản thay đổi", thay nút "Lưu" từng dòng:
+  `POST links_action` (`/admin/brokers/links`): `url_<id>` cho mỗi sàn.
+  `POST ads_action` (`/admin/ads/bulk`): `placement_<id>`, `target_url_<id>`, `dates_<id>` cho mỗi banner. `dates_<id>` là một ô chữ như thiết kế, giá trị hiện tại `b.dates` (`01/11 – 30/11`), trống = không giới hạn.
+  Lỗi → redirect kèm flash `invalid_url`, `too_long`, `invalid_dates`, không lưu dòng nào. Route `link_url`, `edit_url` cũ vẫn còn.
+- A10. Filter mới `x|login_day`: `Hôm nay` hoặc `01/11/2026` cho cột Đăng nhập.
+- A11. `pages.compare|method|affiliate|lienhe`: `title`, `desc` giờ chỉ là nguồn cho thẻ `<title>`, meta description; `label` không còn hiện ở đâu.
+- A12. Trả lời 10 câu của revert-admin (05/11):
+  1. Làm, nhưng backend tự gắn query: `edit_url`, `add_url`, `drawer.action`, `drawer.close_url` đã có `tab`, `type`, `q`. FE không gắn thêm, không cần `back` khi lưu drawer. Lưu xong và lỗi 400 đều giữ đúng danh sách.
+  2. Làm: tab `brand` ("Thương hiệu"): `partner_email`, `logo_path`, `favicon_path`, `POST /admin/settings/brand`. Tab `general` chỉ còn 3 trường, không đụng tới ba trường kia. Thứ tự: general, seo, users, brand, social, tracking. `media_library` có ở `brand`, `seo`.
+  3. Làm: giữ `{label, links}`, một nhóm (A1).
+  4. Làm: A2, khóa là `banners[].broker`.
+  5. Làm hết.
+  6. Không thêm `AdminUser.name`: báo cáo xếp cột Tên loại B (brief mục 6), thêm phải có migration và ô nhập. Không cần `today`: dùng `|login_day` (A10).
+  7. Không có nguồn dữ liệu: sàn không báo số đăng ký về site. FE hiện "—", ghi vào báo cáo là không khôi phục được.
+  8. Làm chọn sẵn `deposit`. Nháp thiếu tiêu đề hoặc nội dung không lưu được: trả 400 như gửi thường.
+  9. Làm.
+  10. Có: A9.
+
+## [Phase 6 Backend] Dòng báo cáo chưa khôi phục được hoặc cần user xem lại (05/11)
+**Không khôi phục được, cần user quyết**
+- K16 (thẻ hero độc lập với sàn nổi bật): thiết kế là chữ cứng, không nói bonus nào được chọn. Muốn đúng phải thêm ô chọn bonus ở admin. Giữ logic cũ: bonus giá trị cao nhất của sàn nổi bật; không có sàn nổi bật thì không có thẻ.
+- K18 (dòng "Bonus nổi bật" là chữ tự do như "Deposit 50%"): không có trường dữ liệu tương ứng, vẫn ghép nhãn loại + số tiền.
+- K24, K25 (rail có chữ phụ "mỗi lot", đoạn mô tả, dòng tự do): `bonus.amount` là một chuỗi, không tách được; không có trường mô tả rail. Backend không thêm trường.
+- Sàn › Link affiliate, cột "Đăng ký": sàn không báo số đăng ký về site, không có nguồn dữ liệu. FE hiện "—".
+- Cài đặt › Tài khoản, cột Tên: báo cáo xếp loại B, không thêm `AdminUser.name`.
+
+**Giữ khác thiết kế, có lý do**
+- Dòng số 25 pages.md (sort "Sắp hết hạn" theo ngày tăng dần): thiết kế chỉ đẩy "Liên tục" xuống cuối vì ngày trong mock là chuỗi, nên 31/12 đứng trước 30/11 dưới nhãn "Sắp hết hạn". Giữ sort thật. Muốn y thiết kế: sửa một dòng ở `app/queries.py`.
+- "Click quảng cáo (tháng)": nhãn đúng thiết kế, số vẫn là 30 ngày gần nhất, vì báo cáo chỉ yêu cầu đổi nhãn.
+
+**Hệ quả của việc trả về đúng thiết kế, user nên biết**
+- `/dieu-khoan`, `/bao-mat` không còn link mặc định trên site (K11); trang vẫn chạy, có trong sitemap. Chính sách bảo mật thường cần có link công khai. Thêm lại ở Trang chủ › Menu & chân trang nếu cần.
+- `/tin-tuc` hiện hết bài, không phân trang (dòng số 57); danh sách dài sẽ nặng dần.
+- Thẻ "Bonus sắp hết hạn" lấy 4 bonus theo thứ tự danh sách (mới nhất trước), nên bonus sắp hết hạn nhất có thể không nằm trong 4 dòng. Tab Sắp hết hạn vẫn đủ.
+- Thẻ "Người đăng ký" và số ở sidebar đếm mọi người đăng ký (cả chờ xác nhận, đã hủy) như thiết kế, không còn là số đã xác nhận.
+- Hai trang đều dùng "Về TradingBonusHub" làm H1 (Giới thiệu, Liên hệ...): theo thiết kế, thẻ `<title>` vẫn riêng.
+
+**Vận hành: site thật dùng dữ liệu đã lưu trong `data/app.db`, backend không được đụng**
+- Mặc định mới chỉ có tác dụng với khóa chưa từng lưu. Khóa đã lưu qua admin giữ nguyên. Sau khi restart, team leader cần kiểm tra ở admin: `sections` (bật lại Form đăng ký), `hero` (ảnh, nhãn thẻ, câu mô tả), `home_about`, `home_why`, `home_compare`, `home_contact`, `pages`, `about_blocks`, `contact_page`, `system_text`, `menu`, `footer`.
+- Khi production còn `SMTP_BACKEND=console`, form đăng ký hiện nhưng luôn báo `sub_failed`.
+
+**Ngoài phạm vi, chưa xử lý**
+- **[ĐÃ XỬ LÝ 05/11, FE không cần sửa]** Gửi chiến dịch, gửi thử ở production với console: `send_failed` (lưu thành nháp, redirect về form nháp, giữ chữ), `test_failed` (502). Lưu nháp vẫn chạy.
+- `bonus_filters` trang chủ ẩn loại chưa có bonus; thiết kế luôn có 6 nút. Không có dòng trong báo cáo.
+
+## [Phase 6 Public FE] Dòng chưa khôi phục được hoặc giữ khác thiết kế (05/11)
+**Không khôi phục được từ template, cần user quyết** (cùng các mục backend đã ghi ở trên)
+- K16: thẻ hero vẫn lấy bonus cao nhất của sàn nổi bật, không có sàn nổi bật thì ẩn thẻ. Thiết kế là chữ cứng. Muốn chọn tự do cần ô chọn bonus ở admin.
+- K18: dòng "Bonus nổi bật" vẫn ghép nhãn loại + số tiền ("Cashback $4/lot"), thiết kế là chữ tự do ("Cashback", "Deposit 50%"). Cần trường dữ liệu mới.
+- K24, K25: rail đã về đúng hai dạng (trái navy số 44px, không tag, 3 dòng; phải xanh có tag, số 52px, đoạn chữ, 1 dòng hạn, nút "Nhận {số tiền}"), nhưng thiếu chữ phụ dưới số ("mỗi lot", "không cần nạp tiền"), đoạn mô tả riêng (đang in tiêu đề bonus), dòng "Rút trong ngày" (đang in "Hạn đến dd/mm"). Không có trường dữ liệu. Số dài hơn 4 ký tự dùng 30px để không tràn rail 160px.
+- K23: banner ngang thiết kế trang chủ không có. Đã bỏ khối navy tự thiết kế, chỉ còn dạng ảnh theo khung 970×250 của `Admin.dc.html`, căn giữa rộng 970px, cùng nhãn "Tài trợ". Vị trí và khoảng cách trên trang chủ không có nguồn trong thiết kế, giữ padding 56px sẵn có. Banner không có ảnh hiện khối nền trung tính (theo quyết định thiếu ảnh), trang chủ vẫn đếm view cho nó.
+
+**Giữ khác thiết kế, có lý do**
+- K29: "Điều kiện" giữ link `/san/{slug}`: thiết kế là `#`, chưa có đích.
+- Dòng 14 pages.md: giữ skip link và viền focus, chỉ thấy khi dùng bàn phím.
+- Dòng 42 pages.md: giữ câu "Chưa chọn sàn nào..." (thiết kế vỡ bảng khi bỏ chọn hết).
+- Dòng 48 pages.md: dòng ưu đãi tab Bonus ở ≤640px giữ xếp dọc: ba cột của thiết kế làm nút đè lên chữ. Padding đã về 24.
+- K12: bỏ câu "Số liệu là dữ liệu minh hoạ", Bonus ngắn hơn thiết kế 35px ở 1440, 50px ở 390 (loại B).
+
+**Chống tràn ở điện thoại (brief mục 13), sai số so với thiết kế**
+- H1 "Về TradingBonusHub": 40,4px ở 390, 36,8px ở 360 (thiết kế 52px tràn 71px). H1 khác giữ 52px; cỡ chữ tính theo từ dài nhất qua biến `--w`.
+- Email ở Liên hệ: 17,2px và 15,4px ở 390 (thiết kế 18px, khung tràn). Ô số "N+" tự giảm dưới 56px khi không vừa.
+- Tại sao chọn: giữ tỉ lệ 158:420 ở mọi khổ, ở 390 ảnh trái còn 88×460px (thiết kế 0px, ảnh phải tràn).
+- Hàng sàn ở 390: cột hai lệch 11px so với thiết kế để nút không lấn padding và không tràn ở 360. Đăng ký ở 390 cao hơn 46px vì khung 322px thay vì 340px bị tràn.
+- Footer đầy đủ ở ≤520px: 2 cột link bằng `repeat(2, ...)`, cao bằng thiết kế (636,5px).
+- Hamburger: nút "Xem bonus"/"Nhận tư vấn" ở ≤600px nằm trong menu mở ra, không đủ chỗ trên thanh header.
+
+**Tự thêm đã gỡ, ảnh hưởng nội dung**
+- Rail dạng ảnh không còn in `site.ads_note`: thiết kế không có dòng này ở dạng ảnh. Dạng dựng từ dữ liệu vẫn in. Khác yêu cầu Phase 4 mục 5.
+- Trang Liên hệ: email, Telegram là chữ thường như thiết kế, không còn link.
+
+
+## [Phase 6 Admin FE] Trả về đúng thiết kế: phần còn khác và việc cần user chọn (05/11)
+Đã xử lý mọi dòng A, C trong `docs/design-diff/admin.md`. Các khác biệt dưới đây còn lại, kèm lý do.
+
+**Không khôi phục được (thiếu dữ liệu)**
+- Sàn › Link affiliate, cột "Đăng ký": giữ tên cột đúng thiết kế, ô hiện "—". Sàn không báo số đăng ký về site. Số click 30 ngày chuyển vào tooltip ô Click.
+- Cài đặt › Tài khoản, cột "Tên": giữ cột, ô hiện "—". `AdminUser` không có tên (backend không thêm, xem A12 mục 6). Muốn có tên thật cần cột DB và ô nhập.
+- Trạng thái mới không có trong thiết kế: "Không có link", "Sàn đang ẩn" của banner vẫn tô đỏ ở Quảng cáo; bài hẹn giờ hiện "Hẹn giờ" thay cho "Đã đăng".
+
+**Giữ khác thiết kế, user quyết**
+- Font mọi nút: giữ Be Vietnam Pro. File thiết kế không cho nút kế thừa font nên ra Arial, có vẻ là sơ suất. Chiều cao đã ép về đúng thiết kế (menu 38px bước 42, nút 40 và 42px), riêng chiều rộng nút, pill, tab con rộng hơn chút do font. Muốn về Arial: bỏ `button` khỏi rule `input, select, textarea, button { font: inherit }` và đổi menu, pill, tab sang font hệ thống ở `static/css/admin.css`.
+- Hộp xác nhận trước khi Xóa và trước khi Gửi email (`admin.md` dòng "Xóa", "Trước khi gửi"): thiết kế làm ngay. Giữ hộp xác nhận vì gửi email và xóa không hoàn tác được, không đổi giao diện lúc thường. Muốn bỏ: gỡ `data-confirm` ở `_base.html`, `settings.html`, `subscribers.html`.
+- Phím Esc đóng drawer, hỏi trước khi bỏ thay đổi chưa lưu: thiết kế không có. Giữ vì không đổi giao diện và QA đã kiểm phím tắt này. Focus ô đầu tiên (viền đậm) đã bỏ: drawer nhận focus, chỉ nhảy vào ô khi có lỗi.
+- "Xem trên site ↗" ở đầu trang: thiết kế không có, brief mục 12 yêu cầu. Giữ một nút, bỏ hai link trùng. Đích trang chủ cũng có ở sidebar, nên các tab gốc của thiết kế có thể bỏ nếu user muốn.
+- "Xuất bản thay đổi": site không có nháp/xuất bản. Màn có form: lưu form (Tab Section: chỉ lưu tiêu đề section). Sàn › Link affiliate, Quảng cáo › Banner: lưu mọi dòng một lần qua `links_action`, `ads_action`. Gửi email: lưu nháp (thay nút "Lưu nháp"), chưa soạn gì thì chỉ báo "Đã lưu"; thiếu một trong hai ô thì báo lỗi như backend. Màn còn lại lưu ngay từng thao tác nên nút chỉ báo "Đã lưu" 1,8 giây, không ghi gì.
+- Đổi công tắc trên thẻ banner khi đang sửa ô chưa bấm Xuất bản: trang tải lại, chữ đang sửa mất (như thiết kế không có cảnh báo; bản trước cũng mất vì nút Lưu riêng từng thẻ).
+
+**Chức năng tự thêm đã chuyển chỗ, khung bảng giữ nguyên**
+- Bài viết, Người đăng ký: nút nhỏ "Lọc" cuối hàng tab con, mở drawer (tìm kiếm, lọc trạng thái). Sàn ẩn/hiện: công tắc trong drawer Sửa sàn. Xem bài trên site: nút trong drawer Sửa bài. Trạng thái người đăng ký, tài khoản bị khóa, lượt xem bài: tooltip.
+- Sửa bài, Xóa người đăng ký, Sửa tài khoản: nút nhỏ hiện khi rê chuột vào dòng (màn cảm ứng luôn hiện). Bài viết còn bấm được vào tiêu đề.
+- Tài khoản: thêm, đổi vai trò, đổi mật khẩu, khóa, xóa nằm trong drawer. "+ Thêm tài khoản" cuối hàng tab con.
+- Gửi email: "Lịch sử gửi" là link nhỏ cạnh hai nút, mở drawer tại chỗ, không mất chữ đang soạn.
+- Thẻ banner: link "Sửa" cuối dòng số liệu; bấm ảnh cũng mở drawer.
+- Menu chính: nút ↑ ↓ ✕ nổi lên khi rê chuột hoặc focus vào dòng; "+ Thêm mục menu" dưới danh sách. Cảnh báo rủi ro về lại thẻ Menu chính như thiết kế.
+- Tổng quan: bỏ dải tin nhắn chưa đọc (số chưa đọc vẫn ở sidebar). Thẻ có tiêu đề luôn hiện; số 0 để trống; hết dữ liệu hiện "Không có bonus nào sắp hết hạn.", "Chưa có banner nào.".
+- Câu rỗng ở các danh sách: thiết kế không có, giữ theo brief mục 5, bỏ nút "+ Thêm" trùng đầu trang.
+- Trang › So sánh, Cách đánh giá, Công bố affiliate, Liên hệ: bỏ ô nhãn breadcrumb (A11), tiêu đề và mô tả có ghi chú chỉ dùng cho thẻ title, meta.

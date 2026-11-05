@@ -13,7 +13,7 @@ def subscribe(client, **data):
 
 def test_subscribe_double_opt_in_and_unsubscribe(client, db):
     r = subscribe(client)
-    assert r.status_code == 303 and r.headers["location"] == "/#dang-ky"
+    assert r.status_code == 303 and r.headers["location"] == "/#lien-he"
     sub = db.query(Subscriber).one()
     assert sub.status == "pending" and sub.interests == ["deposit", "cashback"]
     assert client.get("/").context["flash"]["code"] == "sub_ok"
@@ -79,10 +79,10 @@ def test_subscribe_honeypot(client, db):
 
 
 def test_subscribe_next_not_open_redirect(client):
-    assert subscribe(client, next="//evil.example").headers["location"] == "/#dang-ky"
-    assert subscribe(client, next="/\t/evil.example").headers["location"] == "/#dang-ky"
+    assert subscribe(client, next="//evil.example").headers["location"] == "/#lien-he"
+    assert subscribe(client, next="/\t/evil.example").headers["location"] == "/#lien-he"
     assert subscribe(client, next="/bonus?type=nodep", email="b@example.test").headers["location"] == \
-        "/bonus?type=nodep#dang-ky"
+        "/bonus?type=nodep#lien-he"
 
 
 def test_subscribe_rate_limit(client, db):

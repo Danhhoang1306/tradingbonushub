@@ -9,6 +9,7 @@ import nh3
 
 VN_TZ = timezone(timedelta(hours=7))
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+DAY_MONTH_RE = re.compile(r"(\d{1,2})/(\d{1,2})(?:/(\d{4}))?")
 
 ALLOWED_TAGS = {"p", "br", "hr", "h2", "h3", "h4", "strong", "em", "b", "i", "u", "s", "blockquote", "code", "pre",
                 "ul", "ol", "li", "a", "img", "table", "thead", "tbody", "tr", "th", "td"}
@@ -50,6 +51,38 @@ def parse_date(value: str) -> date | None:
         except ValueError:
             pass
     raise ValueError(value)
+
+
+def _day_month(value: str, year: int) -> date | None:
+    """DD/MM hoặc DD/MM/YYYY. Rỗng -> None. Sai -> ValueError."""
+    if not value:
+        return None
+    m = DAY_MONTH_RE.fullmatch(value)
+    if m is None:
+        raise ValueError(value)
+    return date(int(m[3] or year), int(m[2]), int(m[1]))
+
+
+def parse_date_range(value: str, today: date) -> tuple[date | None, date | None]:
+    """Ô "Chạy từ – đến" của thiết kế: `01/11 – 30/11`, năm mặc định là năm nay. Ngày đến nhỏ hơn ngày từ
+    mà không ghi năm thì hiểu là năm sau. Rỗng -> (None, None). Sai -> ValueError."""
+    parts = re.split(r"\s*[–—-]\s*", (value or "").strip())
+    if len(parts) > 2:
+        raise ValueError(value)
+    start = _day_month(parts[0], today.year)
+    end = _day_month(parts[1], start.year if start else today.year) if len(parts) == 2 else None
+    if start and end and end < start:
+        if parts[1].count("/") == 2:
+            raise ValueError(value)
+        end = end.replace(year=end.year + 1)
+    return start, end
+
+
+def date_range_label(start: date | None, end: date | None, today: date) -> str:
+    """Ngược lại của parse_date_range; chỉ ghi năm khi khác năm nay để lưu lại không làm đổi ngày."""
+    def fmt(d: date | None) -> str:
+        return "" if d is None else d.strftime("%d/%m" if d.year == today.year else "%d/%m/%Y")
+    return f"{fmt(start)} – {fmt(end)}".strip() if start or end else ""
 
 
 def parse_float(value: str) -> float | None:

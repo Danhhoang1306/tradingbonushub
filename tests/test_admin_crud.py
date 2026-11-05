@@ -365,5 +365,4 @@ def test_overview_stats_from_db(admin, db):
     db.commit()
     c = admin.get("/admin").context
     stats = {s["id"]: s["value"] for s in c["stats"]}
-    assert stats == {"bonus": "1/2", "banners": "0", "ad_clicks": "7", "broker_clicks": "0", "subscribers": "1"}
-    assert c["click_days"][-1] == {"day": today_vn(), "clicks": 7, "percent": 100} and c["click_total"] == 7
+    assert stats == {"bonus": "1/2", "banners": "0", "ad_clicks": "7", "subscribers": "1"}

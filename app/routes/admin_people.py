@@ -4,7 +4,7 @@ from sqlalchemy import func, or_, select, update
 
 from app import content, queries
 from app.config import config
-from app.mailer import build, send_email, send_many, shared_connection
+from app.mailer import build, can_deliver, send_email, send_many, shared_connection
 from app.models import BONUS_TYPES, CAMPAIGN_RESUMABLE, Campaign, ContactMessage, Subscriber, utcnow
 from app.routes.admin_base import Admin, admin_api, admin_get, admin_post, done, get_or_404, render_admin, subtabs
 from app.templating import FLASH_MESSAGES
@@ -16,6 +16,7 @@ SEND_BATCH = 20  # ghi tiến độ sau mỗi lô: server tắt giữa chừng t
 SUB_TABS = (("list", "Danh sách"), ("mail", "Gửi email"))
 SUB_STATUS = (("all", "Tất cả"), ("confirmed", "Đã xác nhận"), ("pending", "Chờ xác nhận"), ("unsubscribed", "Đã hủy"))
 MSG_TABS = (("all", "Tất cả"), ("unread", "Chưa đọc"))
+DEFAULT_AUDIENCE = ("deposit",)  # nhóm chọn sẵn của form Gửi email, như thiết kế
 
 
 def recipients(confirmed: list[Subscriber], audience: list[str]) -> list[Subscriber]:
@@ -58,7 +59,8 @@ def _subs_page(a: Admin, tab: str = "list", status: str = "all", q: str = "", au
              "interest_labels": [labels.get(i, i) for i in s.interests], "status": s.status, "created_at": s.created_at,
              "confirmed_at": s.confirmed_at, "delete_url": f"/admin/subscribers/{s.id}/delete"}
             for s in db.scalars(stmt)] if tab == "list" else []
-    mail = mail_form or {"subject": "", "body": "", "audience": _valid_audience(aud or []), "draft_id": None, "errors": {}}
+    mail = mail_form or {"subject": "", "body": "", "audience": _valid_audience(aud or []) or list(DEFAULT_AUDIENCE),
+                         "draft_id": None, "errors": {}}
     confirmed = confirmed_subscribers(db)
     if mail.get("draft_id"):  # gửi tiếp chiến dịch dở: không đếm người đã nhận
         resumed = db.get(Campaign, mail["draft_id"])
@@ -138,6 +140,9 @@ def subs_mail(a: Admin = Depends(admin_post)):
     if a.text("action") == "draft":
         a.db.commit()
         return done(f"/admin/subscribers?tab=mail&draft={campaign.id}")
+    if not can_deliver():  # email chỉ vào log: giữ nguyên trạng thái và chữ đang soạn, không ghi nhận đã gửi
+        a.db.commit()
+        return done(f"/admin/subscribers?tab=mail&draft={campaign.id}", "send_failed")
     # Giành quyền gửi bằng UPDATE có điều kiện: hai request gửi cùng chiến dịch thì chỉ một request được đi tiếp.
     claimed = a.db.execute(update(Campaign).where(Campaign.id == campaign.id, Campaign.status.in_(CAMPAIGN_RESUMABLE))
                            .values(status="sending"))
@@ -190,8 +195,8 @@ def subs_mail_test(a: Admin = Depends(admin_post)):
     mail = _mail_input(a)
     if mail["errors"]:
         return _subs_page(a, "mail", mail_form=mail, status_code=400)
-    ok = send_email(a.user.email, f"[Gửi thử] {mail['subject']}",
-                    f"{mail['body']}\n\n---\nĐây là email gửi thử. Email thật có link hủy đăng ký riêng ở vị trí này.")
+    ok = can_deliver() and send_email(a.user.email, f"[Gửi thử] {mail['subject']}",
+                                      f"{mail['body']}\n\n---\nĐây là email gửi thử. Email thật có link hủy đăng ký riêng ở vị trí này.")
     flash = ({"kind": "success", "text": f"Đã gửi thử tới {a.user.email}", "code": "test_sent"} if ok else
              {"kind": "error", "text": "Không gửi được email thử. Kiểm tra cấu hình SMTP.", "code": "test_failed"})
     return _subs_page(a, "mail", mail_form=mail, status_code=200 if ok else 502, flash=flash)

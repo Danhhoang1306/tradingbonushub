@@ -5,9 +5,9 @@
   <div class="contact__info">
     {% if site.contact_email or site.partner_email or site.telegram %}
     <dl>
-      {% if site.contact_email %}<div><dt>Email</dt><dd><a href="mailto:{{ site.contact_email }}">{{ site.contact_email }}</a></dd></div>{% endif %}
-      {% if site.partner_email %}<div><dt>Hợp tác với sàn</dt><dd><a href="mailto:{{ site.partner_email }}">{{ site.partner_email }}</a></dd></div>{% endif %}
-      {% if site.telegram %}<div><dt>Telegram</dt><dd>{% if site.telegram.startswith("https://") %}<a href="{{ site.telegram }}" rel="noopener" target="_blank">{{ site.telegram }}</a>{% else %}{{ site.telegram }}{% endif %}</dd></div>{% endif %}
+      {% if site.contact_email %}<div><dt>Email</dt><dd style="--w: {{ site.contact_email|length }}">{{ site.contact_email }}</dd></div>{% endif %}
+      {% if site.partner_email %}<div><dt>Hợp tác với sàn</dt><dd style="--w: {{ site.partner_email|length }}">{{ site.partner_email }}</dd></div>{% endif %}
+      {% if site.telegram %}<div><dt>Telegram</dt><dd style="--w: {{ site.telegram|length }}">{{ site.telegram }}</dd></div>{% endif %}
     </dl>
     {% endif %}
     {% if contact.response_note %}<p class="contact__note">{{ contact.response_note }}</p>{% endif %}

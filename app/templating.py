@@ -10,7 +10,7 @@ from app import content
 from app.config import config
 from app.models import KIND_LABELS
 from app.security import FLASH_COOKIE, cookie_kwargs
-from app.utils import render_markdown, to_vn
+from app.utils import render_markdown, to_vn, today_vn
 
 templates = Jinja2Templates(directory=str(config.templates_dir))
 env = templates.env
@@ -30,9 +30,10 @@ FLASH_MESSAGES = {
     "self_delete": ("error", "Không thể xóa hoặc khóa chính tài khoản đang đăng nhập."),
     "no_recipients": ("error", "Không có người nhận phù hợp."),
     "send_failed": ("error", "Không gửi được email nào. Kiểm tra cấu hình SMTP rồi gửi lại từ bản nháp."),
-    "send_partial": ("error", "Mới gửi được một phần. Mở chiến dịch trong Lịch sử gửi để gửi tiếp cho người còn lại."),
+    "send_partial": ("error", "Mới gửi được một phần. Bấm gửi lại để gửi tiếp cho người còn lại."),
     "too_long": ("error", "Nội dung quá dài."),
     "invalid_url": ("error", "Link phải bắt đầu bằng http:// hoặc https://"),
+    "invalid_dates": ("error", "Ngày chạy không hợp lệ, ví dụ 01/11 – 30/11."),
 }
 
 PLACEMENT_LABELS = {"after-bonus": "Sau Bonus mới nhất", "before-blog": "Trước Tin tức",
@@ -70,7 +71,12 @@ def iso_date(value) -> str:
 
 
 def expiry_label(value) -> str:
-    return date_vn(value) if value else "Liên tục"
+    return short_date(value) if value else "Liên tục"
+
+
+def login_day(value) -> str:
+    v = _as_date(value)
+    return "Hôm nay" if isinstance(v, datetime) and v.date() == today_vn() else date_vn(value)
 
 
 def num(value) -> str:
@@ -81,7 +87,7 @@ def num(value) -> str:
 
 
 def ctr(clicks, views) -> str:
-    return f"{clicks / views * 100:.1f}%".replace(".", ",") if views else "—"
+    return f"{clicks / views * 100:.1f}%" if views else "—"
 
 
 @pass_context
@@ -97,6 +103,7 @@ def markdown_filter(text: str) -> Markup:
 
 env.filters.update(
     date_vn=date_vn, short_date=short_date, datetime_vn=datetime_vn, iso_date=iso_date, expiry_label=expiry_label,
+    login_day=login_day,
     num=num, type_label=type_label, markdown=markdown_filter,
     placement_label=lambda v: PLACEMENT_LABELS.get(v, v), post_status_label=lambda v: POST_STATUS_LABELS.get(v, v),
     subscriber_status_label=lambda v: SUBSCRIBER_STATUS_LABELS.get(v, v), role_label=lambda v: ROLE_LABELS.get(v, v),

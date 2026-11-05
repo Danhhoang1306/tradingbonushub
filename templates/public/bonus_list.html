@@ -3,7 +3,7 @@
 {% block content %}
 <div class="stack">
   <div class="toolbar">
-    {% if bonus_count %}<div class="toolbar__count">{{ bonus_count }} ưu đãi</div>{% endif %}
+    <div class="toolbar__count">{% if bonus_count %}{{ bonus_count }} ưu đãi{% endif %}</div>
     <nav class="pills" aria-label="Sắp xếp">
       {% for o in sorts %}<a href="{{ o.url }}" class="pill{% if o.active %} is-active{% endif %}"{% if o.active %} aria-current="true"{% endif %}>{{ o.label }}</a>{% endfor %}
     </nav>

@@ -87,9 +87,10 @@
 </div>
 {% endmacro %}
 
-{% macro rows_editor(prefix, cols, rows, add_label='+ Thêm dòng', errors=none, error_key='', hint='', stacked=false) %}
-<div class="field rows{% if stacked %} rows-stacked{% endif %}{% if error_key and errors and errors[error_key] %} has-error{% endif %}" data-rows>
-  {% if not stacked %}
+{# numbered: dòng đánh số như thiết kế, nút ↑ ↓ ✕ chỉ hiện khi rê chuột hoặc focus vào dòng. #}
+{% macro rows_editor(prefix, cols, rows, add_label='+ Thêm dòng', errors=none, error_key='', hint='', stacked=false, numbered=false) %}
+<div class="field rows{% if stacked %} rows-stacked{% endif %}{% if numbered %} rows-numbered{% endif %}{% if error_key and errors and errors[error_key] %} has-error{% endif %}" data-rows>
+  {% if not stacked and not numbered %}
   <div class="rows-head" style="--n: {{ cols|length }}{{ _tpl(cols) }}">{% for key, l, kind in cols %}<span>{{ l }}</span>{% endfor %}</div>
   {% endif %}
   <div class="rows-list" data-rows-list>
@@ -181,10 +182,18 @@
 </form>
 {% endmacro %}
 
-{% macro empty(text, action_url='', action_label='') %}
-<div class="empty">
-  <p>{{ text }}</p>
-  {% if action_url %}<a href="{{ action_url }}" class="btn-primary">{{ action_label }}</a>{% endif %}
+{% macro empty(text) %}
+<div class="empty"><p>{{ text }}</p></div>
+{% endmacro %}
+
+{# Drawer mở tại chỗ, không tải lại trang: link tới #id (CSS :target). `open` = mở sẵn khi có lỗi, khi đó `close` là URL thật. #}
+{% macro panel(id, title, open=false, close='#') %}
+<div class="drawer-wrap panel{% if open %} is-open{% endif %}" id="{{ id }}">
+  <a class="drawer-overlay" href="{{ close }}" aria-label="Đóng" tabindex="-1"></a>
+  <aside class="drawer" role="dialog" aria-modal="true" aria-label="{{ title }}">
+    <div class="drawer-head"><h2>{{ title }}</h2><a href="{{ close }}" class="btn-close" aria-label="Đóng">✕</a></div>
+    {{ caller() }}
+  </aside>
 </div>
 {% endmacro %}
 
@@ -214,7 +223,6 @@
 <div class="bars" role="img" aria-label="Click theo ngày trong 30 ngày, tổng {{ total|num }}">
   {% for d in days %}<div class="bar{% if loop.last %} is-today{% endif %}" style="height: {{ [d.percent, 1]|max }}%" title="{{ d.day|date_vn }}: {{ d.clicks|num }} click"></div>{% endfor %}
 </div>
-<div class="bars-axis"><span>{{ days[0].day|date_vn }}</span><span>Hôm nay</span></div>
 {% else %}
 <div class="empty empty-inline"><p>Chưa có click nào trong 30 ngày qua.</p></div>
 {% endif %}

@@ -1,56 +1,45 @@
 {% extends "admin/_base.html" %}
 {% import "admin/_macros.html" as ui with context %}
-{% set close_url = '/admin/brokers' %}
+{% if current_tab == 'links' %}{% set page_form = 'page-form' %}{% endif %}
 {% set drawer_inline = ['name','slug','mono','kind','tagline','summary','license','min_deposit','leverage','platforms','spread','withdrawal','founded','affiliate_url','logo_path','pros','cons','in_compare','featured'] %}
 {% block content %}
 {% if current_tab == 'links' %}
-{% set cols = '160px minmax(0,1fr) 90px 90px' %}
-<div class="stack">
-  <p class="note">Nút "Mở tài khoản" trên site đi qua <code>/go/broker/…</code> để đếm click. Để trống link = ẩn nút.</p>
-  <div class="table-wrap">
-    <div class="table" style="--min: 760px; --cols: {{ cols }}">
-      <div class="t-head"><span>Sàn</span><span>Link affiliate</span><span>Click</span><span>30 ngày</span></div>
-      {% for k in brokers %}
-      <div class="t-row">
-        <span class="cell-strong cell-ellipsis">{{ k.name }}</span>
-        <form method="post" action="{{ k.link_url }}" class="inline-row">
-          {{ ui.csrf() }}
-          <input type="url" name="affiliate_url" value="{{ k.affiliate_url }}" maxlength="1000" placeholder="https://…" aria-label="Link affiliate {{ k.name }}">
-          <button type="submit" class="btn-sm">Lưu</button>
-        </form>
-        <span>{{ k.clicks|num }}</span>
-        <span class="cell-muted">{{ k.clicks_30d|num }}</span>
-      </div>
-      {% else %}
-      {{ ui.empty('Chưa có sàn nào.', add_url, '+ Thêm sàn') }}
-      {% endfor %}
+{% set cols = '140px minmax(0,1fr) 100px 100px' %}
+<form id="page-form" method="post" action="{{ links_action }}">{{ ui.csrf() }}</form>
+<div class="table-wrap">
+  <div class="table" style="--min: 760px; --cols: {{ cols }}">
+    <div class="t-head"><span>Sàn</span><span>Link affiliate</span><span>Click</span><span>Đăng ký</span></div>
+    {% for k in brokers %}
+    <div class="t-row t-row-tight">
+      <span class="cell-strong cell-ellipsis">{{ k.name }}</span>
+      <input type="url" form="page-form" name="url_{{ k.id }}" value="{{ k.affiliate_url }}" maxlength="1000" aria-label="Link affiliate {{ k.name }}">
+      <span title="30 ngày qua: {{ k.clicks_30d|num }} click">{{ k.clicks|num }}</span>
+      <span>{{ k.signups|num if k.signups is defined and k.signups else '—' }}</span>
     </div>
+    {% else %}
+    {{ ui.empty('Chưa có sàn nào.') }}
+    {% endfor %}
   </div>
 </div>
 {% else %}
-{% set cols = '170px minmax(0,1fr) 110px 120px 80px 80px 80px 80px' %}
+{% set cols = '140px minmax(0,1fr) 110px 120px 90px 90px 80px' %}
 <div class="stack">
-  <p class="note">Bật "So sánh" cho tối đa {{ max_compare }} sàn để hiện ở mục So sánh trên trang chủ{% if brokers %} (<strong>{{ compare_count }}/{{ max_compare }}</strong> đang bật){% endif %}. Sàn "Nổi bật" có nền tối.</p>
+  <p class="note">Bật "So sánh" cho tối đa {{ max_compare }} sàn để hiện ở mục So sánh trên trang chủ. Sàn "Nổi bật" có nền tối.</p>
   <div class="table-wrap">
-    <div class="table" style="--min: 920px; --cols: {{ cols }}">
-      <div class="t-head"><span>Sàn</span><span>Giấy phép</span><span>Nạp tối thiểu</span><span>Đòn bẩy</span><span>So sánh</span><span>Nổi bật</span><span>Hiển thị</span><span></span></div>
+    <div class="table" style="--min: 860px; --cols: {{ cols }}">
+      <div class="t-head"><span>Sàn</span><span>Giấy phép</span><span>Nạp tối thiểu</span><span>Đòn bẩy</span><span>So sánh</span><span>Nổi bật</span><span></span></div>
       {% for k in brokers %}
-      <div class="t-row{% if not k.is_active %} is-muted{% endif %}">
-        <span class="name-cell">
-          <span class="mono-badge">{% if k.logo_path %}<img src="{{ k.logo_path }}" alt="">{% else %}{{ k.mono }}{% endif %}</span>
-          <span class="cell-ellipsis"><a class="row-link cell-strong cell-ellipsis" href="{{ k.edit_url }}">{{ k.name }}</a>
-            <span class="cell-sub">{{ k.kind|kind_label }}{% if k.bonus_count %} · {{ k.bonus_count }} bonus{% endif %}</span></span>
-        </span>
-        <span class="cell-ellipsis" title="{{ k.license }}">{{ k.license or '—' }}</span>
+      <div class="t-row">
+        <span class="cell-strong cell-ellipsis" title="{{ k.name }}">{{ k.name }}</span>
+        <span>{{ k.license or '—' }}</span>
         <span>{{ k.min_deposit or '—' }}</span>
-        <span class="cell-ellipsis">{{ k.leverage or '—' }}</span>
+        <span>{{ k.leverage or '—' }}</span>
         {{ ui.toggle(k.toggle_url, k.in_compare, 'So sánh ' ~ k.name, 'in_compare') }}
         {{ ui.toggle(k.toggle_url, k.featured, 'Nổi bật ' ~ k.name, 'featured') }}
-        {{ ui.toggle(k.toggle_url, k.is_active, 'Hiển thị ' ~ k.name, 'is_active') }}
-        <span class="t-actions"><a class="btn-sm" href="{{ k.edit_url }}">Sửa</a></span>
+        <a class="btn-sm btn-row" href="{{ k.edit_url }}">Sửa</a>
       </div>
       {% else %}
-      {{ ui.empty('Chưa có sàn nào.', add_url, '+ Thêm sàn') }}
+      {{ ui.empty('Chưa có sàn nào.') }}
       {% endfor %}
     </div>
   </div>

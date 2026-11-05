@@ -81,7 +81,8 @@ def test_compare_page_max_three(client, db):
     c = client.get("/san/so-sanh?ids=" + ",".join(map(str, ids))).context
     assert titles(c["compare_brokers"], "name") == ["Sàn A", "Sàn B", "Sàn C"]
     pick = {p["name"]: p for p in c["compare_pick"]}
-    assert pick["Sàn D"]["url"] is None and not pick["Sàn D"]["selected"]  # đủ 3: không chọn thêm được
+    current = "/san/so-sanh?ids=" + ",".join(map(str, ids[:3]))
+    assert pick["Sàn D"]["url"] == current and not pick["Sàn D"]["selected"]  # đủ 3: bấm không đổi gì
     assert pick["Sàn A"]["url"] == "/san/so-sanh?ids=" + ",".join(map(str, ids[1:3]))
     assert len(c["compare_rows"]) == 8 and all(len(row["cells"]) == 3 for row in c["compare_rows"])
 

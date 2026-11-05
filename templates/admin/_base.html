@@ -10,17 +10,16 @@
 <div class="layout">
   <aside class="sidebar">
     <div class="sidebar-top">
-      <a class="brand" href="/admin">
+      <div class="brand">
         <img src="{{ branding.logo_path or '/static/img/logo.png' }}" alt="" width="36" height="36">
         <span><span class="brand-name">TradingBonusHub</span><span class="brand-sub">Quản trị</span></span>
-      </a>
+      </div>
       <label for="nav-toggle" class="nav-burger" aria-label="Mở menu"><span></span><span></span><span></span></label>
     </div>
     <nav class="nav" aria-label="Menu quản trị">
       {% for g in nav %}
         {% set links = g.links if user.is_admin else g.links|rejectattr('id', 'equalto', 'settings')|list %}
         {% if links %}
-          {% if g.label %}<div class="nav-group">{{ g.label }}</div>{% endif %}
           {% for i in links %}
             <a href="{{ i.url }}" class="nav-link{% if i.active %} is-active{% endif %}"{% if i.active %} aria-current="page"{% endif %}>
               <span>{{ i.label }}</span>{% if i.count %}<span class="nav-count">{{ i.count|num }}</span>{% endif %}
@@ -30,7 +29,7 @@
       {% endfor %}
     </nav>
     <div class="sidebar-foot">
-      <a href="/" target="_blank" rel="noopener" class="btn-outline-light">Xem trang chủ ↗</a>
+      <a href="/" class="btn-outline-light">Xem trang chủ ↗</a>
       <div class="sidebar-user">
         <span class="sidebar-email" title="{{ user.email }}">{{ user.email }}</span>
         <form method="post" action="/admin/logout">{{ ui.csrf() }}<button type="submit" class="link-light">Đăng xuất</button></form>
@@ -46,20 +45,23 @@
       </div>
       <div class="page-head-actions">
         {% if flash and flash.kind == 'success' %}<span class="flash-ok" role="status" data-flash>{{ flash.text }}</span>{% endif %}
-        {% block head_actions %}
-          {% if view_url %}<a href="{{ view_url }}" target="_blank" rel="noopener" class="btn-secondary">Xem trên site ↗</a>{% endif %}
-          {% if page_form %}<button type="submit" form="{{ page_form }}" class="btn-secondary">Xuất bản thay đổi</button>{% endif %}
-          {% if add_url %}<a href="{{ add_url }}" class="btn-primary">+ {{ add_label }}</a>{% endif %}
-        {% endblock %}
+        <span class="flash-ok" role="status" data-publish-note hidden>Đã lưu</span>
+        {% if view_url %}<a href="{{ view_url }}" target="_blank" rel="noopener" class="btn-secondary">Xem trên site ↗</a>{% endif %}
+        {% if add_url %}<a href="{{ add_url }}" class="btn-primary">+ {{ add_label }}</a>{% endif %}
+        {% if page_form %}<button type="submit" form="{{ page_form }}" class="btn-secondary"{% if publish_draft %} name="action" value="draft"{% endif %}>Xuất bản thay đổi</button>
+        {% else %}<button type="button" class="btn-secondary" data-publish>Xuất bản thay đổi</button>{% endif %}
       </div>
     </header>
 
     {% if flash and flash.kind == 'error' %}<div class="alert alert-error" role="alert">{{ flash.text }}</div>{% endif %}
 
     {% if subtabs %}
-    <nav class="subtabs" aria-label="Mục con">
-      {% for t in subtabs %}<a href="{{ t.url }}" class="subtab{% if t.active %} is-active{% endif %}"{% if t.active %} aria-current="page"{% endif %}>{{ t.label }}</a>{% endfor %}
-    </nav>
+    <div class="subtabs" data-live="subtabs">
+      <nav class="subtabs-nav" aria-label="Mục con">
+        {% for t in subtabs %}<a href="{{ t.url }}" class="subtab{% if t.active %} is-active{% endif %}"{% if t.active %} aria-current="page"{% endif %}>{{ t.label }}</a>{% endfor %}
+      </nav>
+      {% block subtab_tools %}{% endblock %}
+    </div>
     {% endif %}
 
     {% block content %}{% endblock %}
@@ -67,13 +69,14 @@
 </div>
 
 {% if drawer %}
+{% set close = drawer.close_url or close_url %}
 <div class="drawer-wrap" data-drawer>
-  <a class="drawer-overlay" href="{{ close_url }}" aria-label="Đóng" tabindex="-1" data-drawer-close></a>
-  <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+  <a class="drawer-overlay" href="{{ close }}" aria-label="Đóng" tabindex="-1" data-drawer-close></a>
+  <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" tabindex="-1">
     <div class="drawer-head">
       <h2 id="drawer-title">{{ drawer.title }}</h2>
       {% if drawer.view_url %}<a href="{{ drawer.view_url }}" target="_blank" rel="noopener" class="btn-sm">Xem trên site ↗</a>{% endif %}
-      <a href="{{ close_url }}" class="btn-close" aria-label="Đóng" data-drawer-close>✕</a>
+      <a href="{{ close }}" class="btn-close" aria-label="Đóng" data-drawer-close>✕</a>
     </div>
     {% block drawer_main %}
     <form id="drawer-form" method="post" action="{{ drawer.action }}" enctype="multipart/form-data" class="drawer-body" novalidate>
@@ -84,14 +87,15 @@
     {% endblock %}
     <div class="drawer-foot">
       {% block drawer_foot %}<button type="submit" form="drawer-form" class="btn-primary btn-save">Lưu</button>{% endblock %}
-      {% if drawer.delete_url %}<button type="submit" form="drawer-delete" class="btn-danger">Xóa</button>{% endif %}
+      {% if drawer.delete_url %}<button type="submit" form="drawer-delete" class="btn-danger">Xoá</button>{% endif %}
     </div>
     {% if drawer.delete_url %}
-    <form id="drawer-delete" method="post" action="{{ drawer.delete_url }}" data-confirm="{{ drawer.delete_confirm or 'Xóa mục này? Thao tác không thể hoàn tác.' }}">{{ ui.csrf() }}<input type="hidden" name="back" value="{{ close_url }}"></form>
+    <form id="drawer-delete" method="post" action="{{ drawer.delete_url }}" data-confirm="{{ drawer.delete_confirm or 'Xóa mục này? Thao tác không thể hoàn tác.' }}">{{ ui.csrf() }}<input type="hidden" name="back" value="{{ close }}"></form>
     {% endif %}
   </aside>
 </div>
 {% endif %}
+{% block panels %}{% endblock %}
 {% if media_library %}{{ ui.media_picker(media_library) }}{% endif %}
 
 <dialog class="confirm" id="confirm-dialog">

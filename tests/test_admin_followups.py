@@ -27,8 +27,8 @@ def test_overview_banner_stats_from_db(admin, db):
                        is_active=False)])
     db.commit()
     rows = admin.get("/admin").context["banners"]
-    assert titles(rows, "name") == ["Nhiều click", "Ít click"]
-    assert rows[0] == {"id": rows[0]["id"], "name": "Nhiều click", "placement": "before-blog", "state": "paused",
+    assert titles(rows, "name") == ["Nhiều click", "Ít click"]  # thứ tự danh sách: mới nhất trước
+    assert rows[0] == {"id": rows[0]["id"], "name": "Nhiều click", "broker": None, "placement": "before-blog", "state": "paused",
                        "views": 50, "clicks": 9, "edit_url": f"/admin/ads/{rows[0]['id']}/edit"}
 
 
@@ -40,7 +40,7 @@ def test_admin_pages_have_branding_from_settings(admin, db):
     assert admin.get("/admin").context["branding"]["logo_path"] == "/static/img/logo.png"
     db.add(MediaFile(path="/media/logo-moi.png"))
     db.commit()
-    admin.post("/admin/settings/general", {"site_name": "S", "logo_path": "/media/logo-moi.png"})
+    admin.post("/admin/settings/brand", {"logo_path": "/media/logo-moi.png", "favicon_path": "/static/img/logo.png"})
     for url in ("/admin", "/admin/bonus", "/admin/media"):
         assert admin.get(url).context["branding"]["logo_path"] == "/media/logo-moi.png"
 
@@ -145,7 +145,7 @@ def test_message_back_rejects_foreign_paths(admin, db, back):
 # 5 + 7. media_library
 
 @pytest.mark.parametrize("url,expected", [
-    ("/admin/settings?tab=seo", True), ("/admin/settings?tab=general", True), ("/admin/settings?tab=social", False),
+    ("/admin/settings?tab=seo", True), ("/admin/settings?tab=brand", True), ("/admin/settings?tab=general", False), ("/admin/settings?tab=social", False),
     ("/admin/settings?tab=tracking", False), ("/admin/settings?tab=users", False),
     ("/admin/home?tab=hero", True), ("/admin/home?tab=why", True), ("/admin/home?tab=sections", False),
     ("/admin/home?tab=menu", False), ("/admin/pages?tab=gioithieu", True), ("/admin/pages?tab=bonus", False),

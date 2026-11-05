@@ -41,11 +41,11 @@
     {% if crumbs|length > 1 %}
     <nav class="crumbs" aria-label="Breadcrumb">
       {% for c in crumbs %}
-      {% if loop.last %}<span aria-current="page">{{ c.label }}</span>{% else %}<a href="{{ c.url }}">{{ c.label }}</a><span aria-hidden="true">/</span>{% endif %}
+      {% if c.url %}<a href="{{ c.url }}"{% if loop.last %} aria-current="page"{% endif %}>{{ c.label }}</a>{% else %}<span aria-current="page">{{ c.label }}</span>{% endif %}{% if not loop.last %}<span aria-hidden="true">/</span>{% endif %}
       {% endfor %}
     </nav>
     {% endif %}
-    <h1 class="page-head__title">{{ page.title }}</h1>
+    <h1 class="page-head__title" style="--w: {{ page.title.split()|map('length')|max|default(1) }}">{{ page.title }}</h1>
     {% if page.desc %}<p class="page-head__desc">{{ page.desc }}</p>{% endif %}
     <div class="tabs">
       {% for t in tabs|default([]) %}

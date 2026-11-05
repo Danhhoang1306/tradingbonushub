@@ -131,7 +131,7 @@ def test_password_reset_keeps_role(db):
 
 # Thấp 3, 4
 
-@pytest.mark.parametrize("url", ["/tin-tuc?page=abc", "/tin-tuc?page=", "/tin-tuc?page=1.5", "/go/broker/abc", "/go/ad/x"])
+@pytest.mark.parametrize("url", ["/go/broker/abc", "/go/ad/x"])
 def test_bad_param_shows_404_page_not_json(client, url):
     r = client.get(url, follow_redirects=False)
     assert r.status_code == 404 and r.headers["content-type"].startswith("text/html")

@@ -6,8 +6,7 @@
   <div class="compare-pick">
     <span class="compare-pick__label">Chọn tối đa {{ max_compare }} sàn:</span>
     {% for p in compare_pick %}
-    {% if p.url %}<a href="{{ p.url }}" class="pill{% if p.selected %} is-active{% endif %}" aria-pressed="{{ 'true' if p.selected else 'false' }}" rel="nofollow">{{ p.name }}</a>
-    {% else %}<span class="pill is-disabled" aria-disabled="true">{{ p.name }}</span>{% endif %}
+    <a href="{{ p.url }}" class="pill{% if p.selected %} is-active{% endif %}" aria-pressed="{{ 'true' if p.selected else 'false' }}" rel="nofollow">{{ p.name }}</a>
     {% endfor %}
   </div>
   {% endif %}
@@ -18,7 +17,7 @@
       <div class="compare-grid__head" role="columnheader"></div>
       {% for c in compare_brokers %}
       <div class="compare-grid__head" role="columnheader">
-        <h2 class="compare-grid__name"><a href="{{ c.url }}" class="link-plain">{{ c.name }}</a></h2>
+        <h2 class="compare-grid__name">{{ c.name }}</h2>
         {% if c.tagline %}<div class="compare-grid__tagline">{{ c.tagline }}</div>{% endif %}
       </div>
       {% endfor %}
@@ -40,7 +39,6 @@
       </div>
     </div>
   </div>
-  {% if site.cta_note and compare_brokers|selectattr("go_url")|list %}<p class="compare-note">{{ site.cta_note }}</p>{% endif %}
   {% elif compare_pick %}
   {{ empty("Chưa chọn sàn nào. Chọn sàn ở trên để so sánh.") }}
   {% else %}

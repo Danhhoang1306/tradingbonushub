@@ -21,9 +21,11 @@
     {% else %}
     <div class="form-block">
       <div class="form-block-title">Đầu trang</div>
-      {{ ui.field('title', 'Tiêu đề trang', fd.get('title', pg.title), e, required=true, preview='title') }}
-      {{ ui.field('desc', 'Mô tả dưới tiêu đề', fd.get('desc', pg.desc), e, rows=2, preview='desc') }}
-      {% if pg.label is defined %}{{ ui.field('label', 'Nhãn breadcrumb', fd.get('label', pg.label), e, hint='Tên ngắn của trang trên đường dẫn điều hướng.') }}{% endif %}
+      {# Các trang này dùng đầu trang chung của mục (brief 13): tiêu đề, mô tả chỉ vào thẻ title, meta. #}
+      {% set shared_head = current_tab in ('compare', 'method', 'affiliate', 'lienhe') %}
+      {{ ui.field('title', 'Tiêu đề trang', fd.get('title', pg.title), e, required=true, preview='title', hint='Trang này hiện đầu trang chung của mục; tiêu đề chỉ dùng cho thẻ title.' if shared_head else '') }}
+      {{ ui.field('desc', 'Mô tả dưới tiêu đề', fd.get('desc', pg.desc), e, rows=2, preview='desc', hint='Chỉ dùng cho meta description.' if shared_head else '') }}
+      {% if pg.label is defined and not shared_head %}{{ ui.field('label', 'Nhãn breadcrumb', fd.get('label', pg.label), e, hint='Tên ngắn của trang trên đường dẫn điều hướng.') }}{% endif %}
     </div>
 
     {% if current_tab == 'gioithieu' %}
@@ -63,13 +65,12 @@
 
     <div class="form-actions">
       <button type="submit" class="btn-primary">Lưu thay đổi</button>
-      <a href="{{ view_url }}" target="_blank" rel="noopener" class="btn-secondary">Xem trên site ↗</a>
     </div>
   </form>
 
   {% if current_tab != 'system' %}
   <aside class="preview" aria-label="Xem trước">
-    <div class="preview-label"><span>Đầu trang</span><a href="{{ view_url }}" target="_blank" rel="noopener">Mở trang ↗</a></div>
+    <div class="preview-label"><span>Đầu trang</span></div>
     <div class="pv pv-dark">
       <div class="pv-title" data-pv="title">{{ pg.title }}</div>
       <div class="pv-text" data-pv="desc">{{ pg.desc }}</div>

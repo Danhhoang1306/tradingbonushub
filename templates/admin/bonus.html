@@ -1,15 +1,16 @@
 {% extends "admin/_base.html" %}
 {% import "admin/_macros.html" as ui with context %}
-{% set close_url = '/admin/bonus' %}
 {% set drawer_inline = ['broker_id','type','title','amount','value_num','min_deposit','withdrawable','expiry_date'] %}
-{% set cols = '120px minmax(0,1fr) 130px 90px 100px 90px 80px' %}
+{% set cols = '120px minmax(0,1fr) 130px 90px 90px 90px 80px' %}
 {% block content %}
 <div class="stack">
   <div class="toolbar">
+    <span class="contents" data-live="pills">
     {% for f in type_filters %}
       <a class="pill{% if f.id == current_type %} is-active{% endif %}" href="/admin/bonus?tab={{ current_tab|urlencode }}&amp;type={{ f.id|urlencode }}&amp;q={{ q|urlencode }}">{{ f.label }}</a>
     {% endfor %}
-    <form class="search" method="get" action="/admin/bonus" role="search">
+    </span>
+    <form class="search" method="get" action="/admin/bonus" role="search" data-live-search>
       <input type="hidden" name="tab" value="{{ current_tab }}">
       <input type="hidden" name="type" value="{{ current_type }}">
       <input type="search" name="q" value="{{ q }}" placeholder="Tìm sàn hoặc tiêu đề…" aria-label="Tìm bonus">
@@ -20,25 +21,21 @@
   <div class="alert alert-info">Chưa có sàn nào. <a href="/admin/brokers/new">Thêm sàn</a> trước khi thêm bonus.</div>
   {% endif %}
 
-  <div class="table-wrap">
-    <div class="table" style="--min: 860px; --cols: {{ cols }}">
+  <div class="table-wrap" data-live="table">
+    <div class="table table-hover" style="--min: 860px; --cols: {{ cols }}">
       <div class="t-head"><span>Sàn</span><span>Tiêu đề</span><span>Loại</span><span>Mức</span><span>Hết hạn</span><span>Hiển thị</span><span></span></div>
       {% for b in bonuses %}
-      <div class="t-row{% if not b.visible %} is-muted{% endif %}">
+      <div class="t-row">
         <span class="cell-strong cell-ellipsis">{{ b.broker.name }}</span>
-        <span class="cell-ellipsis">
-          <a class="row-link cell-ellipsis" href="{{ b.edit_url }}" title="{{ b.title }}">{{ b.title }}</a>
-          {% if b.expired %}<span class="cell-warn">Đã hết hạn</span>{% elif not b.broker_active %}<span class="cell-warn">Sàn đang ẩn</span>{% elif b.expires_soon %}<span class="cell-warn">Sắp hết hạn</span>{% endif %}
-        </span>
+        <span class="cell-ellipsis" title="{{ b.title }}">{{ b.title }}</span>
         <span class="cell-muted">{{ b.type_label }}</span>
         <span class="cell-ellipsis">{{ b.amount or '—' }}</span>
-        <span class="{{ 'status-bad' if b.expired or b.expires_soon else 'cell-muted' }}">{{ b.expiry_date|expiry_label }}</span>
+        <span class="cell-muted">{{ b.expiry_date|expiry_label }}</span>
         {{ ui.toggle(b.toggle_url, b.is_active, 'Hiển thị bonus ' ~ b.title) }}
-        <span class="t-actions"><a class="btn-sm" href="{{ b.edit_url }}">Sửa</a></span>
+        <a class="btn-sm btn-row" href="{{ b.edit_url }}">Sửa</a>
       </div>
       {% else %}
-        {% if q or current_type != 'all' or current_tab != 'all' %}{{ ui.empty('Không có bonus phù hợp.') }}
-        {% else %}{{ ui.empty('Chưa có bonus nào.', add_url if broker_options else '', '+ Thêm bonus') }}{% endif %}
+        {{ ui.empty('Không có bonus phù hợp.' if q or current_type != 'all' or current_tab != 'all' else 'Chưa có bonus nào.') }}
       {% endfor %}
     </div>
   </div>
@@ -49,16 +46,12 @@
 {% set d = drawer.data %}{% set e = drawer.errors %}
 {% set opts = [] %}{% for k in broker_options %}{% set _ = opts.append({'id': k.id, 'label': k.name ~ ('' if k.is_active else ' (đang ẩn)')}) %}{% endfor %}
 {{ ui.select('broker_id', 'Sàn', opts, d.broker_id, e, empty_label='— Chọn sàn —', required=true, hint='' if broker_options else '<a href="/admin/brokers/new">Thêm sàn trước</a>') }}
-{{ ui.pills('type', 'Loại bonus', type_options, d.type, e) }}
-{{ ui.field('title', 'Tiêu đề', d.title, e, required=true, placeholder='Tên ưu đãi, ngắn gọn') }}
-<div class="fields-2">
-  {{ ui.field('amount', 'Mức thưởng', d.amount, e, placeholder='Phần trăm, số tiền hoặc mức theo lot') }}
-  {{ ui.field('value_num', 'Giá trị để sắp xếp', d.value_num, e, hint='Số, dùng cho "Giá trị cao". Có thể trống.', attrs='inputmode="decimal"') }}
-</div>
-<div class="fields-2">
-  {{ ui.field('min_deposit', 'Nạp tối thiểu', d.min_deposit, e, required=true) }}
-  {{ ui.field('withdrawable', 'Phần rút được', d.withdrawable, e, required=true) }}
-</div>
+{{ ui.field('title', 'Tiêu đề', d.title, e, required=true) }}
+{{ ui.field('amount', 'Mức thưởng', d.amount, e) }}
+{{ ui.field('min_deposit', 'Nạp tối thiểu', d.min_deposit, e) }}
 {{ ui.field('expiry_date', 'Hết hạn', d.expiry_date, e, type='date', hint='Để trống = Liên tục.') }}
+{{ ui.pills('type', 'Loại bonus', type_options, d.type, e) }}
+{{ ui.field('value_num', 'Giá trị để sắp xếp', d.value_num, e, hint='Số, dùng cho "Giá trị cao". Có thể trống.', attrs='inputmode="decimal"') }}
+{{ ui.field('withdrawable', 'Phần rút được', d.withdrawable, e) }}
 {{ ui.switch_input('is_active', 'Hiển thị trên site', d.is_active) }}
 {% endblock %}

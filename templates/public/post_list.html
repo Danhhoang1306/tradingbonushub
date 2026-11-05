@@ -5,13 +5,6 @@
 <div class="grid-cards grid-cards--320">
   {% for p in posts %}{{ post_card(p, "white") }}{% endfor %}
 </div>
-{% if pagination.pages > 1 %}
-<nav class="pagination" aria-label="Phân trang">
-  {% if pagination.prev_url %}<a href="{{ pagination.prev_url }}" class="pill" rel="prev">← Trang trước</a>{% endif %}
-  <span>Trang {{ pagination.page }} / {{ pagination.pages }}</span>
-  {% if pagination.next_url %}<a href="{{ pagination.next_url }}" class="pill" rel="next">Trang sau →</a>{% endif %}
-</nav>
-{% endif %}
 {% else %}
 {{ empty("Chưa có bài viết nào.") }}
 {% endif %}

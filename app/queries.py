@@ -9,7 +9,7 @@ from app.models import KIND_LABELS, Banner, Bonus, Broker, Campaign, ClickLog, P
 from app.security import is_http_url
 from app.utils import today_vn
 
-EXPIRING_DAYS = 14
+EXPIRING_DAYS = 60
 
 
 def bonus_visible_clause(today: date):
@@ -29,6 +29,8 @@ def visible_bonuses(db: Session, type_: str | None = None, sort: str = "new", li
         q = q.order_by(Bonus.value_num.is_(None), Bonus.value_num.desc(), Bonus.id.desc())
     elif sort == "expiry":
         q = q.order_by(Bonus.expiry_date.is_(None), Bonus.expiry_date.asc(), Bonus.id.desc())
+    elif sort == "input":
+        q = q.order_by(Bonus.id)
     else:
         q = q.order_by(Bonus.created_at.desc(), Bonus.id.desc())
     if limit:

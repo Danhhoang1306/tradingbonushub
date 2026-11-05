@@ -75,6 +75,64 @@
     if (f) setTimeout(function () { f.classList.add('is-hidden'); }, 1800);
   }
 
+  /* ---------- Nút "Xuất bản thay đổi": màn danh sách lưu ngay từng thao tác nên chỉ báo đã lưu ---------- */
+  function initPublish() {
+    var note = $('[data-publish-note]'), timer = null;
+    function show() {
+      var old = $('[data-flash]');
+      if (old) old.hidden = true;
+      note.hidden = false;
+      clearTimeout(timer);
+      timer = setTimeout(function () { note.hidden = true; }, 1800);
+    }
+    on(document, 'click', '[data-publish]', show);
+    // Gửi email: nút này lưu nháp; chưa soạn gì thì không có gì để lưu.
+    var mail = $('#mail-form');
+    var draftBtn = mail && $('button[form="mail-form"]');
+    if (draftBtn) draftBtn.addEventListener('click', function (e) {
+      if (mail.elements.subject.value.trim() || mail.elements.body.value.trim()) return;
+      e.preventDefault();
+      show();
+    });
+  }
+
+  /* ---------- Công tắc, mũi tên: tải lại trang vẫn giữ vị trí cuộn ---------- */
+  function initScroll() {
+    var KEY = 'admin-scroll';
+    try {
+      var saved = JSON.parse(sessionStorage.getItem(KEY));
+      sessionStorage.removeItem(KEY);
+      if (saved && saved.path === location.pathname) window.scrollTo(0, saved.y);
+    } catch (e) { /* trình duyệt chặn storage: bỏ qua */ }
+    document.addEventListener('submit', function (e) {
+      if (!e.target.closest('.toggle-form')) return;
+      try { sessionStorage.setItem(KEY, JSON.stringify({ path: location.pathname, y: window.scrollY })); } catch (err) { /* như trên */ }
+    });
+  }
+
+  /* ---------- Ô tìm kiếm lọc ngay khi gõ: lấy lại trang, thay các vùng data-live ---------- */
+  function initLiveSearch() {
+    var form = $('[data-live-search]');
+    if (!form) return;
+    var timer = null, pending = null;
+    function run() {
+      var url = form.getAttribute('action') + '?' + new URLSearchParams(new FormData(form)).toString();
+      if (pending) pending.abort();
+      pending = new AbortController();
+      fetch(url, { credentials: 'same-origin', signal: pending.signal })
+        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
+        .then(function (html) {
+          var next = new DOMParser().parseFromString(html, 'text/html');
+          $$('[data-live]').forEach(function (el) {
+            var fresh = $('[data-live="' + el.getAttribute('data-live') + '"]', next);
+            if (fresh) el.replaceWith(fresh);
+          });
+          history.replaceState(null, '', url);
+        }).catch(function () { /* lỗi mạng hoặc bị hủy: Enter vẫn tìm được */ });
+    }
+    form.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(run, 200); });
+  }
+
   /* ---------- Xác nhận trước khi xóa / gửi ---------- */
   function initConfirm() {
     var dlg = $('#confirm-dialog');
@@ -113,9 +171,8 @@
     var wrap = $('[data-drawer]');
     if (!wrap) return;
     var close = $('a[data-drawer-close]', wrap);
-    var target = $('.drawer-body .has-error :is(input, select, textarea)', wrap) ||
-      $('.drawer-body :is(input:not([type=hidden]):not([type=file]), select, textarea)', wrap);
-    if (target) target.focus();
+    // Thiết kế không focus ô đầu: focus vào drawer để Tab đi từ đây, chỉ nhảy vào ô khi có lỗi.
+    ($('.drawer-body .has-error :is(input, select, textarea)', wrap) || $('.drawer', wrap)).focus();
     var dirty = !!$('.drawer-body .alert-error', wrap);  // lỗi 400: form đang giữ chữ chưa lưu
     wrap.addEventListener('click', function (e) {
       if (e.target.closest('[data-act], [data-row-add], .btn-add')) dirty = true;
@@ -315,20 +372,13 @@
     var form = $('[data-audience-form]');
     if (!form || form.hasAttribute('data-retry')) return;  // gửi lại: nhãn cố định, không đếm theo nhóm
     var out = $('[data-audience-count]', form), send = out.closest('button');
-    var some = $('[data-send-some]', form), none = $('[data-send-none]', form);
     var pending = null;
-    function setEmpty(empty) {  // 0 người: khóa nút (server trả lỗi nếu gửi) và nói rõ lý do
-      send.disabled = empty;
-      some.hidden = empty;
-      none.hidden = !empty;
-    }
     function recount() {
       var params = new URLSearchParams();
       $$('input[name=audience]:checked', form).forEach(function (c) { params.append('aud', c.value); });
       if (pending) pending.abort();  // chỉ lấy kết quả của lần chọn cuối
       out.textContent = '…';  // số cũ không còn đúng, kể cả khi yêu cầu dưới đây lỗi
       send.setAttribute('data-confirm', 'Gửi email này tới các nhóm đã chọn?');
-      setEmpty(false);
       send.disabled = true;
       pending = new AbortController();
       fetch(form.getAttribute('data-audience-url') + '?' + params.toString(), { credentials: 'same-origin', signal: pending.signal })
@@ -337,7 +387,7 @@
           var n = d.count.toLocaleString('vi-VN');
           out.textContent = n;
           send.setAttribute('data-confirm', 'Gửi email này tới ' + n + ' người đăng ký?');
-          setEmpty(d.count === 0);
+          send.disabled = d.count === 0;  // 0 người: server cũng từ chối
         }).catch(function (err) {  // lỗi: giữ "…" và câu xác nhận chung, không hiện số sai
           if (err.name !== 'AbortError') send.disabled = false;
         });
@@ -347,7 +397,7 @@
     window.addEventListener('pageshow', function () {
       var restored = $$('input[name=audience]', form).some(function (c) { return c.checked !== c.defaultChecked; });
       if (restored) recount();
-      else setEmpty(out.textContent === '0');
+      else send.disabled = out.textContent === '0';
     });
   }
 
@@ -365,7 +415,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    initFlash(); initConfirm(); initDrawer(); initReorder(); rowsInit(); linesInit(document);
+    initScroll(); initFlash(); initPublish(); initLiveSearch(); initConfirm(); initDrawer(); initReorder(); rowsInit(); linesInit(document);
     initImages(); initPreview(); initCopy(); initDropzone(); initAudience(); initNav(); syncPreview();
   });
 })();

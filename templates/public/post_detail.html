@@ -1,20 +1,12 @@
 {% extends "base_public.html" %}
-{% from "public/_macros.html" import media, post_card %}
+{% from "public/_macros.html" import media %}
 {% block og_type %}article{% endblock %}
 {% block head_extra %}{% if post.published_at %}<meta property="article:published_time" content="{{ post.published_at.isoformat() }}Z">{% endif %}{% endblock %}
 {% block content %}
 <article class="article">
-  {% if post.cover_path %}{{ media(post.cover_path, post.title, "article__cover", eager=true) }}{% endif %}
-  <div class="article__meta">{{ post.category }}{% if post.published_at %} · <time datetime="{{ post.published_at.isoformat() }}Z">{{ post.published_at|date_vn }}</time>{% endif %} · {{ post.read_minutes }} phút đọc</div>
+  {{ media(post.cover_path, post.title, "article__cover", eager=true) }}
+  <div class="article__meta">{{ post.category }}{% if post.published_at %} · <time datetime="{{ post.published_at.isoformat() }}Z">{{ post.published_at|short_date }}</time>{% endif %} · {{ post.read_minutes }} phút đọc</div>
   <div class="prose">{{ post.body_html|safe }}</div>
-  <a href="/tin-tuc" class="article__back">← Về danh sách</a>
+  <a href="{{ back_url }}" class="article__back">← Về danh sách</a>
 </article>
-{% if related_posts %}
-<section class="related" aria-labelledby="h-related">
-  <h2 class="related__title" id="h-related">Bài viết liên quan</h2>
-  <div class="grid-cards grid-cards--320">
-    {% for p in related_posts %}{{ post_card(p, "white", none, "h3") }}{% endfor %}
-  </div>
-</section>
-{% endif %}
 {% endblock %}

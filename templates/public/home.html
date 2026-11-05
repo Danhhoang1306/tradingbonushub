@@ -1,22 +1,22 @@
 {% extends "base_public.html" %}
 {% from "public/_macros.html" import media, eyebrow, arrow_btn, avatar, post_card, ad_block, rail %}
 {% block body_class %}page-home{% endblock %}
+{#- Như thiết kế: nút "Xem bonus" cuộn tới section Bonus; section đang ẩn thì sang trang Bonus. -#}
+{% set bonus_href = "#bonus" if "bonus" in home_sections else "/bonus" %}
 
 {% block header %}
 {% if "hero" in home_sections %}
-<section class="hero{% if not hero.image_path %} hero--plain{% endif %}">
-  {% if hero.image_path %}
+<section class="hero">
   {{ media(hero.image_path, "", "hero__bg", eager=true) }}
   <div class="hero__shade" aria-hidden="true"></div>
-  {% endif %}
-  {{ site_header("hero") }}
+  {{ site_header("hero", bonus_href) }}
   <div class="hero__body">
     <div class="hero__grid">
       <div class="hero__text">
         {{ eyebrow(hero.eyebrow, "glass") }}
         <h1 class="hero__title">{{ hero.headline or site.site_name }}</h1>
         {% if hero.sub %}<p class="hero__sub">{{ hero.sub }}</p>{% endif %}
-        {% if hero.cta %}{{ arrow_btn("/bonus", hero.cta, "blue") }}{% endif %}
+        {% if hero.cta %}{{ arrow_btn(bonus_href, hero.cta, "blue") }}{% endif %}
       </div>
       {% if hero_bonus %}
       <div class="hero-card">
@@ -69,22 +69,21 @@
         </div>
         {% endif %}
         <div class="about-cta">
-          {{ arrow_btn("/bonus", "Xem tất cả bonus", "navy") }}
+          {{ arrow_btn(bonus_href, "Xem tất cả bonus", "navy", "hover") }}
           {% if a.badge %}<span>{{ a.badge }}</span>{% endif %}
         </div>
       </div>
-      {% if a.images[1] or a.images[2] or active_bonus_count %}
       <div class="about-gallery">
-        {{ media(a.images[1], a.title, "about-gallery__a" ~ ("" if active_bonus_count else " is-wide")) }}
+        {{ media(a.images[1], a.title, "about-gallery__a") }}
         {% if active_bonus_count %}
-        <div class="stat-dark{% if not a.images[1] %} is-wide{% endif %}">
-          <div class="stat-dark__value">{{ active_bonus_count|num }}+</div>
+        {%- set n = active_bonus_count|num %}
+        <div class="stat-dark">
+          <div class="stat-dark__value" style="--n: {{ n|length + 1 }}">{{ n }}+</div>
           {% if a.count_label %}<div class="stat-dark__label">{{ a.count_label }}</div>{% endif %}
         </div>
         {% endif %}
         {{ media(a.images[2], a.title, "about-gallery__b") }}
       </div>
-      {% endif %}
     </div>
   </section>
 
@@ -137,19 +136,16 @@
   </section>
 
   {% elif sid == "ad1" %}
-  <div class="ad-sec"><div class="container">{{ ad_block(ad1, site.cta_note) }}</div></div>
+  <div class="ad-sec"><div class="container">{{ ad_block(ad1) }}</div></div>
 
   {% elif sid == "ad2" %}
-  <div class="ad-sec"><div class="container">{{ ad_block(ad2, site.cta_note) }}</div></div>
+  <div class="ad-sec"><div class="container">{{ ad_block(ad2) }}</div></div>
 
   {% elif sid == "why" %}{% set w = site.home_why %}
   <section class="home-sec" aria-labelledby="h-why">
     <div class="container split split--380">
-      {%- set why_col = w.stat_value or w.images[1] %}
-      {% if w.images[0] or why_col %}
-      <div class="why-gallery{% if not (w.images[0] and why_col) %} why-gallery--single{% endif %}">
+      <div class="why-gallery">
         {{ media(w.images[0], w.title, "why-gallery__a") }}
-        {% if why_col %}
         <div class="why-gallery__col">
           {% if w.stat_value %}
           <div class="stat-light">
@@ -159,9 +155,7 @@
           {% endif %}
           {{ media(w.images[1], w.title, "why-gallery__b") }}
         </div>
-        {% endif %}
       </div>
-      {% endif %}
       <div>
         {{ eyebrow(w.eyebrow) }}
         <h2 class="h2" id="h-why">{{ w.title }}</h2>
@@ -191,7 +185,7 @@
           {% endfor %}
         </div>
       </div>
-      <div class="type-card{% if not t0.image %} type-card--plain{% endif %}">
+      <div class="type-card">
         {{ media(t0.image, t0.title, "type-card__img") }}
         {% for t in site.bonus_types %}
         <div class="type-card__body" role="tabpanel" id="type-panel-{{ t.id }}" aria-labelledby="type-tab-{{ t.id }}" data-type-panel="{{ t.id }}"{% if not loop.first %} hidden{% endif %}>
@@ -239,7 +233,7 @@
   </section>
 
   {% elif sid == "signup" %}{% set c = site.home_contact %}
-  <section class="signup" id="dang-ky" aria-labelledby="h-signup">
+  <section class="signup" id="lien-he" aria-labelledby="h-signup">
     <div class="signup__box">
       {{ media(c.image, c.title, "signup__img") }}
       <div class="signup__content">
@@ -261,7 +255,7 @@
           <fieldset class="chips">
             <legend class="sr-only">Loại bonus quan tâm</legend>
             {% for t in site.bonus_types %}
-            <label class="chip"><input type="checkbox" name="interests" value="{{ t.id }}"><span>{{ t.label }}</span></label>
+            <label class="chip"><input type="checkbox" name="interests" value="{{ t.id }}"{% if t.id == "deposit" %} checked{% endif %}><span>{{ t.label }}</span></label>
             {% endfor %}
           </fieldset>
           <input type="text" name="website" value="" tabindex="-1" autocomplete="off" hidden>

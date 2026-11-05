@@ -1,6 +1,6 @@
 {%- from "public/_macros.html" import arrow_btn -%}
 {# Header site: variant "hero" (trang chủ, nằm trên ảnh nền) hoặc "page" (trang con, nền navy). #}
-{% macro site_header(variant="page") -%}
+{% macro site_header(variant="page", bonus_url="/bonus") -%}
 {%- set is_hero = variant == "hero" -%}
 <header class="site-header site-header--{{ variant }}" data-header>
   <div class="site-header__inner">
@@ -13,11 +13,11 @@
     </button>
     <nav class="site-nav" id="site-nav" aria-label="Menu chính">
       {% for m in site.menu %}
-      {%- set active = m.url == current_path or (m.url != "/" and current_path.startswith(m.url ~ "/")) -%}
+      {%- set active = m.url == nav_path or (m.url != "/" and nav_path.startswith(m.url ~ "/")) -%}
       <a href="{{ m.url }}" class="site-nav__link{% if active %} is-active{% endif %}"{% if active %} aria-current="page"{% endif %}>{{ m.label }}</a>
       {% endfor %}
     </nav>
-    {% if is_hero %}{{ arrow_btn("/bonus", site.system_text.header_cta_home, "blue", "header") }}{% else %}{{ arrow_btn("/bonus", site.system_text.header_cta_page, "blue", "header-sm") }}{% endif %}
+    {% if is_hero %}{{ arrow_btn(bonus_url, site.system_text.header_cta_home, "blue", "header") }}{% else %}{{ arrow_btn("/bonus", site.system_text.header_cta_page, "blue", "header-sm") }}{% endif %}
   </div>
 </header>
 {%- endmacro %}
