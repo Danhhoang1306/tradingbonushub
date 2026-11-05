@@ -141,6 +141,39 @@ Bố cục: mỗi form có cột trái là trường nhập, cột phải là xe
 mở đúng trang public; lưu bằng một nút cố định đáy form; báo "Đã lưu" ngắn. Nhóm sidebar thành
 Dữ liệu (Bonus, Sàn, Bài viết, Quảng cáo) | Nội dung (Trang chủ, Trang, Thư viện ảnh) | Khách (Người đăng ký, Tin nhắn) | Hệ thống (Cài đặt).
 
+
+## 13. Trả về đúng thiết kế (user quyết định 05/11, ưu tiên cao nhất, đè mọi mục khác nếu mâu thuẫn)
+Nguồn đối chiếu: `design/` và 3 báo cáo `docs/design-diff/home.md`, `pages.md`, `admin.md`.
+Nguyên tắc: mọi màn CÓ trong thiết kế phải về đúng thiết kế. Không tự thêm, bớt, đổi nhãn, đổi câu chữ, đổi bố cục.
+Loại A và C trong báo cáo đều phải xử lý. Chỉ được giữ khác biệt thuộc danh sách GIỮ dưới đây. Mọi khác biệt
+còn lại mà không thể khôi phục thì ghi vào docs/ISSUES.md kèm lý do, không tự quyết im lặng.
+
+GIỮ: không có dữ liệu mock (thay bằng dữ liệu DB); các màn admin mới theo mục 12 (Trang, Thư viện ảnh, Tin nhắn,
+Đăng nhập, các tab mới); chống tràn ngang và menu hamburger trên điện thoại (thiết kế tự lỗi ở 390); toàn bộ sửa
+lỗi bảo mật và logic của QA không làm đổi giao diện.
+
+Quyết định cụ thể của user:
+- Ảnh hero: DÙNG LẠI ảnh gốc của thiết kế (khóa v2-hero-bg, về `static/img/hero-bg.webp`, đặt lại làm mặc định
+  hero.image_path). Hero cao 820px như thiết kế.
+- Thiếu ảnh: HIỆN khối nền trung tính giữ nguyên bố cục, không chữ. Không ẩn khối, không co bố cục.
+- Câu chữ: khôi phục NGUYÊN VĂN thiết kế, gồm "Cập nhật ưu đãi hằng ngày", "Tối đa một email mỗi tuần",
+  "khối lượng yêu cầu", "1–2 ngày làm việc", "Nhận tư vấn", "Sàn uy tín", "Nổi bật tuần này", "Phổ biến".
+  RIÊNG số 100% vẫn BỎ, nhưng giữ khung thẻ số: thẻ ẩn khi admin chưa nhập, bố cục quanh nó như thiết kế.
+
+Quyết định của team leader để thực hiện:
+- H1 và mô tả về header chung của mục như thiết kế. Meta SEO vẫn riêng từng trang.
+- Bỏ "Bài viết liên quan", khối affiliate dưới bảng so sánh, các khối tự thêm. Quảng cáo chỉ dùng hình dạng có trong thiết kế.
+- Ngày dạng dd/mm như thiết kế.
+- Link nút theo thiết kế (nút "Xem bonus" ở trang chủ cuộn tới #bonus, "Nhận tư vấn" tới Bonus).
+- Chip Deposit bonus chọn sẵn. Thẻ So sánh nổi bật ở giữa. Thứ tự sàn theo thứ tự nhập.
+- Bonus: bỏ bắt buộc min_deposit, withdrawable (dữ liệu thiết kế có giá trị "—"). Giữ bắt buộc license.
+- Form đăng ký: bật lại như thiết kế. Khi site production chưa có SMTP thật (SMTP_BACKEND=console), đăng ký phải trả
+  `sub_failed`, không được báo "kiểm tra hộp thư".
+- Mobile: cỡ chữ theo thiết kế nếu không tràn; nếu tràn thì dùng cỡ lớn nhất vừa màn hình.
+- Admin: sidebar phẳng, 8 mục đúng tên và thứ tự thiết kế, các mục mới đặt tiếp theo. Nút "Xuất bản thay đổi" có ở mọi
+  màn như thiết kế: màn có form thì lưu form, màn danh sách báo thay đổi đã được lưu. Tổng quan đúng 4 thẻ và bố cục thiết kế,
+  bỏ biểu đồ tự thêm. "Sắp hết hạn" = còn tối đa 60 ngày. Cột bảng đúng thiết kế.
+
 ## 11. Cách làm việc (vibe coding có kỷ luật)
 - Trước khi code: đọc đúng phần cần, nêu kế hoạch ngắn trong đầu; không đoán, xem file thật.
 - Chia nhỏ theo lát dọc: làm một việc, chạy thử, rồi mới sang việc tiếp theo. Không viết nhiều rồi mới test.
