@@ -50,7 +50,7 @@ def main() -> int:
     done = sorted(p for p in DEST.glob(f"{PREFIX}*") if p.is_dir() and not p.name.endswith(".tmp"))
     for old in done[:-KEEP]:
         shutil.rmtree(old)
-    print(f"{datetime.now():%Y-%m-%d %H:%M:%S} OK {final} (giữ {min(len(done), KEEP)} bản)")
+    print(f"{datetime.now():%Y-%m-%d %H:%M:%S} OK {final} (keep {min(len(done), KEEP)})")
     return 0
 
 
