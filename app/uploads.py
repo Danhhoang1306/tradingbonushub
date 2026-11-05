@@ -3,7 +3,7 @@ import io
 import secrets
 
 from fastapi import UploadFile
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, ImageOps, UnidentifiedImageError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -41,6 +41,9 @@ def save_image(db: Session, upload: UploadFile, alt: str = "") -> MediaFile:
         raise UploadError("File không phải ảnh hợp lệ.")
     if fmt not in FORMATS:
         raise UploadError("Chỉ nhận ảnh PNG, JPEG hoặc WEBP.")
+    data = _strip_metadata(data, fmt)
+    with Image.open(io.BytesIO(data)) as img:
+        width, height = img.size
     name = f"{secrets.token_hex(16)}.{FORMATS[fmt]}"
     config.upload_dir.mkdir(parents=True, exist_ok=True)
     (config.upload_dir / name).write_bytes(data)
@@ -48,6 +51,29 @@ def save_image(db: Session, upload: UploadFile, alt: str = "") -> MediaFile:
     db.add(media)
     db.flush()
     return media
+
+
+def _strip_metadata(data: bytes, fmt: str) -> bytes:
+    """Bỏ EXIF/GPS/XMP/chú thích. Ảnh không có metadata giữ nguyên từng byte, không nén lại."""
+    with Image.open(io.BytesIO(data)) as img:
+        exif = img.getexif()
+        info = img.info
+        has_text = fmt == "PNG" and any(isinstance(v, (str, bytes)) and k != "icc_profile" for k, v in info.items())
+        if not exif and not has_text and not any(k in info for k in ("exif", "xmp", "XML:com.adobe.xmp", "comment")):
+            return data
+        animated = getattr(img, "is_animated", False)
+        turned = exif.get(0x0112, 1) not in (0, 1) and not animated
+        out = ImageOps.exif_transpose(img) if turned else img  # giữ đúng chiều trước khi bỏ thẻ Orientation
+        kwargs: dict = {"icc_profile": info["icc_profile"]} if info.get("icc_profile") else {}
+        if fmt == "JPEG":
+            kwargs |= {"quality": 92} if turned else {"quality": "keep"}
+        elif fmt == "WEBP":
+            kwargs |= {"quality": 90}
+        if animated:
+            kwargs["save_all"] = True
+        buf = io.BytesIO()
+        out.save(buf, format=fmt, **kwargs)
+        return buf.getvalue()
 
 
 def is_library_path(db: Session, path: str) -> bool:

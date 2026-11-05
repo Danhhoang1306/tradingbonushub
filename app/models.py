@@ -11,6 +11,7 @@ KIND_LABELS = {"forex": "Forex", "crypto": "Crypto"}
 POST_CATEGORIES = ("Hướng dẫn", "Kiến thức", "So sánh", "Tin sàn")
 POST_STATUSES = ("draft", "published")
 PLACEMENTS = ("after-bonus", "before-blog", "rail-left", "rail-right")
+CAMPAIGN_RESUMABLE = ("draft", "partial")  # còn mở lại, gửi tiếp, xóa được
 SUBSCRIBER_STATUSES = ("pending", "confirmed", "unsubscribed")
 ROLES = ("admin", "editor")
 
@@ -123,6 +124,8 @@ class Subscriber(TimestampMixin, Base):
     status: Mapped[str] = mapped_column(String(20), default="pending", nullable=False)
     token: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     confirmed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    confirm_sent_at: Mapped[datetime | None] = mapped_column(DateTime)  # đầu cửa sổ đếm email xác nhận
+    confirm_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
 
 
 class ContactMessage(TimestampMixin, Base):
@@ -142,6 +145,7 @@ class Campaign(TimestampMixin, Base):
     status: Mapped[str] = mapped_column(String(20), default="draft", nullable=False)
     sent_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     sent_at: Mapped[datetime | None] = mapped_column(DateTime)
+    sent_to: Mapped[list] = mapped_column(JSON, default=list, server_default="[]", nullable=False)  # email đã nhận, để gửi tiếp phần còn lại
 
 
 class Setting(TimestampMixin, Base):

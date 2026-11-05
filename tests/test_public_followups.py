@@ -167,7 +167,7 @@ def test_new_default_text(client):
     assert site["cta_note"].startswith("Liên kết affiliate.") and site["ads_note"] == "CFD có rủi ro mất vốn cao."
     assert site["hero"]["card_label"] == "Nổi bật tuần này"
     assert site["contact_page"]["success_title"] == "Đã gửi"
-    assert site["system_text"]["header_cta_page"] == "Nhận tư vấn"
+    assert site["system_text"]["header_cta_page"] == "Xem bonus"
 
 
 def test_bonus_types_have_url_but_it_is_not_stored(client, admin, db):

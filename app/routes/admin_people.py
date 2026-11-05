@@ -2,15 +2,17 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, or_, select
 
-from app import content
+from app import content, queries
 from app.config import config
 from app.mailer import build, send_email, send_many
-from app.models import BONUS_TYPES, Campaign, ContactMessage, Subscriber, utcnow
+from app.models import BONUS_TYPES, CAMPAIGN_RESUMABLE, Campaign, ContactMessage, Subscriber, utcnow
 from app.routes.admin_base import Admin, admin_api, admin_get, admin_post, done, get_or_404, render_admin, subtabs
+from app.templating import FLASH_MESSAGES
 from app.utils import to_int
 
 router = APIRouter()
 
+SEND_BATCH = 20  # ghi tiến độ sau mỗi lô: server tắt giữa chừng thì gửi tiếp chỉ trùng tối đa một lô
 SUB_TABS = (("list", "Danh sách"), ("mail", "Gửi email"))
 SUB_STATUS = (("all", "Tất cả"), ("confirmed", "Đã xác nhận"), ("pending", "Chờ xác nhận"), ("unsubscribed", "Đã hủy"))
 MSG_TABS = (("all", "Tất cả"), ("unread", "Chưa đọc"))
@@ -30,9 +32,10 @@ def _valid_audience(values: list[str]) -> list[str]:
 
 
 def _draft(db, campaign_id: int) -> Campaign:
-    """Chỉ bản nháp mới mở lại/gửi được: chặn gửi trùng một chiến dịch đã gửi."""
+    """Chỉ bản nháp hoặc chiến dịch gửi dở mới mở lại/gửi/xóa được: chặn gửi trùng chiến dịch đã gửi xong."""
+    queries.release_stuck_campaigns(db)
     c = db.get(Campaign, campaign_id)
-    if c is None or c.status != "draft":
+    if c is None or c.status not in CAMPAIGN_RESUMABLE:
         raise HTTPException(404)
     return c
 
@@ -40,6 +43,7 @@ def _draft(db, campaign_id: int) -> Campaign:
 def _subs_page(a: Admin, tab: str = "list", status: str = "all", q: str = "", aud: list[str] | None = None,
                mail_form: dict | None = None, status_code=200, **extra):
     db = a.db
+    queries.release_stuck_campaigns(db)
     tab = tab if tab in dict(SUB_TABS) else "list"
     status = status if status in dict(SUB_STATUS) else "all"
     labels = content.type_labels(content.get_all(db))
@@ -58,7 +62,8 @@ def _subs_page(a: Admin, tab: str = "list", status: str = "all", q: str = "", au
     confirmed = confirmed_subscribers(db)
     campaigns = [{"id": c.id, "subject": c.subject, "audience_labels": [labels.get(i, i) for i in c.audience],
                   "status": c.status, "sent_count": c.sent_count, "sent_at": c.sent_at, "created_at": c.created_at,
-                  "edit_url": f"/admin/subscribers?tab=mail&draft={c.id}" if c.status == "draft" else None}
+                  "edit_url": f"/admin/subscribers?tab=mail&draft={c.id}" if c.status in CAMPAIGN_RESUMABLE else None,
+                  "delete_url": f"/admin/subscribers/campaigns/{c.id}/delete" if c.status in CAMPAIGN_RESUMABLE else None}
                  for c in db.scalars(select(Campaign).order_by(Campaign.created_at.desc()).limit(20))]
     return render_admin(
         a, "admin/subscribers.html", "subscribers", "Người đăng ký", status_code,
@@ -93,7 +98,14 @@ def subs_audience_count(aud: list[str] = Query([]), a: Admin = Depends(admin_api
 def subs_delete(sid: int, a: Admin = Depends(admin_post)):
     a.db.delete(get_or_404(a.db, Subscriber, sid))
     a.db.commit()
-    return done("/admin/subscribers", "deleted")
+    return done(a.back_after_delete("/admin/subscribers"), "deleted")
+
+
+@router.post("/subscribers/campaigns/{cid}/delete")
+def campaign_delete(cid: int, a: Admin = Depends(admin_post)):
+    a.db.delete(_draft(a.db, cid))
+    a.db.commit()
+    return done("/admin/subscribers?tab=mail", "deleted")
 
 
 def _mail_input(a: Admin) -> dict:
@@ -103,6 +115,7 @@ def _mail_input(a: Admin) -> dict:
         errors["subject"] = "Nhập tiêu đề email."
     if not body:
         errors["body"] = "Nhập nội dung email."
+    a.check_lengths(errors)
     return {"subject": subject, "body": body, "audience": _valid_audience(a.many("audience")),
             "draft_id": to_int(a.text("draft_id")), "errors": errors}
 
@@ -120,17 +133,37 @@ def subs_mail(a: Admin = Depends(admin_post)):
     if a.text("action") == "draft":
         a.db.commit()
         return done(f"/admin/subscribers?tab=mail&draft={campaign.id}")
-    targets = recipients(confirmed_subscribers(a.db), audience)
+    already = set(campaign.sent_to or [])  # gửi tiếp chiến dịch gửi dở: không gửi lại người đã nhận
+    targets = [s for s in recipients(confirmed_subscribers(a.db), audience) if s.email not in already]
     if not targets:
         a.db.rollback()
-        draft = f"&draft={mail['draft_id']}" if mail["draft_id"] else ""
-        return done(f"/admin/subscribers?tab=mail{draft}", "no_recipients")
+        kind, text = FLASH_MESSAGES["no_recipients"]  # render lại, không mất nội dung đang soạn
+        return _subs_page(a, "mail", mail_form=mail, status_code=400,
+                          flash={"kind": kind, "text": text, "code": "no_recipients"})
     campaign.status = "sending"  # ghi lại trước khi gửi: nếu request đứt giữa chừng vẫn thấy trong lịch sử
     a.db.commit()
-    sent = send_many([build(s.email, subject, body, f"{config.base_url}/huy-dang-ky/{s.token}") for s in targets])
-    campaign.status, campaign.sent_count, campaign.sent_at = "sent", sent, utcnow()
+    messages = [build(s.email, subject, body, f"{config.base_url}/huy-dang-ky/{s.token}") for s in targets]
+    sent = 0
+    for start in range(0, len(messages), SEND_BATCH):
+        batch = messages[start:start + SEND_BATCH]
+        ok = send_many(batch)
+        sent += ok
+        already |= {m["To"] for m in batch if getattr(m, "delivered", False)}
+        campaign.sent_to = sorted(already)
+        campaign.sent_count = len(campaign.sent_to) if len(campaign.sent_to) >= sent else sent
+        a.db.commit()  # cũng làm mới updated_at, để phân biệt đang gửi với đã chết
+        if ok < len(batch):
+            break
+    if sent == len(messages):
+        campaign.status, campaign.sent_at = "sent", utcnow()
+        a.db.commit()
+        return done("/admin/subscribers?tab=mail", "sent")
+    # Gửi hỏng: admin phải thấy, và còn gửi lại được. Không bao giờ status=sent khi còn người chưa nhận.
+    campaign.status = "partial" if campaign.sent_count else "draft"
+    if campaign.sent_count:
+        campaign.sent_at = utcnow()
     a.db.commit()
-    return done("/admin/subscribers?tab=mail", "sent")
+    return done(f"/admin/subscribers?tab=mail&draft={campaign.id}", "send_partial" if campaign.sent_count else "send_failed")
 
 
 @router.post("/subscribers/mail/test")
@@ -192,7 +225,4 @@ def messages_toggle(mid: int, a: Admin = Depends(admin_post)):
 def messages_delete(mid: int, a: Admin = Depends(admin_post)):
     a.db.delete(get_or_404(a.db, ContactMessage, mid))
     a.db.commit()
-    back = a.back("/admin/messages")
-    if back.split("?")[0] == f"/admin/messages/{mid}":  # đang mở chính tin vừa xóa: về danh sách cùng tab
-        back = "/admin/messages" + ("?" + back.split("?", 1)[1] if "?" in back else "")
-    return done(back, "deleted")
+    return done(a.back_after_delete("/admin/messages"), "deleted")

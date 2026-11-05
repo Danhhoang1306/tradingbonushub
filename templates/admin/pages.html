@@ -6,31 +6,24 @@
 {% block content %}
 {% set s = settings %}
 {% set pg = s.pages[current_tab] %}
-{{ ui.form_errors(e, ['title', 'desc', 'meta_title', 'meta_desc', 'about_image', 'method_image', 'affiliate_image']) }}
+{% set inline = ['title', 'desc', 'label', 'meta_title', 'meta_desc', 'about_image', 'method_image', 'affiliate_image', 'intro', 'topics', 'response_note', 'success_title', 'success_text', 'body_md'] %}
+{% for f in system_fields %}{% set _ = inline.append(f.key) %}{% endfor %}
+{{ ui.form_errors(e, inline) }}
 <div class="page-form-layout{% if current_tab != 'system' %} has-preview{% endif %}">
   <form id="page-form" method="post" action="{{ form.action }}" enctype="multipart/form-data">
     {{ ui.csrf() }}
     {% if current_tab == 'system' %}
-    {% set st = s.system_text %}
-    {% for heading, desc, fields in [
-      ('Nút trên thanh đầu trang', '', [('header_cta_home', 'Nút ở trang chủ', 0), ('header_cta_page', 'Nút ở trang con', 0)]),
-      ('Trang 404', 'Hiện khi đường dẫn không tồn tại.', [('not_found_title', 'Tiêu đề', 0), ('not_found_text', 'Mô tả', 2)]),
-      ('Trang lỗi 500', 'Hiện khi hệ thống gặp sự cố.', [('error_title', 'Tiêu đề', 0), ('error_text', 'Mô tả', 2)]),
-      ('Xác nhận đăng ký email', 'Trang mở từ link trong email xác nhận.', [('sub_confirmed_title', 'Tiêu đề', 0), ('sub_confirmed_text', 'Mô tả', 2)]),
-      ('Hủy đăng ký email', 'Trang mở từ link hủy trong email.', [('sub_unsubscribed_title', 'Tiêu đề', 0), ('sub_unsubscribed_text', 'Mô tả', 2)]),
-      ('Liên kết không hợp lệ', 'Khi link xác nhận hoặc hủy đã hết hạn.', [('sub_invalid_title', 'Tiêu đề', 0), ('sub_invalid_text', 'Mô tả', 2)]),
-    ] %}
     <div class="form-block">
-      <div class="form-block-title">{{ heading }}</div>
-      {% if desc %}<p class="form-block-desc">{{ desc }}</p>{% endif %}
-      {% for name, label, rows in fields %}{{ ui.field(name, label, fd.get(name, st[name]), e, rows=rows, attrs='maxlength="500"') }}{% endfor %}
+      <div class="form-block-title">Chữ hệ thống</div>
+      <p class="form-block-desc">Nút trên thanh đầu trang, trang lỗi và các trang xác nhận/hủy đăng ký email.</p>
+      {% for f in system_fields %}{{ ui.field(f.key, f.label, f.value, e, rows=2 if f.key.endswith('_text') else 0, max=500) }}{% endfor %}
     </div>
-    {% endfor %}
     {% else %}
     <div class="form-block">
       <div class="form-block-title">Đầu trang</div>
       {{ ui.field('title', 'Tiêu đề trang', fd.get('title', pg.title), e, required=true, preview='title') }}
       {{ ui.field('desc', 'Mô tả dưới tiêu đề', fd.get('desc', pg.desc), e, rows=2, preview='desc') }}
+      {% if pg.label is defined %}{{ ui.field('label', 'Nhãn breadcrumb', fd.get('label', pg.label), e, hint='Tên ngắn của trang trên đường dẫn điều hướng.') }}{% endif %}
     </div>
 
     {% if current_tab == 'gioithieu' %}
@@ -49,7 +42,7 @@
         {{ ui.field('intro', 'Lời mở đầu', fd.get('intro', c.intro), e, rows=3) }}
         {{ ui.lines_field('topics', 'Chủ đề liên hệ', fd.topics.splitlines() if 'topics' in fd else c.topics, e, hint='Mỗi dòng một chủ đề.', add_label='+ Thêm chủ đề') }}
         {{ ui.field('response_note', 'Ghi chú thời gian phản hồi', fd.get('response_note', c.response_note), e, rows=2) }}
-        {{ ui.field('success_title', 'Tiêu đề sau khi gửi', fd.get('success_title', c.success_title), e, attrs='maxlength="120"') }}
+        {{ ui.field('success_title', 'Tiêu đề sau khi gửi', fd.get('success_title', c.success_title), e) }}
         {{ ui.field('success_text', 'Thông báo sau khi gửi', fd.get('success_text', c.success_text), e, rows=2) }}
         <p class="field-hint">Email, email hợp tác và Telegram sửa ở <a href="/admin/settings?tab=general">Cài đặt › Chung</a>.</p>
       </div>

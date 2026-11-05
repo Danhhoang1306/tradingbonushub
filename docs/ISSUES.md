@@ -22,6 +22,7 @@ Editor mở `/admin/settings` nhận 403. Ẩn mục này trong sidebar khi `not
   `bonus_types[].short` (nhãn ngắn cho tab/chip vì thiết kế dùng hai bộ nhãn), `pages.terms/privacy`, `contact_page.success_text`.
 - `Campaign.status` có thêm giá trị `sending` (ghi lại trước khi gửi, đổi thành `sent` khi xong).
 - Bonus "Sắp hết hạn" = đang hiển thị và hết hạn trong ≤ 14 ngày.
+- Phase 4: thêm cột `Subscriber.confirm_sent_at`, `confirm_count`, `Campaign.sent_to` (migration 0002); `Campaign.status` thêm `partial`; bỏ `/docs` ở mọi môi trường; người đã hủy đăng ký chỉ nhận lại tối đa 1 email xác nhận mỗi 30 ngày.
 - Mô tả trang Liên hệ mặc định ("Gửi câu hỏi, báo lỗi thông tin bonus hoặc đề nghị hợp tác.") do backend đặt vì
   thiết kế không có header riêng cho trang này; admin sửa được ở Trang › Liên hệ.
 - Gửi email chiến dịch chạy đồng bộ trong request (một kết nối SMTP cho cả lô). Đủ cho danh sách nhỏ; danh sách lớn
@@ -132,10 +133,36 @@ Chi tiết trong `docs/VIEW_CONTEXT.md` (mục 4, 5).
   `footer.risk_note`). Đề nghị thêm câu affiliate vào giá trị mặc định hoặc thêm khóa riêng, vì đây là thông tin công bố cần có trên trang có link affiliate.
 
 ## [Admin FE → Backend] Từ code review đợt 3 (05/11)
-13. **Cài đặt › Tài khoản, lỗi 400 ở dòng sửa**: `user_edit` không trả lại vai trò vừa chọn, ô vai trò quay về giá trị đã lưu. Sửa mật khẩu rồi
+13. **[ĐÃ XỬ LÝ 05/11]** **Cài đặt › Tài khoản, lỗi 400 ở dòng sửa**: `user_edit` không trả lại vai trò vừa chọn, ô vai trò quay về giá trị đã lưu. Sửa mật khẩu rồi
     lưu lại thì đổi vai trò bị mất dù báo "Đã lưu". Đề nghị trả `form.data.edit_role`; FE sẽ đọc khi `form.errors_user_id == u.id`.
-14. **`back` khi xóa**: FE đã gửi ở mọi form xóa, nhưng chỉ `messages_delete` dùng. `subs_delete`, `media_delete`, xóa bonus/sàn/banner/bài viết vẫn về
+14. **[ĐÃ XỬ LÝ 05/11]** **`back` khi xóa**: FE đã gửi ở mọi form xóa, nhưng chỉ `messages_delete` dùng. `subs_delete`, `media_delete`, xóa bonus/sàn/banner/bài viết vẫn về
     URL cố định, mất lọc và tìm kiếm. Đề nghị đổi sang `a.back(...)`.
-15. **Gửi 0 người**: FE đã khóa nút khi có JS. Khi tắt JS nhánh `no_recipients` vẫn redirect và mất nội dung đang soạn; đề nghị render lại form.
-16. **Chữ hệ thống**: danh sách 12 khóa và nhãn đang viết trong `pages.html`, trùng `DEFAULTS["system_text"]`. Thêm khóa mới phải sửa cả template.
+15. **[ĐÃ XỬ LÝ 05/11]** **Gửi 0 người**: FE đã khóa nút khi có JS. Khi tắt JS nhánh `no_recipients` vẫn redirect và mất nội dung đang soạn; đề nghị render lại form.
+16. **[ĐÃ XỬ LÝ 05/11: `system_fields`]** **[FE: khóa chưa có nhãn tự hiện ở khối "Chữ khác", không còn bị bỏ sót]** **Chữ hệ thống**: danh sách 12 khóa và nhãn đang viết trong `pages.html`, trùng `DEFAULTS["system_text"]`. Thêm khóa mới phải sửa cả template.
 
+
+## [Backend → FE] Phase 4: đã xong phía backend, việc còn lại của FE (05/11)
+Chi tiết trong `docs/VIEW_CONTEXT.md`.
+
+**Public FE**
+1. `subscription.html`: khi `action_url` có giá trị, render `<form method="post" action="{{ action_url }}">` với nút
+   `site.system_text["sub_" ~ status ~ "_button"]`. **Bắt buộc: chưa làm thì khách không xác nhận/hủy được**, vì GET không còn đổi trạng thái.
+2. Form đăng ký: `flash.code == "sub_failed"` hiện cạnh form như `sub_invalid`, không hiện khối "đã đăng ký".
+3. Ẩn khối khi rỗng: `site.hero.image_path` (nền navy, xóa `static/img/hero-bg.webp`), `site.home_why.stat_value`/`stat_label`, `site.home_about.badge`.
+4. `_header.html`: nút trang con trỏ `/bonus`, chữ `site.system_text.header_cta_page`.
+5. Rail có ảnh cũng in `site.ads_note` (Nghi ngờ 6).
+6. `legal.html`: `body_html` giờ có nội dung mặc định, không còn cần câu "đang được cập nhật" (giữ cho trường hợp admin xóa hết).
+7. Lỗi Thấp của FE trong QA_REPORT: 16 (Esc menu mobile), 17 (tương phản), 18 (chuỗi dài). `site.footer.copyright` đã thay `{year}` sẵn, thay lần nữa ở template cũng vô hại.
+
+**Admin FE**
+1. Hiện `form_errors` cho mọi khóa không gắn ô: lỗi độ dài có thể ở `menu_label`, `reason_text`, `about_block_text`...
+2. `ads.html`, `overview.html`: `state` thêm `no_link`, `broker_hidden` (đã có trong `|banner_state_label`), không được tô như "Đang chạy".
+3. `subscribers.html`: `campaigns[].status` thêm `partial` ("Gửi dở"), `delete_url` có form xóa kèm csrf, `sent_count` hiện cả khi `partial`.
+4. `posts.html`: nhãn "Hẹn giờ" khi `p.scheduled`.
+5. `pages.html`: tab mới `compare`, `method`, `affiliate` (chỉ trường chung); ô `label` ở mọi tab trừ `system`; tab `system` lặp `system_fields`, bỏ danh sách khóa viết tay.
+6. `brokers.html`: `license` là ô bắt buộc (`required`), hiện lỗi `license`; thêm `maxlength` theo VIEW_CONTEXT nếu muốn báo sớm.
+7. `settings.html` tab users: đọc `form.data.edit_role` khi `form.errors_user_id == u.id`.
+8. `home.html` tab menu: gợi ý ô copyright: viết `{year}` để tự cập nhật năm.
+
+**QA**
+- Production giờ cần đủ `SECRET_KEY` (≥ 32 ký tự), `BASE_URL`, `SMTP_BACKEND`, nếu không `run.py` thoát mã 2. `/xac-nhan`, `/huy-dang-ky` phải POST. Broker cần `license`. Script `qa/` cần cập nhật.

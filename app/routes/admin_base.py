@@ -1,6 +1,7 @@
 """Nền tảng chung cho khu quản trị: xác thực, CSRF, sidebar, đọc form, trường ảnh."""
+import re
 from dataclasses import dataclass, field
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 
 from fastapi import Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
@@ -13,6 +14,9 @@ from app.db import get_db
 from app.models import AdminSession, AdminUser, Banner, Bonus, Broker, ContactMessage, MediaFile, Post, Subscriber
 from app.security import csrf_ok, is_local_path, load_session
 from app.templating import render, set_flash
+
+
+STATIC_IMAGE_RE = re.compile(r"/static/img/[\w-]+(\.[\w-]+)+")
 
 
 class LoginRequired(Exception):
@@ -28,15 +32,31 @@ class Admin:
     form: FormData | None = None
     _repeated: set[str] = field(default_factory=set)  # tên trường đã đọc dạng lặp (many/rows)
     _images: dict[str, str] = field(default_factory=dict)  # đường dẫn ảnh đã xử lý ở lần POST này
+    _too_long: dict[str, int] = field(default_factory=dict)  # trường vượt giới hạn: báo lỗi, không cắt thầm
 
     @property
     def user(self) -> AdminUser:
         return self.session.user
 
     # --- đọc form ---
+    def _limit(self, name: str, value: str, max_len: int) -> str:
+        if len(value) > max_len:
+            self._too_long[name] = max_len
+        return value
+
     def text(self, name: str, max_len: int = 255) -> str:
         v = self.form.get(name, "") if self.form is not None else ""
-        return (v if isinstance(v, str) else "").strip()[:max_len]
+        return self._limit(name, (v if isinstance(v, str) else "").strip(), max_len)
+
+    def raw(self, name: str) -> str:
+        """Giá trị nguyên văn, không bỏ khoảng trắng (mật khẩu phải khớp đúng chuỗi người dùng gõ khi đăng nhập)."""
+        v = self.form.get(name, "") if self.form is not None else ""
+        return v if isinstance(v, str) else ""
+
+    def check_lengths(self, errors: dict) -> None:
+        """Gọi trước `if errors:` ở mỗi handler lưu dữ liệu."""
+        for name, limit in self._too_long.items():
+            errors.setdefault(name, f"Tối đa {limit} ký tự.")
 
     def keep(self, name: str, current: str, max_len: int = 1000) -> str:
         """Như text() nhưng form không có trường này thì giữ giá trị cũ (không xóa nhầm khi form chưa hiện ô đó)."""
@@ -52,14 +72,14 @@ class Admin:
         self._repeated.add(name)
         if self.form is None:
             return []
-        return [v.strip()[:max_len] if isinstance(v, str) else "" for v in self.form.getlist(name)]
+        return [self._limit(name, v.strip(), max_len) if isinstance(v, str) else "" for v in self.form.getlist(name)]
 
     def lines(self, name: str) -> list[str]:
         return [x.strip() for x in self.long_text(name).splitlines() if x.strip()]
 
     def rows(self, prefix: str, fields: tuple[str, ...]) -> list[dict]:
         """Đọc các trường lặp `{prefix}_{field}` (cùng thứ tự) thành list dict, bỏ dòng trống."""
-        cols = [self.many(f"{prefix}_{f}") for f in fields]
+        cols = [self.many(f"{prefix}_{f}", 5000) for f in fields]
         n = max((len(c) for c in cols), default=0)
         out = []
         for i in range(n):
@@ -84,7 +104,7 @@ class Admin:
                 errors[name] = str(e)
                 return current
         path = self.text(name)
-        if not path or path == current or path.startswith("/static/img/") or uploads.is_library_path(self.db, path):
+        if not path or path == current or STATIC_IMAGE_RE.fullmatch(path) or uploads.is_library_path(self.db, path):
             return path
         errors[name] = "Ảnh phải chọn từ thư viện."
         return current
@@ -108,6 +128,11 @@ class Admin:
         path = back.split("?", 1)[0]
         return back if is_local_path(back) and (path == default or path.startswith(default + "/")) else default
 
+    def back_after_delete(self, default: str) -> str:
+        """Như back(), nhưng đang đứng ở trang của chính mục vừa xóa thì về danh sách (giữ tab/lọc)."""
+        path, _, query = self.back(default).partition("?")
+        return default + (f"?{query}" if query else "") if path != default else self.back(default)
+
 
 def _admin_session(request: Request, db: Session) -> AdminSession:
     sess = load_session(db, request)
@@ -128,8 +153,18 @@ def admin_api(request: Request, db: Session = Depends(get_db)) -> Admin:
     return Admin(request, db, sess)
 
 
+def _return_path_after_login(request: Request) -> str:
+    """POST hết phiên: quay lại trang đang đứng (route POST không mở được bằng GET sau khi đăng nhập)."""
+    ref = urlsplit(request.headers.get("referer", ""))
+    if ref.netloc == request.url.netloc and ref.path.startswith("/admin") and ref.path != "/admin/login":
+        return ref.path + (f"?{ref.query}" if ref.query else "")
+    return "/admin"
+
+
 async def admin_post(request: Request, db: Session = Depends(get_db)) -> Admin:
-    sess = _admin_session(request, db)
+    sess = load_session(db, request)
+    if sess is None:
+        raise LoginRequired(_return_path_after_login(request))
     form = await request.form(max_part_size=6 * 1024 * 1024)
     if not csrf_ok(sess.csrf_token, form.get("csrf_token")):
         raise HTTPException(403, "CSRF token không hợp lệ")

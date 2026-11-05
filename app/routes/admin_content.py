@@ -14,9 +14,11 @@ router = APIRouter()
 
 HOME_TABS = (("sections", "Section"), ("hero", "Hero"), ("about", "Về chúng tôi"), ("why", "Tại sao chọn"),
              ("types", "Loại bonus"), ("contact", "Liên hệ"), ("menu", "Menu & chân trang"))
-PAGE_TABS = (("bonus", "Bonus"), ("san", "Sàn"), ("tin", "Tin tức"), ("gioithieu", "Giới thiệu"), ("lienhe", "Liên hệ"),
+PAGE_TABS = (("bonus", "Bonus"), ("san", "Sàn"), ("compare", "So sánh"), ("tin", "Tin tức"), ("gioithieu", "Giới thiệu"),
+             ("method", "Cách đánh giá"), ("affiliate", "Công bố affiliate"), ("lienhe", "Liên hệ"),
              ("terms", "Điều khoản"), ("privacy", "Bảo mật"), ("system", "Chữ hệ thống"))
-PAGE_URLS = {"bonus": "/bonus", "san": "/san", "tin": "/tin-tuc", "gioithieu": "/gioi-thieu", "lienhe": "/lien-he",
+PAGE_URLS = {"bonus": "/bonus", "san": "/san", "compare": "/san/so-sanh", "method": "/gioi-thieu/cach-danh-gia",
+             "affiliate": "/gioi-thieu/affiliate", "tin": "/tin-tuc", "gioithieu": "/gioi-thieu", "lienhe": "/lien-he",
              "terms": "/dieu-khoan", "privacy": "/bao-mat", "system": "/"}
 SETTINGS_TABS = (("general", "Chung"), ("seo", "SEO"), ("social", "Mạng xã hội"), ("tracking", "Tracking"),
                  ("users", "Tài khoản quản trị"))
@@ -148,6 +150,7 @@ def home_save(tab: str, a: Admin = Depends(admin_post)):
                                            "affiliate_note": a.keep("affiliate_note", s["footer"]["affiliate_note"], 500)}
         updates["cta_note"] = a.keep("cta_note", s["cta_note"], 500)
         updates["ads_note"] = a.keep("ads_note", s["ads_note"], 500)
+    a.check_lengths(errors)
     if errors:
         return _home_page(a, tab, errors, values=a.form_data(**parsed), status_code=400)
     for k, v in updates.items():
@@ -160,10 +163,13 @@ def home_save(tab: str, a: Admin = Depends(admin_post)):
 
 def _pages_page(a: Admin, tab: str, errors: dict | None = None, values: dict | None = None, status_code=200):
     tab = _tab(tab, PAGE_TABS)
+    s = content.get_all(a.db)
     return render_admin(
         a, "admin/pages.html", "pages", "Trang", status_code,
-        subtabs=subtabs("/admin/pages", PAGE_TABS, tab), current_tab=tab, settings=content.get_all(a.db),
+        subtabs=subtabs("/admin/pages", PAGE_TABS, tab), current_tab=tab, settings=s,
         form={"action": f"/admin/pages/{tab}", "data": values or {}, "errors": errors or {}}, view_url=PAGE_URLS[tab],
+        system_fields=[{"key": k, "label": label, "value": (values or {}).get(k, s["system_text"][k])}
+                       for k, label in content.SYSTEM_TEXT_LABELS.items()],
         about_tabs=[{"id": "about", "label": "Về chúng tôi"}, {"id": "method", "label": "Cách đánh giá"},
                     {"id": "affiliate", "label": "Công bố affiliate"}],
         media_library=media_library(a.db) if tab in PAGE_IMAGE_TABS else [])
@@ -180,11 +186,15 @@ def pages_save(tab: str, a: Admin = Depends(admin_post)):
         raise HTTPException(404)
     s, errors = content.get_all(a.db), {}
     if tab == "system":  # không có tiêu đề/SEO riêng, chỉ các chữ hệ thống
-        content.put(a.db, "system_text", {k: a.keep(k, v, 500) for k, v in s["system_text"].items()})
+        system_text = {k: a.keep(k, v, 500) for k, v in s["system_text"].items()}
+        a.check_lengths(errors)
+        if errors:
+            return _pages_page(a, tab, errors, a.form_data(), 400)
+        content.put(a.db, "system_text", system_text)
         a.db.commit()
         return done("/admin/pages?tab=system")
     pages = s["pages"]
-    pages[tab] = {"title": a.text("title"), "desc": a.text("desc", 1000), "meta_title": a.text("meta_title"),
+    pages[tab] = {"label": a.keep("label", pages[tab].get("label", ""), 120), "title": a.text("title"), "desc": a.text("desc", 1000), "meta_title": a.text("meta_title"),
                   "meta_desc": a.text("meta_desc", 500)}
     if not pages[tab]["title"]:
         errors["title"] = "Nhập tiêu đề trang."
@@ -202,6 +212,7 @@ def pages_save(tab: str, a: Admin = Depends(admin_post)):
                                    "success_text": a.text("success_text", 1000)}
     elif tab in ("terms", "privacy"):
         updates["legal"] = s["legal"] | {f"{tab}_md": a.long_text("body_md")}
+    a.check_lengths(errors)
     if errors:
         return _pages_page(a, tab, errors, a.form_data(**parsed), 400)
     for k, v in updates.items():
@@ -236,9 +247,12 @@ def media_upload(a: Admin = Depends(admin_post)):
     files = [f for f in a.form.getlist("files") if isinstance(f, UploadFile) and uploads.has_file(f)]
     if not files:
         return _media_page(a, errors={"files": "Chọn ít nhất một ảnh."}, status_code=400)
+    alt = a.text("alt")
+    if len(alt) > 255:
+        return _media_page(a, errors={"alt": "Tối đa 255 ký tự."}, status_code=400)
     for f in files:
         try:
-            uploads.save_image(a.db, f, a.text("alt"))
+            uploads.save_image(a.db, f, alt)
             a.db.commit()
         except uploads.UploadError as e:  # các ảnh trước đó đã được lưu
             return _media_page(a, errors={"files": f"{f.filename}: {e}"}, status_code=400)
@@ -248,20 +262,23 @@ def media_upload(a: Admin = Depends(admin_post)):
 @router.post("/media/{mid}/edit")
 def media_edit(mid: int, a: Admin = Depends(admin_post)):
     m = get_or_404(a.db, MediaFile, mid)
-    m.alt = a.text("alt")
+    alt = a.text("alt")
+    if len(alt) > 255:
+        return done(a.back("/admin/media"), "too_long")
+    m.alt = alt
     a.db.commit()
-    return done("/admin/media")
+    return done(a.back("/admin/media"))
 
 
 @router.post("/media/{mid}/delete")
 def media_delete(mid: int, a: Admin = Depends(admin_post)):
     m = get_or_404(a.db, MediaFile, mid)
     if uploads.is_in_use(a.db, m.path):
-        return done("/admin/media", "media_in_use")
+        return done(a.back_after_delete("/admin/media"), "media_in_use")
     uploads.delete_file(m)
     a.db.delete(m)
     a.db.commit()
-    return done("/admin/media", "deleted")
+    return done(a.back_after_delete("/admin/media"), "deleted")
 
 
 # ======================= CÀI ĐẶT =======================
@@ -291,16 +308,17 @@ def settings_get(tab: str = "general", a: Admin = Depends(admin_get)):
 @router.post("/settings/users/new")
 def user_create(a: Admin = Depends(admin_post)):
     require_admin_role(a)
-    email, password, role = a.text("email").lower(), a.text("password", 200), a.text("role")
+    email, password, role = a.text("email").lower(), a.raw("password"), a.text("role")
     errors = {}
     if not EMAIL_RE.match(email):
         errors["email"] = "Email không hợp lệ."
     elif a.db.scalar(select(AdminUser.id).where(AdminUser.email == email)):
         errors["email"] = "Email đã tồn tại."
-    if len(password) < 10:
-        errors["password"] = "Mật khẩu tối thiểu 10 ký tự."
+    if not 10 <= len(password) <= 200:
+        errors["password"] = "Mật khẩu từ 10 đến 200 ký tự."
     if role not in ROLES:
         errors["role"] = "Chọn vai trò."
+    a.check_lengths(errors)
     if errors:
         return _settings_page(a, "users", errors, a.form_data(), 400)
     a.db.add(AdminUser(email=email, password_hash=hash_password(password), role=role))
@@ -313,16 +331,16 @@ def user_edit(uid: int, a: Admin = Depends(admin_post)):
     """Đổi vai trò (`role`) và/hoặc mật khẩu (`password`, để trống = giữ nguyên)."""
     require_admin_role(a)
     u = get_or_404(a.db, AdminUser, uid)
-    role, password = a.text("role"), a.text("password", 200)
+    role, password = a.text("role"), a.raw("password")
     errors = {}
     if role and role not in ROLES:
         errors["edit_role"] = "Vai trò không hợp lệ."
     if role and role != "admin" and u.id == a.user.id:
         errors["edit_role"] = "Không thể tự hạ quyền tài khoản đang đăng nhập."
-    if password and len(password) < 10:
-        errors["edit_password"] = "Mật khẩu tối thiểu 10 ký tự."
+    if password and not 10 <= len(password) <= 200:
+        errors["edit_password"] = "Mật khẩu từ 10 đến 200 ký tự."
     if errors:  # khóa edit_* + errors_user_id: tách khỏi lỗi của form thêm tài khoản
-        return _settings_page(a, "users", errors, status_code=400, errors_user_id=u.id)
+        return _settings_page(a, "users", errors, {"edit_role": role}, 400, errors_user_id=u.id)
     if role:
         u.role = role
     if password:
@@ -383,7 +401,8 @@ def settings_save(tab: str, a: Admin = Depends(admin_post)):
             errors["social"] = "Link mạng xã hội phải là http(s): " + ", ".join(bad[:3])
         updates, parsed = {"social": social}, {"social": social}
     elif tab == "tracking":
-        updates = {"analytics_head": a.long_text("analytics_head")[:20000]}
+        updates = {"analytics_head": a.text("analytics_head", 20000)}
+    a.check_lengths(errors)
     if errors:
         return _settings_page(a, tab, errors, a.form_data(**parsed), 400)
     for k, v in updates.items():

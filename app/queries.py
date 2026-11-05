@@ -1,11 +1,12 @@
 """Truy vấn nghiệp vụ dùng chung + chuyển ORM sang dict cho template (hợp đồng trong docs/VIEW_CONTEXT.md)."""
 from datetime import date, timedelta
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, delete, func, or_, select, update
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session, joinedload
 
-from app.models import KIND_LABELS, Banner, Bonus, Broker, ClickLog, Post
+from app.models import KIND_LABELS, Banner, Bonus, Broker, Campaign, ClickLog, Post, utcnow
+from app.security import is_http_url
 from app.utils import today_vn
 
 EXPIRING_DAYS = 14
@@ -62,10 +63,17 @@ def banner_live_clause(today: date):
 
 
 def live_banner(db: Session, placement: str) -> Banner | None:
-    q = (select(Banner).outerjoin(Banner.broker).where(banner_live_clause(today_vn()), Banner.placement == placement)
-         .where(or_(Banner.broker_id.is_(None), Broker.is_active.is_(True)))
-         .order_by(Banner.updated_at.desc()).limit(1))
-    return db.scalar(q)
+    today = today_vn()
+    q = (select(Banner).where(banner_live_clause(today), Banner.placement == placement)
+         .order_by(Banner.updated_at.desc(), Banner.id.desc()))
+    return next((b for b in db.scalars(q) if banner_state(b, today) == "running"), None)
+
+
+def banner_target(b: Banner) -> str:
+    """Link đích thật của banner: target_url, không có thì link affiliate của sàn. Rỗng = banner chết."""
+    if is_http_url(b.target_url):
+        return b.target_url
+    return b.broker.affiliate_url if b.broker and is_http_url(b.broker.affiliate_url) else ""
 
 
 def banner_state(b: Banner, today: date | None = None) -> str:
@@ -76,6 +84,10 @@ def banner_state(b: Banner, today: date | None = None) -> str:
         return "scheduled"
     if b.end_date and b.end_date < today:
         return "ended"
+    if b.broker and not b.broker.is_active:
+        return "broker_hidden"
+    if not banner_target(b):
+        return "no_link"
     return "running"
 
 
@@ -84,6 +96,33 @@ def log_click(db: Session, kind: str, ref_id: int) -> None:
     stmt = stmt.on_conflict_do_update(index_elements=["kind", "ref_id", "day"],
                                       set_={"count": ClickLog.count + 1, "updated_at": func.current_timestamp()})
     db.execute(stmt)
+
+
+def bump(db: Session, model, row_id: int, column: str) -> None:
+    """Cộng lượt xem/click, giữ nguyên updated_at (lastmod sitemap, thứ tự banner không đổi vì một lượt xem)."""
+    db.execute(update(model).where(model.id == row_id)
+               .values({column: getattr(model, column) + 1, "updated_at": model.updated_at}))
+
+
+def delete_clicks(db: Session, kind: str, ref_id: int) -> None:
+    """SQLite dùng lại id: phải xóa theo, nếu không sàn/banner mới thừa hưởng click của bản đã xóa."""
+    db.execute(delete(ClickLog).where(ClickLog.kind == kind, ClickLog.ref_id == ref_id))
+
+
+SENDING_STALE_MINUTES = 15  # mỗi lô email đều ghi lại tiến độ, nên im lặng lâu hơn mức này là server đã tắt giữa chừng
+
+
+def release_stuck_campaigns(db: Session, stale_minutes: int = SENDING_STALE_MINUTES) -> int:
+    """Chiến dịch kẹt `sending` trở lại trạng thái mở được: có người đã nhận thì `partial`, chưa có thì `draft`.
+    stale_minutes=0 dùng lúc khởi động: app chạy một process nên mọi `sending` khi đó đều đã chết."""
+    cutoff = utcnow() - timedelta(minutes=stale_minutes)
+    stuck = db.scalars(select(Campaign).where(Campaign.status == "sending", Campaign.updated_at <= cutoff)).all()
+    for c in stuck:
+        c.sent_count = len(c.sent_to or [])
+        c.status = "partial" if c.sent_count else "draft"
+    if stuck:
+        db.commit()
+    return len(stuck)
 
 
 def daily_clicks(db: Session, days: int = 30, kind: str | None = None) -> list[dict]:
@@ -97,9 +136,13 @@ def daily_clicks(db: Session, days: int = 30, kind: str | None = None) -> list[d
     return [d | {"percent": round(d["clicks"] / peak * 100)} for d in out]  # percent: chiều cao cột so với ngày cao nhất
 
 
+def post_public_clause():
+    """Đã đăng và tới ngày đăng (ngày tương lai = hẹn giờ)."""
+    return and_(Post.status == "published", or_(Post.published_at.is_(None), Post.published_at <= utcnow()))
+
+
 def published_posts_query():
-    return (select(Post).where(Post.status == "published")
-            .order_by(Post.published_at.desc(), Post.id.desc()))
+    return select(Post).where(post_public_clause()).order_by(Post.published_at.desc(), Post.id.desc())
 
 
 # ---------- ORM -> dict ----------

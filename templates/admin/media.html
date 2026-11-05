@@ -36,7 +36,7 @@
         <div class="media-meta"><span>{{ m.width }}×{{ m.height }} · {{ ui.size(m.size) }}</span><span>{{ m.created_at|date_vn }}</span></div>
         <form class="media-alt" method="post" action="{{ m.edit_url }}">
           {{ ui.csrf() }}
-          <input type="text" name="alt" value="{{ m.alt }}" placeholder="Mô tả ảnh (alt)" aria-label="Mô tả ảnh">
+          <input type="text" name="alt" value="{{ m.alt }}" maxlength="255" placeholder="Mô tả ảnh (alt)" aria-label="Mô tả ảnh">
           <button type="submit" class="btn-sm">Lưu</button>
         </form>
         <div class="media-actions">

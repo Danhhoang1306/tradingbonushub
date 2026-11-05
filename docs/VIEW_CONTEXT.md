@@ -55,6 +55,10 @@ public hiện trong khối form tương ứng dựa vào `flash.code`.
 | `sub_ok` | success | Kiểm tra hộp thư để xác nhận email. | trang có form đăng ký (sau POST /api/subscribe) |
 | `sub_invalid` | error | Vui lòng nhập email hợp lệ. | như trên |
 | `sub_rate` | error | Bạn thao tác quá nhanh, vui lòng thử lại sau ít phút. | như trên |
+| `sub_failed` | error | Chưa gửi được email xác nhận. Vui lòng thử lại sau. | như trên |
+| `send_failed` | error | Không gửi được email nào... | admin Gửi email, chiến dịch vẫn là nháp |
+| `send_partial` | error | Mới gửi được một phần... | admin Gửi email, `campaigns[].status = partial` |
+| `too_long` | error | Nội dung quá dài. | admin Sàn › Link affiliate, Thư viện ảnh (sửa alt) |
 | `contact_ok` | success | Cảm ơn bạn. Chúng tôi sẽ trả lời qua email. | `/lien-he` |
 
 Trang chủ: nếu `flash.code == "sub_ok"` thì hiện khối “đã đăng ký” (`site.home_contact.success_title` /
@@ -138,9 +142,9 @@ Dạng dùng: `form.data.menu if 'menu' in form.data else settings.menu`.
 | Biến | Kiểu | Ghi chú |
 |---|---|---|
 | `site` | dict | Toàn bộ nội dung sửa được (mục 2.1) + `site.type_labels` (dict id→nhãn ngắn) + `site.year` (int) |
-| `page` | `{"key": str\|None, "title": str, "desc": str}` | Tiêu đề + mô tả đầu trang (navy header của trang con) |
-| `meta` | `{"title", "description", "keywords", "canonical", "og_image", "noindex": bool}` | Đặt vào `<head>`. `og_image` là URL tuyệt đối hoặc `""` (ẩn thẻ). `canonical` giữ tham số đổi nội dung (đã chuẩn hóa): `/bonus?type=`, `/san?kind=`, `/san/{slug}?tab=` (trừ overview), `/tin-tuc?cat=&page=` (trừ trang 1). Bỏ `sort` và `ids` |
-| `crumbs` | `list[{"label", "url"}]` | Breadcrumb, phần tử đầu là “Trang chủ” |
+| `page` | `{"key": str\|None, "title": str, "desc": str, "label": str}` | Tiêu đề + mô tả đầu trang (navy header của trang con) |
+| `meta` | `{"title", "description", "keywords", "canonical", "og_image", "noindex": bool}` | Đặt vào `<head>`. Trang sàn, bài viết có SEO riêng, không dùng SEO chung của mục. `og_image` là URL tuyệt đối hoặc `""` (ẩn thẻ). `canonical` giữ tham số đổi nội dung (đã chuẩn hóa): `/bonus?type=`, `/san?kind=`, `/san/{slug}?tab=` (trừ overview), `/tin-tuc?cat=&page=` (trừ trang 1). Bỏ `sort` và `ids` |
+| `crumbs` | `list[{"label", "url"}]` | Breadcrumb, phần tử đầu là “Trang chủ”; nhãn lấy từ `site.pages[...].label`, admin sửa được |
 | `current_path` | str | Để tô menu đang chọn (so với `site.menu[i].url`) |
 | `flash` | xem 0.1 | |
 
@@ -158,16 +162,16 @@ Google Fonts Be Vietnam Pro, và cuối `<head>`: `{{ site.analytics_head|safe }
 | `branding` | `{logo_path, favicon_path, og_image}` | header/footer logo, favicon |
 | `cta_note` | str (rỗng → ẩn) | dòng nhỏ dưới nút "Mở tài khoản": công bố affiliate + cảnh báo rủi ro. **Bắt buộc in ở mọi nút mở tài khoản** |
 | `ads_note` | str (rỗng → ẩn) | dòng nhỏ dưới nút trong quảng cáo dọc (rail) |
-| `system_text` | `{header_cta_home, header_cta_page, not_found_title, not_found_text, error_title, error_text, sub_confirmed_title, sub_confirmed_text, sub_unsubscribed_title, sub_unsubscribed_text, sub_invalid_title, sub_invalid_text}` | nút header, chữ trang 404/500 và trang kết quả đăng ký. Các `*_title` đã nằm sẵn trong `page.title` |
+| `system_text` | `{header_cta_home, header_cta_page, not_found_title, not_found_text, error_title, error_text, sub_confirmed_*, sub_unsubscribed_*, sub_invalid_* (title, text), sub_ask_confirm_* , sub_ask_unsubscribe_* (title, text, button)}` | nút header (cả hai trỏ `/bonus`), chữ trang 404/500 và trang đăng ký. Các `*_title` đã nằm sẵn trong `page.title` |
 | `social` | `list[{label, url}]` (url http(s)) | footer (rỗng → ẩn) |
 | `analytics_head` | str (HTML) | cuối `<head>`, `\|safe` |
 | `menu` | `list[{label, url}]` | menu header |
-| `footer` | `{about_text, columns: list[{title, links: list[{label, url}]}], risk_note, copyright, affiliate_note}` | footer. `affiliate_note` in cạnh `copyright` ở footer trang con (rỗng → ẩn). `columns` mặc định đã có `/dieu-khoan`, `/bao-mat` |
-| `hero` | `{eyebrow, headline, sub, cta, image_path, card_label}` | hero trang chủ (`image_path` mặc định `/static/img/hero-bg.webp`; `card_label` = nhãn thẻ "Nổi bật tuần này") |
+| `footer` | `{about_text, columns: list[{title, links: list[{label, url}]}], risk_note, copyright, affiliate_note}` | footer. `copyright` ở `site` đã thay `{year}` bằng năm hiện tại (trong `settings` phía admin vẫn là mẫu `{year}`). `affiliate_note` in cạnh `copyright` ở footer trang con (rỗng → ẩn). `columns` mặc định đã có `/dieu-khoan`, `/bao-mat` |
+| `hero` | `{eyebrow, headline, sub, cta, image_path, card_label}` | hero trang chủ (`image_path` mặc định rỗng → nền navy; `card_label` = nhãn thẻ "Nổi bật tuần này") |
 | `sections` | `list[{id, label, on}]` | admin; public dùng `home_sections` |
-| `home_about` | `{eyebrow, title, text, points: list[{title,text}], badge, count_label, images: [str,str,str]}` | section Về chúng tôi |
+| `home_about` | `{eyebrow, title, text, points: list[{title,text}], badge, count_label, images: [str,str,str]}` | section Về chúng tôi. `badge` mặc định rỗng → ẩn |
 | `home_bonus` | `{eyebrow, title}` | tiêu đề section Bonus mới nhất |
-| `home_why` | `{eyebrow, title, text, stat_value, stat_label, reasons: list[{title,text}], images: [str,str]}` | Tại sao chọn (số thứ tự `01.` FE tự in theo `loop.index`) |
+| `home_why` | `{eyebrow, title, text, stat_value, stat_label, reasons: list[{title,text}], images: [str,str]}` | Tại sao chọn. `stat_value`, `stat_label` mặc định rỗng → ẩn khối số (số thứ tự `01.` FE tự in theo `loop.index`) |
 | `home_types` | `{eyebrow, title, image}` | Loại bonus |
 | `home_compare` | `{eyebrow, title}` | So sánh 3 sàn |
 | `home_contact` | `{eyebrow, title, text, image, success_title, success_text}` | form đăng ký trang chủ |
@@ -175,8 +179,8 @@ Google Fonts Be Vietnam Pro, và cuối `<head>`: `{{ site.analytics_head|safe }
 | `bonus_types` | `list[{id, short, label, desc, points: list[str], url}]` – luôn đủ 5 theo thứ tự `nodep, deposit, cashback, contest, crypto` | section Loại bonus, chip đăng ký. `short` = nhãn ngắn (tab/chip), `label` = nhãn dài, `url` = `/bonus?type=<id>` (chỉ có ở `site`, không có ở `settings` phía admin) |
 | `about_blocks` | `{about|method|affiliate: {image: str, blocks: list[{title,text}]}}` | /gioi-thieu (đã chuyển thành `about_blocks` ở context trang) |
 | `contact_page` | `{intro, topics: list[str], response_note, success_title, success_text}` | /lien-he |
-| `pages` | `{bonus|san|tin|gioithieu|lienhe|terms|privacy: {title, desc, meta_title, meta_desc}}` (có thêm khóa `system` chỉ để admin dùng) | đã đưa vào `page`/`meta` |
-| `legal` | `{terms_md, privacy_md}` | đã chuyển thành `body_html` |
+| `pages` | `{bonus|san|compare|tin|gioithieu|method|affiliate|lienhe|terms|privacy: {label, title, desc, meta_title, meta_desc}}` (có thêm khóa `system` chỉ để admin dùng) | đã đưa vào `page`/`meta`/`crumbs`. `/san/so-sanh` dùng `compare`, hai trang con Giới thiệu dùng `method`, `affiliate` |
+| `legal` | `{terms_md, privacy_md}` – có nội dung mặc định | đã chuyển thành `body_html` |
 
 ### 2.2 Dict dùng chung
 
@@ -258,7 +262,8 @@ Form đăng ký (section `signup`, nên đặt `id="dang-ky"`):
   name="website" (honeypot ẩn), name="next" (hidden, value="{{ current_path }}")
 ```
 Sau POST luôn redirect 303 về `next#dang-ky` kèm flash `sub_ok|sub_invalid|sub_rate`.
-Hành vi: email mới → gửi mail xác nhận; đã xác nhận → không gửi lại (vẫn báo `sub_ok`).
+Hành vi: email mới → gửi mail xác nhận; đã xác nhận → không gửi lại (vẫn báo `sub_ok`); đang chờ → gửi lại cùng link, tối đa
+3 email/24 giờ cho một địa chỉ; đã hủy → tối đa 1 email/30 ngày. Vượt giới hạn vẫn báo `sub_ok`. SMTP lỗi → `sub_failed`.
 
 ### `GET /bonus?type=&sort=` → `public/bonus_list.html`
 `type ∈ nodep|deposit|cashback|contest|crypto` (khác → all), `sort ∈ new|value|expiry` (khác → new).
@@ -330,10 +335,13 @@ POST thành công → 303 `/lien-he` + flash. Lỗi → 400 (hoặc 429 khi gử
 | `body_html` | str – HTML đã lọc (`|safe`); rỗng → “Nội dung đang được cập nhật.” |
 `page.title` = tiêu đề trang (admin sửa được).
 
-### `GET /xac-nhan/{token}`, `GET /huy-dang-ky/{token}` → `public/subscription.html`
-| `status` | `"confirmed"` (200) / `"unsubscribed"` (200) / `"invalid"` (404) |
+### `/xac-nhan/{token}`, `/huy-dang-ky/{token}` → `public/subscription.html`
+GET không đổi trạng thái (máy quét link trong email chỉ gọi GET): hiện trang có nút. POST mới xác nhận/hủy, không cần CSRF.
+Email có `List-Unsubscribe-Post`, nên dịch vụ email có thể POST thẳng vào link hủy.
+| `status` | GET: `"ask_confirm"` / `"ask_unsubscribe"` (khi còn việc phải làm) hoặc `"confirmed"` / `"unsubscribed"` / `"invalid"` (404). POST: `"confirmed"` / `"unsubscribed"` / `"invalid"` (404) |
+| `action_url` | str\|None – có ở hai trạng thái `ask_*`: `<form method="post" action="{{ action_url }}"><button>{{ site.system_text["sub_" ~ status ~ "_button"] }}</button></form>` |
 `page.title` đã đặt sẵn từ `site.system_text.sub_<status>_title`, `meta.noindex = True`.
-Câu mô tả: `site.system_text.sub_confirmed_text` / `sub_unsubscribed_text` / `sub_invalid_text`.
+Câu mô tả: `site.system_text["sub_" ~ status ~ "_text"]`.
 
 ### Trang lỗi → `public/404.html`, `public/500.html`
 Context chung (`site`, `page.title`, `meta.noindex = True`). Câu mô tả: `site.system_text.not_found_text` / `error_text`.
@@ -406,7 +414,7 @@ Form: `POST /admin/login` – `email`, `password`, `csrf_token`, `next`. Không 
 | `click_total` | int |
 | `top_brokers` | `list[{"id","name","clicks"}]` (≤ 5, click tích lũy) |
 | `unread_messages` | int |
-| `banners` | `list[{"id","name","placement","state","views","clicks","edit_url"}]` – tối đa 5, nhiều click nhất trước, số tích lũy từ DB. `placement\|placement_label`, `state\|banner_state_label`, CTR = `ctr(b.clicks, b.views)`. Rỗng → ẩn thẻ. View của rail chỉ tăng qua beacon |
+| `banners` | `list[{"id","name","placement","state","views","clicks","edit_url"}]` – `state` có thêm `no_link`, `broker_hidden` (xem Quảng cáo); tối đa 5, nhiều click nhất trước, số tích lũy từ DB. `placement\|placement_label`, `state\|banner_state_label`, CTR = `ctr(b.clicks, b.views)`. Rỗng → ẩn thẻ. View của rail chỉ tăng qua beacon |
 
 ### `/admin/bonus?tab=all|on|off|exp&type=&q=` → `admin/bonus.html`
 | `subtabs` | Tất cả / Đang hiển thị / Đã ẩn / Sắp hết hạn |
@@ -439,11 +447,13 @@ tài khoản: các trường lặp cùng thứ tự `account_name`, `account_min
 nạp/rút: `payment_method`, `payment_deposit`, `payment_withdraw`, `payment_time` (lặp như trên),
 `in_compare`, `featured`, `is_active` (checkbox value=1).
 `drawer.data.pros/cons` là `list[str]` (in vào textarea bằng `|join('\n')`), `accounts`/`payment_methods` là list dict
-như mục 2.2. Lỗi có thể ở: `name, slug, kind, affiliate_url, in_compare, logo_path`.
+như mục 2.2. Lỗi có thể ở: `name, slug, license, kind, affiliate_url, in_compare, logo_path`, và bất kỳ trường nào vượt độ dài.
+`license` bắt buộc. Slug `so-sanh` bị cấm. Độ dài tối đa: `name, slug` 120; `mono` 2; `tagline, license, platforms` 255;
+`min_deposit, leverage, spread` 60; `withdrawal` 120; `founded` 20; `affiliate_url` 1000.
 
 ### `/admin/ads?tab=banner|stats` → `admin/ads.html`
 | `subtabs` | Banner / Thống kê |
-| `banners` | `list[{"id","name","image_path","placement","target_url","broker": {"id","name"}|None,"start_date": date|None,"end_date": date|None,"is_active","state","views","clicks","edit_url","toggle_url","delete_url"}]` – `state|banner_state_label`, CTR = `ctr(b.clicks, b.views)` |
+| `banners` | `list[{"id","name","image_path","placement","target_url","broker": {"id","name"}|None,"start_date": date|None,"end_date": date|None,"is_active","state","views","clicks","edit_url","toggle_url","delete_url"}]` – `state|banner_state_label`, CTR = `ctr(b.clicks, b.views)`. `state`: `running`, `paused`, `scheduled`, `ended`, `no_link` (không có link đích, không hiện ở site), `broker_hidden` (sàn đang ẩn) |
 | `totals` | `{"views", "clicks"}` |
 | `ad_click_days` | như `click_days` nhưng chỉ click quảng cáo |
 | `broker_options`, `placement_options` (`list[{"id","label"}]`) | |
@@ -453,12 +463,12 @@ affiliate của sàn), `image_path` + `image_path_file`, `start_date`, `end_date
 Lỗi: `name, broker_id, placement, target_url, start_date, end_date, image_path`.
 
 ### `/admin/posts?tab=all|pub|draft&q=` → `admin/posts.html`
-| `posts` | `list[Post + {"status","show_home","view_url": str|None,"edit_url","toggle_url","delete_url"}]` |
+| `posts` | `list[Post + {"status","show_home","scheduled": bool,"view_url": str|None,"edit_url","toggle_url","delete_url"}]` – `scheduled`: đã đăng, ngày tương lai, chưa hiện ở site (hiện nhãn "Hẹn giờ") |
 | `category_options` | `list[str]` |
 | `q`, `current_tab`, `add_url`, `add_label`, `drawer`, `media_library` (khi drawer mở) | |
 Công tắc “Trang chủ” = `POST toggle_url` (bật/tắt `show_home`).
 Form drawer: `title`*, `slug`, `category`, `excerpt` (textarea), `body_md` (textarea Markdown), `cover_path` + `cover_path_file`,
-`status` (`draft`|`published`), `published_at` (`type=date`; trống + đăng → lấy giờ hiện tại), `show_home`.
+`status` (`draft`|`published`), `published_at` (`type=date`; trống + đăng → đăng ngay; ngày tương lai → chỉ hiện từ 00:00 giờ VN ngày đó), `show_home`.
 Số phút đọc tự tính. Lỗi: `title, slug, category, status, published_at, cover_path`.
 
 ### `/admin/home?tab=sections|hero|about|why|types|contact|menu` → `admin/home.html` (Nội dung trang chủ)
@@ -483,18 +493,19 @@ Mọi form tab là `POST {{ form.action }}` + csrf + `enctype="multipart/form-da
   `footer_col_title` + `footer_col_links` (textarea, mỗi dòng `Nhãn | /url`), lặp theo số cột.
   Link hợp lệ: `/đường-dẫn` (không khoảng trắng), `http(s)://`, `mailto:`, `#neo`. Lỗi: `menu`, `footer_col_links`.
 
-### `/admin/pages?tab=bonus|san|tin|gioithieu|lienhe|terms|privacy|system` → `admin/pages.html` (Trang)
+### `/admin/pages?tab=bonus|san|compare|tin|gioithieu|method|affiliate|lienhe|terms|privacy|system` → `admin/pages.html` (Trang)
 | `settings` | dict = `site` |
 | `form` | `{"action": "/admin/pages/<tab>", "data": dict (xem 0.5), "errors": dict}` |
 | `view_url` | URL public của trang |
 | `about_tabs` | `list[{"id","label"}]` – 3 khối của trang Giới thiệu |
 | `media_library` | chỉ tab `gioithieu`; tab khác là `[]` |
-Trường chung: `title`*, `desc`, `meta_title`, `meta_desc` (giá trị hiện tại: `settings.pages[current_tab]`).
+Trường chung: `label` (nhãn breadcrumb), `title`*, `desc`, `meta_title`, `meta_desc` (giá trị hiện tại: `settings.pages[current_tab]`).
 Thêm theo tab:
 - **gioithieu**: với mỗi `t` trong `about_tabs`: `<t>_image` (+ `_file`), khối lặp `<t>_block_title` + `<t>_block_text`
   (hiện tại: `settings.about_blocks[t]`).
 - **lienhe**: `intro`, `topics` (textarea, mỗi dòng 1 chủ đề), `response_note`, `success_title`, `success_text` (`settings.contact_page`).
-- **system** (“Chữ hệ thống”): **không** có 4 trường chung; `POST /admin/pages/system` nhận đúng các khóa của `settings.system_text`.
+- **system** (“Chữ hệ thống”): **không** có trường chung; lặp `system_fields` (`list[{"key","label","value"}]`, có sẵn ở context, thêm khóa mới
+  không phải sửa template), mỗi ô `name="{{ f.key }}"`; `POST /admin/pages/system`.
   Trường nào không gửi thì giữ nguyên. `view_url` = `/`.
 
 Các trường mới `card_label`, `affiliate_note`, `cta_note`, `ads_note`, `success_title` và tab `system` cũng giữ giá trị cũ nếu form
@@ -518,11 +529,15 @@ Xóa: `POST delete_url` (bị chặn khi `in_use`, flash `media_in_use` – nên
 | `audience_count` | int – số người nhận theo lựa chọn hiện tại (đổi lựa chọn: `audience_count_url`, hoặc GET `?tab=mail&aud=deposit&aud=cashback`) |
 | `audience_count_url` | `/admin/subscribers/audience-count` – route JSON, xem bên dưới |
 | `mail_form` | `{"action": "/admin/subscribers/mail", "test_action": "/admin/subscribers/mail/test", "subject", "body", "audience": list[str], "draft_id": int|None, "errors": dict}` |
-| `campaigns` | `list[{"id","subject","audience_labels","status": "draft"|"sending"|"sent","sent_count","sent_at","created_at","edit_url": str|None}]` (20 gần nhất). `edit_url` chỉ có ở bản nháp |
+| `campaigns` | `list[{"id","subject","audience_labels","status": "draft"|"sending"|"partial"|"sent","sent_count","sent_at","created_at","edit_url": str|None,"delete_url": str|None}]` (20 gần nhất). `edit_url`, `delete_url` (POST, csrf) chỉ có ở `draft`, `partial` |
 Gửi: `POST mail_form.action` – `subject`*, `body`* (văn bản thuần), `audience` (checkbox lặp; trống = tất cả),
 `draft_id` (hidden, giá trị `mail_form.draft_id`, rỗng khi soạn mới), `action` = `send` | `draft` (hai nút submit cùng name).
 Chỉ gửi người **đã xác nhận**; mỗi email tự kèm link hủy.
 Lưu nháp → 303 về `?tab=mail&draft=<id>` (lưu tiếp sẽ cập nhật đúng bản nháp đó). Xóa người đăng ký: `POST delete_url`.
+
+**SMTP lỗi**: gửi hỏng hết → chiến dịch về `draft`, flash `send_failed`, redirect về form nháp. Gửi được một phần → `partial`,
+flash `send_partial`, gửi lại chỉ tới người chưa nhận. `sent` nghĩa là mọi người đã nhận. Không có người nhận → 400, giữ chữ đang soạn, flash `no_recipients`.
+Chiến dịch kẹt `sending` (server tắt giữa lúc gửi) tự về `partial`/`draft` khi khởi động lại hoặc sau 15 phút không có tiến độ. Tiến độ ghi theo lô 20 email, nên gửi tiếp có thể trùng tối đa một lô.
 
 **Mở lại bản nháp**: `GET /admin/subscribers?tab=mail&draft=<id>` (= `c.edit_url`) nạp nháp vào `mail_form`. Campaign không
 phải nháp → 404; POST `draft_id` của campaign đã gửi cũng 404, nên không gửi trùng được.
@@ -559,17 +574,24 @@ Trường:
   sửa `POST u.edit_url` – `role` và/hoặc `password` (trống = giữ); khóa/mở `POST u.toggle_url`; xóa `POST u.delete_url`.
   Với `is_self`: ẩn khóa/xóa (server trả flash `self_delete`) và không cho tự hạ quyền.
   Lỗi form **thêm**: khóa `email`, `password`, `role`, `errors_user_id = None`, `form.data` giữ `email`, `role`.
-  Lỗi form **sửa**: khóa `edit_role`, `edit_password`, `errors_user_id = <id dòng lỗi>`. Mật khẩu không bao giờ trả lại.
+  Lỗi form **sửa**: khóa `edit_role`, `edit_password`, `errors_user_id = <id dòng lỗi>`, `form.data.edit_role` = vai trò vừa chọn. Mật khẩu không bao giờ trả lại.
+  Mật khẩu 10–200 ký tự, giữ nguyên khoảng trắng.
 
 ---
 
 ## 6. Ghi chú hành vi để FE không phải đọc code
 
+- Mọi form admin: nội dung vượt giới hạn **không bị cắt**, trả 400 với lỗi ở đúng khóa trường (có thể là khóa lặp như `menu_label`,
+  `reason_text`, không gắn với ô cụ thể: phải hiện ở hộp lỗi đầu form). Dòng lặp tối đa 5000 ký tự mỗi ô, trường đơn mặc định 255–1000.
+- Mọi form xóa nhận `back` như nút bật/tắt; đang đứng ở trang của mục vừa xóa thì về danh sách.
+- Phiên hết hạn khi POST: đăng nhập xong về trang đang đứng (theo Referer), không về route POST.
 - Bonus hết hạn (ngày < hôm nay giờ VN) tự biến khỏi public; sàn tắt → bonus của sàn cũng ẩn, trang sàn 404.
 - Banner chỉ hiện khi bật **và** hôm nay nằm trong [start_date, end_date] (trống = không giới hạn).
 - Banner `after-bonus`/`before-blog`: mỗi lần trang chủ render, `views` +1. Rail: `views` +1 qua beacon (mục 2.2).
   Click qua `/go/ad/{id}` → `clicks` +1.
-- Chạy local cho FE: đặt `APP_ENV=development` (mặc định là production, cần `SECRET_KEY`), `PORT=8011`/`8012`,
+- Tham số sai kiểu hoặc id quá lớn ở GET → trang 404. HEAD dùng được mọi nơi trừ `/go/*` và không đếm lượt. `/docs` không có ở môi trường nào.
+- Thân request tối đa 1MB ở public và `/admin/login`, 64MB ở admin; vượt → 413.
+- Chạy local cho FE: đặt `APP_ENV=development` (mặc định là production, cần đủ `SECRET_KEY`, `BASE_URL`, `SMTP_BACKEND`), `PORT=8011`/`8012`,
   `DATABASE_URL=sqlite:///<thư mục tạm>/fe.db`, `UPLOAD_DIR=<thư mục tạm>/up`, rồi `python run.py`.
   Tạo tài khoản: `python -m app.cli create-admin --email ban@example.test`. Không tương tác: đặt biến môi trường
   `ADMIN_PASSWORD` trước khi chạy lệnh (không có tham số dòng lệnh cho mật khẩu).

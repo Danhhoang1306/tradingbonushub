@@ -88,7 +88,7 @@ def test_bonus_tabs_and_filters(admin, db):
 
 def test_broker_crud_with_lists(admin, db):
     r = admin.post("/admin/brokers/new", {
-        "name": "Sàn Thử Nghiệm", "kind": "crypto", "affiliate_url": "https://example.com/a", "is_active": "1",
+        "name": "Sàn Thử Nghiệm", "kind": "crypto", "license": "FSC", "affiliate_url": "https://example.com/a", "is_active": "1",
         "pros": "Ưu 1\n\nƯu 2", "cons": "Nhược 1",
         "account_name": ["Standard", "", "Pro"], "account_min_deposit": ["$10", "", "$200"],
         "account_spread": ["1.0", "", "0.1"], "account_commission": ["0", "", "$3"],
@@ -105,10 +105,10 @@ def test_broker_crud_with_lists(admin, db):
 
 def test_broker_validation(admin, db):
     make_broker(db, "Sàn A")
-    r = admin.post("/admin/brokers/new", {"name": "Sàn A", "kind": "forex", "affiliate_url": "javascript:alert(1)"})
+    r = admin.post("/admin/brokers/new", {"name": "Sàn A", "kind": "forex", "license": "FSC", "affiliate_url": "javascript:alert(1)"})
     assert r.status_code == 400
     assert {"slug", "affiliate_url"} <= set(errors_of(r))
-    r = admin.post("/admin/brokers/new", {"name": "Sàn B", "kind": "forex", "affiliate_url": "ftp://x.example"})
+    r = admin.post("/admin/brokers/new", {"name": "Sàn B", "kind": "forex", "license": "FSC", "affiliate_url": "ftp://x.example"})
     assert r.status_code == 400
 
 
@@ -122,7 +122,7 @@ def test_compare_limit_three(admin, db):
     db.expire_all()
     assert db.query(Broker).filter_by(in_compare=True).count() == 3
     # qua form sửa cũng bị chặn
-    r = admin.post(f"/admin/brokers/{ks[3].id}/edit", {"name": "Sàn D", "kind": "forex", "in_compare": "1"})
+    r = admin.post(f"/admin/brokers/{ks[3].id}/edit", {"name": "Sàn D", "kind": "forex", "license": "FSC", "in_compare": "1", "is_active": "1"})
     assert r.status_code == 400 and "in_compare" in errors_of(r)
     # bỏ một sàn thì thêm được
     admin.post(f"/admin/brokers/{ks[0].id}/toggle", {"field": "in_compare"})
@@ -137,7 +137,7 @@ def test_featured_max_one(admin, db):
     admin.post(f"/admin/brokers/{b.id}/toggle", {"field": "featured"})
     db.expire_all()
     assert [k.name for k in db.query(Broker).filter_by(featured=True)] == ["Sàn B"]
-    admin.post(f"/admin/brokers/{a.id}/edit", {"name": "Sàn A", "kind": "forex", "featured": "1", "is_active": "1"})
+    admin.post(f"/admin/brokers/{a.id}/edit", {"name": "Sàn A", "kind": "forex", "license": "FSC", "featured": "1", "is_active": "1"})
     db.expire_all()
     assert [k.name for k in db.query(Broker).filter_by(featured=True)] == ["Sàn A"]
 

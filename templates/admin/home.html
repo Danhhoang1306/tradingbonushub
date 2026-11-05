@@ -5,7 +5,11 @@
 {% set e = form.errors %}
 {% block content %}
 {% set s = settings %}
-{{ ui.form_errors(e, ['menu', 'footer_col_links', 'image_path', 'image', 'image_0', 'image_1', 'image_2']) }}
+{% set inline = ['menu', 'footer_col_links', 'image_path', 'image', 'image_0', 'image_1', 'image_2', 'eyebrow', 'title', 'text', 'headline', 'sub', 'cta', 'card_label',
+  'badge', 'count_label', 'stat_value', 'stat_label', 'success_title', 'success_text', 'about_text', 'risk_note', 'copyright', 'affiliate_note', 'cta_note', 'ads_note',
+  'bonus_eyebrow', 'bonus_title', 'compare_eyebrow', 'compare_title', 'blog_eyebrow', 'blog_title'] %}
+{% for bt in s.bonus_types %}{% for suffix in ('_short', '_label', '_desc', '_points') %}{% set _ = inline.append(bt.id ~ suffix) %}{% endfor %}{% endfor %}
+{{ ui.form_errors(e, inline) }}
 
 {% if current_tab == 'sections' %}
 <div class="page-form-layout">
@@ -55,7 +59,7 @@
       {{ ui.field('headline', 'Tiêu đề', fd.get('headline', h.headline), e, rows=2, preview='headline') }}
       {{ ui.field('sub', 'Mô tả', fd.get('sub', h.sub), e, rows=3, preview='sub') }}
       {{ ui.field('cta', 'Chữ trên nút', fd.get('cta', h.cta), e, preview='cta') }}
-      {{ ui.field('card_label', 'Nhãn thẻ bonus nổi bật', fd.get('card_label', h.card_label), e, hint='Hiện trên thẻ bonus của sàn nổi bật ở hero.', attrs='maxlength="120"') }}
+      {{ ui.field('card_label', 'Nhãn thẻ bonus nổi bật', fd.get('card_label', h.card_label), e, hint='Hiện trên thẻ bonus của sàn nổi bật ở hero.') }}
     </div>
     <div class="form-block">
       <div class="form-block-title">Ảnh nền hero</div>
@@ -67,7 +71,7 @@
     <div class="form-block">
       <div class="form-block-title">Nội dung</div>
       {{ ui.field('eyebrow', 'Nhãn nhỏ', fd.get('eyebrow', a.eyebrow), e, preview='eyebrow') }}
-      {{ ui.field('title', 'Tiêu đề', fd.get('title', a.title), e, rows=2, preview='title') }}
+      {{ ui.field('title', 'Tiêu đề', fd.get('title', a.title), e, rows=2, preview='title', max=1000) }}
       {{ ui.field('text', 'Đoạn mô tả', fd.get('text', a.text), e, rows=4, preview='text') }}
     </div>
     <div class="form-block">
@@ -91,7 +95,7 @@
     <div class="form-block">
       <div class="form-block-title">Nội dung</div>
       {{ ui.field('eyebrow', 'Nhãn nhỏ', fd.get('eyebrow', w.eyebrow), e, preview='eyebrow') }}
-      {{ ui.field('title', 'Tiêu đề', fd.get('title', w.title), e, rows=2, preview='title') }}
+      {{ ui.field('title', 'Tiêu đề', fd.get('title', w.title), e, rows=2, preview='title', max=1000) }}
       {{ ui.field('text', 'Đoạn mô tả', fd.get('text', w.text), e, rows=4, preview='text') }}
       <div class="fields-2 fields-1-2">
         {{ ui.field('stat_value', 'Con số', fd.get('stat_value', w.stat_value), e, preview='stat_value') }}
@@ -113,7 +117,7 @@
     <div class="form-block">
       <div class="form-block-title">Tiêu đề section</div>
       {{ ui.field('eyebrow', 'Nhãn nhỏ', fd.get('eyebrow', t.eyebrow), e, preview='eyebrow') }}
-      {{ ui.field('title', 'Tiêu đề', fd.get('title', t.title), e, rows=2, preview='title') }}
+      {{ ui.field('title', 'Tiêu đề', fd.get('title', t.title), e, rows=2, preview='title', max=1000) }}
       {{ ui.image_field('image', 'Ảnh minh họa', fd.get('image', t.image), e, ratio='4/3', preview='img') }}
     </div>
     <div class="form-block">
@@ -123,10 +127,10 @@
       <div class="type-block">
         <div class="type-block-title">{{ loop.index }}. {{ bt.label }}</div>
         <div class="fields-2">
-          {{ ui.field(bt.id ~ '_short', 'Nhãn ngắn', fd.get(bt.id ~ '_short', bt.short), e) }}
-          {{ ui.field(bt.id ~ '_label', 'Nhãn dài', fd.get(bt.id ~ '_label', bt.label), e) }}
+          {{ ui.field(bt.id ~ '_short', 'Nhãn ngắn', fd.get(bt.id ~ '_short', bt.short), e, max=60) }}
+          {{ ui.field(bt.id ~ '_label', 'Nhãn dài', fd.get(bt.id ~ '_label', bt.label), e, max=120) }}
         </div>
-        {{ ui.field(bt.id ~ '_desc', 'Mô tả', fd.get(bt.id ~ '_desc', bt.desc), e, rows=2) }}
+        {{ ui.field(bt.id ~ '_desc', 'Mô tả', fd.get(bt.id ~ '_desc', bt.desc), e, rows=2, max=1000) }}
         {{ ui.lines_field(bt.id ~ '_points', 'Lưu ý', fd[bt.id ~ '_points'].splitlines() if (bt.id ~ '_points') in fd else bt.points, e, hint='Mỗi dòng một ý.', add_label='+ Thêm lưu ý') }}
       </div>
       {% endfor %}
@@ -137,13 +141,13 @@
     <div class="form-block">
       <div class="form-block-title">Form đăng ký nhận bonus</div>
       {{ ui.field('eyebrow', 'Nhãn nhỏ', fd.get('eyebrow', c.eyebrow), e, preview='eyebrow') }}
-      {{ ui.field('title', 'Tiêu đề', fd.get('title', c.title), e, preview='title') }}
-      {{ ui.field('text', 'Mô tả', fd.get('text', c.text), e, rows=3, preview='text') }}
+      {{ ui.field('title', 'Tiêu đề', fd.get('title', c.title), e, preview='title', max=1000) }}
+      {{ ui.field('text', 'Mô tả', fd.get('text', c.text), e, rows=3, preview='text', max=1000) }}
       {{ ui.image_field('image', 'Ảnh', fd.get('image', c.image), e, ratio='4/3', preview='img') }}
     </div>
     <div class="form-block">
       <div class="form-block-title">Sau khi đăng ký</div>
-      {{ ui.field('success_title', 'Tiêu đề', fd.get('success_title', c.success_title), e) }}
+      {{ ui.field('success_title', 'Tiêu đề', fd.get('success_title', c.success_title), e, max=1000) }}
       {{ ui.field('success_text', 'Nội dung', fd.get('success_text', c.success_text), e, rows=2) }}
     </div>
 
@@ -157,14 +161,14 @@
       <div class="form-block-title">Chân trang</div>
       {{ ui.field('about_text', 'Giới thiệu ngắn', fd.get('about_text', f.about_text), e, rows=3) }}
       {{ ui.field('risk_note', 'Cảnh báo rủi ro ở chân trang', fd.get('risk_note', f.risk_note), e, rows=3, preview='risk_note') }}
-      {{ ui.field('copyright', 'Dòng bản quyền', fd.get('copyright', f.copyright), e) }}
-      {{ ui.field('affiliate_note', 'Ghi chú affiliate cạnh bản quyền', fd.get('affiliate_note', f.affiliate_note), e, hint='Hiện ở chân trang các trang con. Để trống = ẩn.', attrs='maxlength="500"') }}
+      {{ ui.field('copyright', 'Dòng bản quyền', fd.get('copyright', f.copyright), e, hint='Viết {year} để năm tự cập nhật.') }}
+      {{ ui.field('affiliate_note', 'Ghi chú affiliate cạnh bản quyền', fd.get('affiliate_note', f.affiliate_note), e, hint='Hiện ở chân trang các trang con. Để trống = ẩn.') }}
     </div>
     <div class="form-block">
       <div class="form-block-title">Ghi chú dưới nút</div>
       <p class="form-block-desc">Để trống = ẩn dòng tương ứng trên site.</p>
-      {{ ui.field('cta_note', 'Dưới nút "Mở tài khoản"', fd.get('cta_note', s.cta_note), e, rows=2, hint='Công bố affiliate và cảnh báo rủi ro. Tối đa 500 ký tự.', attrs='maxlength="500"') }}
-      {{ ui.field('ads_note', 'Dưới nút trong quảng cáo dọc', fd.get('ads_note', s.ads_note), e, rows=2, attrs='maxlength="500"') }}
+      {{ ui.field('cta_note', 'Dưới nút "Mở tài khoản"', fd.get('cta_note', s.cta_note), e, rows=2, hint='Công bố affiliate và cảnh báo rủi ro. Tối đa 500 ký tự.') }}
+      {{ ui.field('ads_note', 'Dưới nút trong quảng cáo dọc', fd.get('ads_note', s.ads_note), e, rows=2) }}
     </div>
     <div class="form-block">
       <div class="form-block-title">Cột link chân trang</div>

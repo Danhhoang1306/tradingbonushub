@@ -62,7 +62,7 @@ def test_upload_requires_file(admin):
 
 
 def test_image_field_in_form_and_delete_guard(admin, db):
-    r = admin.post("/admin/brokers/new", {"name": "Sàn Logo", "kind": "forex"},
+    r = admin.post("/admin/brokers/new", {"name": "Sàn Logo", "kind": "forex", "license": "FSC"},
                    files=[("logo_path_file", ("logo.png", image_bytes(), "image/png"))])
     assert r.status_code == 303
     k = db.query(Broker).one()
@@ -92,10 +92,10 @@ def test_image_used_in_settings_blocks_delete(admin, db):
 
 
 def test_image_field_rejects_fake_upload_and_foreign_path(admin, db):
-    r = admin.post("/admin/brokers/new", {"name": "Sàn X", "kind": "forex"},
+    r = admin.post("/admin/brokers/new", {"name": "Sàn X", "kind": "forex", "license": "FSC"},
                    files=[("logo_path_file", ("x.png", b"not an image", "image/png"))])
     assert r.status_code == 400 and "logo_path" in errors_of(r)
-    r = admin.post("/admin/brokers/new", {"name": "Sàn X", "kind": "forex", "logo_path": "https://evil.example/x.png"})
+    r = admin.post("/admin/brokers/new", {"name": "Sàn X", "kind": "forex", "license": "FSC", "logo_path": "https://evil.example/x.png"})
     assert r.status_code == 400 and "logo_path" in errors_of(r)
     make_broker(db, "Sàn Y")
     assert db.query(Broker).count() == 1

@@ -12,7 +12,7 @@ from app.db import get_db
 from app.models import AdminUser, Banner, Bonus, Broker, ContactMessage, Subscriber
 from app.routes.admin_base import Admin, admin_get, admin_post, render_admin
 from app.security import (LOGIN_CSRF_COOKIE, SESSION_COOKIE, SESSION_DAYS, client_ip, cookie_kwargs, create_session,
-                          csrf_ok, destroy_session, is_local_path, load_session, login_limiter, verify_dummy,
+                          csrf_ok, destroy_session, is_local_path, load_session, login_ip_limiter, login_limiter, verify_dummy,
                           verify_password)
 from app.templating import render, set_flash
 from app.utils import today_vn
@@ -46,14 +46,16 @@ def login(request: Request, db: Session = Depends(get_db), email: str = Form("")
     email = email.strip().lower()[:255]
     if not csrf_ok(request.cookies.get(LOGIN_CSRF_COOKIE), csrf_token):
         return _login_page(request, next, email, "Phiên đăng nhập đã hết hạn, vui lòng thử lại.", 403)
-    key = f"{client_ip(request)}|{email}"
-    if login_limiter.blocked(key):
+    ip = client_ip(request)
+    key = f"{ip}|{email}"
+    if login_limiter.blocked(key) or login_ip_limiter.blocked(ip):
         return _login_page(request, next, email, "Đăng nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút.", 429)
     user = db.scalar(select(AdminUser).where(AdminUser.email == email))
     if user is None:
         verify_dummy(password)
     if user is None or not verify_password(user.password_hash, password) or not user.is_active:
         login_limiter.hit(key)
+        login_ip_limiter.hit(ip)
         return _login_page(request, next, email, "Email hoặc mật khẩu không đúng.", 401)
     login_limiter.reset(key)
     token = create_session(db, user)

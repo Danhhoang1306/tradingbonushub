@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 
 from app import content, queries
@@ -121,6 +122,7 @@ def _bonus_save(a: Admin, b: Bonus | None):
         expiry = parse_date(v["expiry_date"])
     except ValueError:
         errors["expiry_date"] = "Ngày không hợp lệ."
+    a.check_lengths(errors)
     if errors:
         title, action = ("Thêm bonus", "/admin/bonus/new") if b is None else ("Sửa bonus", f"/admin/bonus/{b.id}/edit")
         return _bonus_page(a, drawer=_drawer(title, action, v, errors, None if b is None else f"/admin/bonus/{b.id}/delete"),
@@ -157,7 +159,7 @@ def bonus_toggle(bid: int, a: Admin = Depends(admin_post)):
 def bonus_delete(bid: int, a: Admin = Depends(admin_post)):
     a.db.delete(get_or_404(a.db, Bonus, bid))
     a.db.commit()
-    return done("/admin/bonus", "deleted")
+    return done(a.back_after_delete("/admin/bonus"), "deleted")
 
 
 # ======================= SÀN =======================
@@ -166,6 +168,10 @@ BROKER_TEXT = ("name", "slug", "mono", "kind", "tagline", "license", "min_deposi
                "withdrawal", "founded", "affiliate_url", "logo_path")
 ACCOUNT_FIELDS = ("name", "min_deposit", "spread", "commission")
 PAYMENT_FIELDS = ("method", "deposit", "withdraw", "time")
+BROKER_LIMITS = {"name": 120, "slug": 120, "mono": 2, "kind": 10, "tagline": 255, "license": 255, "min_deposit": 60,
+                 "leverage": 60, "platforms": 255, "spread": 60, "withdrawal": 120, "founded": 20, "affiliate_url": 1000,
+                 "logo_path": 255}  # khớp cột trong models.py
+RESERVED_BROKER_SLUGS = {"so-sanh"}  # trùng route tĩnh /san/so-sanh
 
 
 def _broker_values(k: Broker | None) -> dict:
@@ -196,7 +202,7 @@ def _broker_page(a: Admin, tab: str = "list", drawer: dict | None = None, status
     return render_admin(
         a, "admin/brokers.html", "brokers", "Sàn", status_code,
         subtabs=subtabs("/admin/brokers", BROKER_TABS, tab), current_tab=tab, brokers=rows,
-        compare_count=sum(1 for k in brokers if k.in_compare), max_compare=3,
+        compare_count=sum(1 for k in brokers if k.in_compare and k.is_active), max_compare=3,
         add_url="/admin/brokers/new", add_label="Thêm sàn", kind_options=[{"id": k, "label": KIND_LABELS[k]} for k in BROKER_KINDS],
         drawer=drawer, media_library=media_library(db) if drawer else [])
 
@@ -219,7 +225,8 @@ def broker_edit(kid: int, a: Admin = Depends(admin_get)):
 
 
 def _compare_full(db, exclude_id: int | None) -> bool:
-    return db.scalar(select(func.count()).select_from(Broker).where(Broker.in_compare.is_(True),
+    """Sàn đang ẩn không hiện ở site nên không chiếm suất."""
+    return db.scalar(select(func.count()).select_from(Broker).where(Broker.in_compare.is_(True), Broker.is_active.is_(True),
                                                                    Broker.id != (exclude_id or 0))) >= 3
 
 
@@ -231,7 +238,7 @@ def _set_featured(db, k: Broker) -> None:
 
 def _broker_save(a: Admin, k: Broker | None):
     db, errors = a.db, {}
-    v = {f: a.text(f, 1000 if f == "affiliate_url" else 255) for f in BROKER_TEXT}
+    v = {f: a.text(f, BROKER_LIMITS[f]) for f in BROKER_TEXT}
     v |= {"summary": a.long_text("summary"), "pros": a.lines("pros"), "cons": a.lines("cons"),
           "accounts": a.rows("account", ACCOUNT_FIELDS), "payment_methods": a.rows("payment", PAYMENT_FIELDS),
           "in_compare": a.flag("in_compare"), "featured": a.flag("featured"), "is_active": a.flag("is_active")}
@@ -241,31 +248,44 @@ def _broker_save(a: Admin, k: Broker | None):
     v["slug"] = slugify(v["slug"] or v["name"])
     if not v["slug"] or not SLUG_RE.match(v["slug"]):
         errors["slug"] = "Slug chỉ gồm chữ thường, số và dấu gạch ngang."
+    elif v["slug"] in RESERVED_BROKER_SLUGS:
+        errors["slug"] = "Slug này trùng địa chỉ có sẵn của site, hãy chọn slug khác."
     elif db.scalar(select(Broker.id).where(Broker.slug == v["slug"], Broker.id != (k.id if k else 0))):
         errors["slug"] = "Slug đã được dùng."
+    if not v["license"]:
+        errors["license"] = "Nhập giấy phép: site chỉ liệt kê sàn có giấy phép."
     v["mono"] = (v["mono"] or mono_from_name(v["name"]))[:2].upper()
     if v["kind"] not in BROKER_KINDS:
         errors["kind"] = "Chọn loại sàn."
     if v["affiliate_url"] and not is_http_url(v["affiliate_url"]):
         errors["affiliate_url"] = "Link phải bắt đầu bằng http:// hoặc https://"
-    if v["in_compare"] and not (k and k.in_compare) and _compare_full(db, k.id if k else None):
+    if v["in_compare"] and v["is_active"] and _compare_full(db, k.id if k else None):
         errors["in_compare"] = "Chỉ được chọn tối đa 3 sàn để so sánh."
-    if errors:
+    a.check_lengths(errors)
+
+    def error_page():
         title, action = ("Thêm sàn", "/admin/brokers/new") if k is None else ("Sửa sàn", f"/admin/brokers/{k.id}/edit")
         return _broker_page(a, drawer=_drawer(title, action, v, errors,
                                               None if k is None else f"/admin/brokers/{k.id}/delete"), status_code=400)
+
+    if errors:
+        return error_page()
     is_new = k is None
-    if is_new:
-        k = Broker()
-        db.add(k)
+    row = Broker() if is_new else k
+    db.add(row)
     for f in BROKER_TEXT + ("summary", "pros", "cons", "accounts", "payment_methods", "in_compare", "is_active"):
-        setattr(k, f, v[f])
-    if v["featured"]:
-        db.flush()
-        _set_featured(db, k)
-    else:
-        k.featured = False
-    db.commit()
+        setattr(row, f, v[f])
+    try:
+        if v["featured"]:
+            db.flush()
+            _set_featured(db, row)
+        else:
+            row.featured = False
+        db.commit()
+    except IntegrityError:  # hai request lưu cùng slug đồng thời
+        db.rollback()
+        errors["slug"] = "Slug đã được dùng."
+        return error_page()
     return done("/admin/brokers", "created" if is_new else "saved")
 
 
@@ -285,7 +305,7 @@ def broker_toggle(kid: int, a: Admin = Depends(admin_post)):
     k = get_or_404(a.db, Broker, kid)
     field = a.text("field") or "is_active"
     if field == "in_compare":
-        if not k.in_compare and _compare_full(a.db, k.id):
+        if not k.in_compare and k.is_active and _compare_full(a.db, k.id):
             return done(a.back("/admin/brokers"), "compare_limit")
         k.in_compare = not k.in_compare
     elif field == "featured":
@@ -295,6 +315,10 @@ def broker_toggle(kid: int, a: Admin = Depends(admin_post)):
             _set_featured(a.db, k)
     elif field == "is_active":
         k.is_active = not k.is_active
+        if k.is_active and k.in_compare and _compare_full(a.db, k.id):  # bật lại khi đã đủ 3: mất suất so sánh
+            k.in_compare = False
+            a.db.commit()
+            return done(a.back("/admin/brokers"), "compare_limit")
     else:
         raise HTTPException(400, "field không hợp lệ")
     a.db.commit()
@@ -305,6 +329,8 @@ def broker_toggle(kid: int, a: Admin = Depends(admin_post)):
 def broker_link(kid: int, a: Admin = Depends(admin_post)):
     k = get_or_404(a.db, Broker, kid)
     url = a.text("affiliate_url", 1000)
+    if len(url) > 1000:
+        return done("/admin/brokers?tab=links", "too_long")
     if url and not is_http_url(url):
         return done("/admin/brokers?tab=links", "invalid_url")
     k.affiliate_url = url
@@ -315,8 +341,9 @@ def broker_link(kid: int, a: Admin = Depends(admin_post)):
 @router.post("/brokers/{kid}/delete")
 def broker_delete(kid: int, a: Admin = Depends(admin_post)):
     a.db.delete(get_or_404(a.db, Broker, kid))
+    queries.delete_clicks(a.db, "broker", kid)
     a.db.commit()
-    return done("/admin/brokers", "deleted")
+    return done(a.back_after_delete("/admin/brokers"), "deleted")
 
 
 # ======================= QUẢNG CÁO =======================
@@ -393,6 +420,7 @@ def _ads_save(a: Admin, b: Banner | None):
             errors["end_date"] = "Ngày kết thúc phải sau ngày bắt đầu."
     except ValueError:
         errors["start_date"] = "Ngày không hợp lệ."
+    a.check_lengths(errors)
     if errors:
         title, action = ("Thêm banner", "/admin/ads/new") if b is None else ("Sửa banner", f"/admin/ads/{b.id}/edit")
         return _ads_page(a, drawer=_drawer(title, action, v, errors, None if b is None else f"/admin/ads/{b.id}/delete"),
@@ -428,8 +456,9 @@ def ads_toggle(aid: int, a: Admin = Depends(admin_post)):
 @router.post("/ads/{aid}/delete")
 def ads_delete(aid: int, a: Admin = Depends(admin_post)):
     a.db.delete(get_or_404(a.db, Banner, aid))
+    queries.delete_clicks(a.db, "ad", aid)
     a.db.commit()
-    return done("/admin/ads", "deleted")
+    return done(a.back_after_delete("/admin/ads"), "deleted")
 
 
 # ======================= BÀI VIẾT =======================
@@ -443,6 +472,10 @@ def _post_values(p: Post | None) -> dict:
             "cover_path": p.cover_path, "status": p.status, "published_at": pub, "show_home": p.show_home}
 
 
+def _scheduled(p: Post) -> bool:
+    return p.status == "published" and p.published_at is not None and p.published_at > utcnow()
+
+
 def _posts_page(a: Admin, tab: str = "all", q: str = "", drawer: dict | None = None, status_code=200):
     db, tab = a.db, _tab(tab, POST_TABS)
     stmt = select(Post).order_by(Post.published_at.is_(None).desc(), Post.published_at.desc(), Post.id.desc())
@@ -453,7 +486,8 @@ def _posts_page(a: Admin, tab: str = "all", q: str = "", drawer: dict | None = N
     if q.strip():
         stmt = stmt.where(Post.title.ilike(f"%{q.strip()}%"))
     rows = [queries.post_view(p) | {
-        "status": p.status, "show_home": p.show_home, "view_url": f"/tin-tuc/{p.slug}" if p.status == "published" else None,
+        "status": p.status, "show_home": p.show_home, "scheduled": _scheduled(p),
+        "view_url": f"/tin-tuc/{p.slug}" if p.status == "published" and not _scheduled(p) else None,
         "edit_url": f"/admin/posts/{p.id}/edit", "toggle_url": f"/admin/posts/{p.id}/toggle",
         "delete_url": f"/admin/posts/{p.id}/delete"} for p in db.scalars(stmt)]
     return render_admin(
@@ -478,12 +512,12 @@ def posts_edit(pid: int, a: Admin = Depends(admin_get)):
     p = get_or_404(a.db, Post, pid)
     return _posts_page(a, drawer=_drawer("Sửa bài viết", f"/admin/posts/{pid}/edit", _post_values(p),
                                          delete_url=f"/admin/posts/{pid}/delete",
-                                         view_url=f"/tin-tuc/{p.slug}" if p.status == "published" else None))
+                                         view_url=f"/tin-tuc/{p.slug}" if p.status == "published" and not _scheduled(p) else None))
 
 
 def _posts_save(a: Admin, p: Post | None):
     db, errors = a.db, {}
-    v = {"title": a.text("title"), "slug": a.text("slug", 200), "category": a.text("category", 40),
+    v = {"title": a.text("title"), "slug": a.text("slug", 120), "category": a.text("category", 40),
          "excerpt": a.text("excerpt", 1000), "body_md": a.long_text("body_md"), "status": a.text("status", 20),
          "published_at": a.text("published_at", 20), "show_home": a.flag("show_home")}
     v["cover_path"] = a.image("cover_path", errors, p.cover_path if p else "")
@@ -501,25 +535,36 @@ def _posts_save(a: Admin, p: Post | None):
     published_at = None
     try:
         d = parse_date(v["published_at"])
-        if d:
-            published_at = as_utc_naive(datetime(d.year, d.month, d.day, 8, 0, tzinfo=VN_TZ))
+        if d and not (p and p.published_at and to_vn(p.published_at).date() == d):  # giữ giờ cũ khi không đổi ngày
+            # Hôm nay: đăng ngay. Ngày khác: tính từ 00:00 giờ VN, nên ngày tương lai chỉ hiện từ ngày đó.
+            published_at = utcnow() if d == today_vn() else as_utc_naive(datetime(d.year, d.month, d.day, tzinfo=VN_TZ))
     except ValueError:
+        d = None
         errors["published_at"] = "Ngày không hợp lệ."
-    if errors:
+    a.check_lengths(errors)
+
+    def error_page():
         title, action = ("Thêm bài viết", "/admin/posts/new") if p is None else ("Sửa bài viết", f"/admin/posts/{p.id}/edit")
         return _posts_page(a, drawer=_drawer(title, action, v, errors, None if p is None else f"/admin/posts/{p.id}/delete"),
                            status_code=400)
+
+    if errors:
+        return error_page()
     is_new = p is None
-    if is_new:
-        p = Post()
-        db.add(p)
-    p.title, p.slug, p.category, p.excerpt, p.body_md = v["title"], v["slug"], v["category"], v["excerpt"], v["body_md"]
-    p.cover_path, p.status, p.show_home, p.read_minutes = v["cover_path"], v["status"], v["show_home"], read_minutes(v["body_md"])
+    row = Post() if is_new else p
+    db.add(row)
+    row.title, row.slug, row.category, row.excerpt, row.body_md = v["title"], v["slug"], v["category"], v["excerpt"], v["body_md"]
+    row.cover_path, row.status, row.show_home, row.read_minutes = v["cover_path"], v["status"], v["show_home"], read_minutes(v["body_md"])
     if published_at:
-        p.published_at = published_at
-    elif p.status == "published" and p.published_at is None:
-        p.published_at = utcnow()
-    db.commit()
+        row.published_at = published_at
+    elif row.status == "published" and (row.published_at is None or d is None):
+        row.published_at = utcnow()  # không chọn ngày = đăng ngay, kể cả khi trước đó đang hẹn giờ
+    try:
+        db.commit()
+    except IntegrityError:  # hai request lưu cùng slug đồng thời
+        db.rollback()
+        errors["slug"] = "Slug đã được dùng."
+        return error_page()
     return done("/admin/posts", "created" if is_new else "saved")
 
 
@@ -546,4 +591,4 @@ def posts_toggle(pid: int, a: Admin = Depends(admin_post)):
 def posts_delete(pid: int, a: Admin = Depends(admin_post)):
     a.db.delete(get_or_404(a.db, Post, pid))
     a.db.commit()
-    return done("/admin/posts", "deleted")
+    return done(a.back_after_delete("/admin/posts"), "deleted")

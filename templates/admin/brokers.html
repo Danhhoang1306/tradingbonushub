@@ -15,7 +15,7 @@
         <span class="cell-strong cell-ellipsis">{{ k.name }}</span>
         <form method="post" action="{{ k.link_url }}" class="inline-row">
           {{ ui.csrf() }}
-          <input type="url" name="affiliate_url" value="{{ k.affiliate_url }}" placeholder="https://…" aria-label="Link affiliate {{ k.name }}">
+          <input type="url" name="affiliate_url" value="{{ k.affiliate_url }}" maxlength="1000" placeholder="https://…" aria-label="Link affiliate {{ k.name }}">
           <button type="submit" class="btn-sm">Lưu</button>
         </form>
         <span>{{ k.clicks|num }}</span>
@@ -64,7 +64,7 @@
 {{ ui.field('name', 'Tên sàn', d.name, e, required=true) }}
 <div class="fields-2">
   {{ ui.field('slug', 'Slug (đường dẫn)', d.slug, e, hint='Trống = tự tạo từ tên.') }}
-  {{ ui.field('mono', 'Chữ viết tắt', d.mono, e, hint='2 ký tự, hiện khi chưa có logo.', attrs='maxlength="2"') }}
+  {{ ui.field('mono', 'Chữ viết tắt', d.mono, e, hint='2 ký tự, hiện khi chưa có logo.') }}
 </div>
 {{ ui.pills('kind', 'Loại sàn', kind_options, d.kind, e) }}
 {{ ui.field('tagline', 'Mô tả ngắn', d.tagline, e) }}
@@ -72,7 +72,7 @@
 {{ ui.image_field('logo_path', 'Logo', d.logo_path, e, ratio='1/1') }}
 
 <div class="drawer-section">Thông số</div>
-{{ ui.field('license', 'Giấy phép', d.license, e) }}
+{{ ui.field('license', 'Giấy phép', d.license, e, required=true) }}
 <div class="fields-2">
   {{ ui.field('min_deposit', 'Nạp tối thiểu', d.min_deposit, e) }}
   {{ ui.field('leverage', 'Đòn bẩy tối đa', d.leverage, e) }}

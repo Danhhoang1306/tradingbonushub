@@ -19,6 +19,7 @@ def build(to: str, subject: str, text: str, unsubscribe_url: str | None = None) 
     msg["Subject"] = subject
     if unsubscribe_url:
         msg["List-Unsubscribe"] = f"<{unsubscribe_url}>"
+        msg["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click"
         text = f"{text}\n\n---\nHủy nhận email: {unsubscribe_url}"
     msg.set_content(text)
     return msg
@@ -36,10 +37,11 @@ def _connect() -> smtplib.SMTP:
 
 
 def send_many(messages: list[EmailMessage]) -> int:
-    """Gửi cả lô qua một kết nối SMTP. Trả về số email gửi thành công."""
+    """Gửi cả lô qua một kết nối SMTP. Trả về số email gửi thành công; email đã gửi có `msg.delivered = True`."""
     if config.smtp_backend != "smtp":
         for msg in messages:
             outbox.append(msg)
+            msg.delivered = True
             log.info("[console email] to=%s subject=%s\n%s", msg["To"], msg["Subject"], msg.get_content())
         return len(messages)
     sent = 0
@@ -48,6 +50,7 @@ def send_many(messages: list[EmailMessage]) -> int:
             for msg in messages:
                 try:
                     server.send_message(msg)
+                    msg.delivered = True
                     sent += 1
                 except smtplib.SMTPRecipientsRefused:
                     log.warning("SMTP từ chối người nhận %s", msg["To"])

@@ -1,5 +1,19 @@
 {# Thành phần dùng chung cho các màn quản trị. Import: {% import "admin/_macros.html" as ui with context %} #}
 
+{# Giới hạn độ dài theo server/model (T-10). Trường trùng tên nhưng khác giới hạn: truyền max= ở nơi gọi. #}
+{% set LIMITS = {
+  'title': 255, 'slug': 120, 'name': 120, 'mono': 2, 'tagline': 255, 'license': 255, 'min_deposit': 60, 'leverage': 60,
+  'platforms': 255, 'spread': 60, 'withdrawal': 120, 'founded': 20, 'affiliate_url': 1000, 'target_url': 1000,
+  'footer_col_title': 120, 'footer_col_links': 5000, 'sub': 100000, 'text': 100000, 'summary': 100000,
+  'amount': 60, 'value_num': 30, 'withdrawable': 60, 'excerpt': 1000, 'body_md': 100000, 'alt': 255, 'email': 255,
+  'eyebrow': 1000, 'headline': 1000, 'cta': 1000, 'card_label': 120, 'badge': 1000, 'count_label': 1000,
+  'stat_value': 1000, 'stat_label': 1000, 'success_title': 120, 'success_text': 1000,
+  'bonus_eyebrow': 255, 'bonus_title': 255, 'compare_eyebrow': 255, 'compare_title': 255, 'blog_eyebrow': 255, 'blog_title': 255,
+  'about_text': 2000, 'risk_note': 2000, 'copyright': 500, 'affiliate_note': 500, 'cta_note': 500, 'ads_note': 500,
+  'desc': 1000, 'label': 120, 'meta_title': 255, 'meta_desc': 500, 'meta_keywords': 500, 'intro': 2000, 'response_note': 1000,
+  'site_name': 120, 'contact_email': 255, 'partner_email': 255, 'telegram': 120, 'analytics_head': 20000
+} %}
+
 {% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token }}">{% endmacro %}
 
 {% macro back_url() %}{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}{% endmacro %}
@@ -23,13 +37,14 @@
 {% macro err(errors, name) %}{% if errors and errors[name] %}<span class="field-error">{{ errors[name] }}</span>{% endif %}{% endmacro %}
 
 {# Ô nhập một dòng / nhiều dòng. #}
-{% macro field(name, label, value='', errors=none, type='text', rows=0, hint='', required=false, placeholder='', mono=false, attrs='', preview='') %}
+{% macro field(name, label, value='', errors=none, type='text', rows=0, hint='', required=false, placeholder='', mono=false, attrs='', preview='', max=0) %}
+{% set limit = max or LIMITS.get(name) %}
 <label class="field{% if errors and errors[name] %} has-error{% endif %}">
   <span class="field-label">{{ label }}{% if required %} <em class="req">*</em>{% endif %}</span>
   {% if rows %}
-  <textarea name="{{ name }}" rows="{{ rows }}"{% if placeholder %} placeholder="{{ placeholder }}"{% endif %}{% if mono %} class="mono"{% endif %}{% if preview %} data-bind="{{ preview }}"{% endif %} {{ attrs|safe }}>{% if value is not none %}{{ value }}{% endif %}</textarea>
+  <textarea name="{{ name }}" rows="{{ rows }}"{% if placeholder %} placeholder="{{ placeholder }}"{% endif %}{% if mono %} class="mono"{% endif %}{% if preview %} data-bind="{{ preview }}"{% endif %}{% if limit %} maxlength="{{ limit }}"{% endif %} {{ attrs|safe }}>{% if value is not none %}{{ value }}{% endif %}</textarea>
   {% else %}
-  <input type="{{ type }}" name="{{ name }}" value="{% if value is not none %}{{ value }}{% endif %}"{% if placeholder %} placeholder="{{ placeholder }}"{% endif %}{% if required %} required{% endif %}{% if preview %} data-bind="{{ preview }}"{% endif %} {{ attrs|safe }}>
+  <input type="{{ type }}" name="{{ name }}" value="{% if value is not none %}{{ value }}{% endif %}"{% if placeholder %} placeholder="{{ placeholder }}"{% endif %}{% if required %} required{% endif %}{% if preview %} data-bind="{{ preview }}"{% endif %}{% if limit %} maxlength="{{ limit }}"{% endif %} {{ attrs|safe }}>
   {% endif %}
   {% if hint %}<span class="field-hint">{{ hint }}</span>{% endif %}
   {{ err(errors, name) }}
@@ -56,11 +71,11 @@
   <div class="rows-cells" style="--n: {{ cols|length }}{{ _tpl(cols) }}">
     {% for key, label, kind in cols %}
       {% if kind == 'textarea' %}
-      <textarea name="{{ prefix }}_{{ key }}" rows="3" placeholder="{{ label }}" aria-label="{{ label }}">{{ r[key] if r and r[key] is not none else '' }}</textarea>
+      <textarea name="{{ prefix }}_{{ key }}" rows="3" maxlength="1000" placeholder="{{ label }}" aria-label="{{ label }}">{{ r[key] if r and r[key] is not none else '' }}</textarea>
       {% elif kind == 'pairlines' %}
-      <textarea name="{{ prefix }}_{{ key }}" rows="4" placeholder="Nhãn | /duong-dan (mỗi dòng một link)" aria-label="{{ label }}" data-lines="pair" data-add-label="+ Thêm link">{{ r[key] if r and r[key] is not none else '' }}</textarea>
+      <textarea name="{{ prefix }}_{{ key }}" rows="4" maxlength="{{ LIMITS.get(prefix ~ '_' ~ key, 1000) }}" placeholder="Nhãn | /duong-dan (mỗi dòng một link)" aria-label="{{ label }}" data-lines="pair" data-add-label="+ Thêm link">{{ r[key] if r and r[key] is not none else '' }}</textarea>
       {% else %}
-      <input type="text" name="{{ prefix }}_{{ key }}" value="{{ r[key] if r and r[key] is not none else '' }}" placeholder="{{ label }}" aria-label="{{ label }}">
+      <input type="text" name="{{ prefix }}_{{ key }}" value="{{ r[key] if r and r[key] is not none else '' }}" maxlength="{{ LIMITS.get(prefix ~ '_' ~ key, 1000) }}" placeholder="{{ label }}" aria-label="{{ label }}">
       {% endif %}
     {% endfor %}
   </div>
@@ -160,9 +175,9 @@
 </form>
 {% endmacro %}
 
-{% macro delete_form(url, confirm, disabled=false, title='') %}
+{% macro delete_form(url, confirm, disabled=false, title='', back='') %}
 <form method="post" action="{{ url }}" class="inline-form" data-confirm="{{ confirm }}">
-  {{ csrf() }}<input type="hidden" name="back" value="{{ back_url() }}"><button type="submit" class="btn-sm btn-sm-danger"{% if disabled %} disabled{% endif %}{% if title %} title="{{ title }}"{% endif %}>Xóa</button>
+  {{ csrf() }}<input type="hidden" name="back" value="{{ back or back_url() }}"><button type="submit" class="btn-sm btn-sm-danger"{% if disabled %} disabled{% endif %}{% if title %} title="{{ title }}"{% endif %}>Xóa</button>
 </form>
 {% endmacro %}
 

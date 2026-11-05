@@ -2,6 +2,7 @@ import logging
 import mimetypes
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -26,26 +27,111 @@ CSP_SCRIPTS_ANALYTICS = ("script-src 'self' 'unsafe-inline' https://www.googleta
                          "connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com "
                          "https://*.analytics.google.com https://www.googletagmanager.com")
 
+PUBLIC_BODY_LIMIT = 1024 * 1024
+ADMIN_BODY_LIMIT = 64 * 1024 * 1024  # upload nhiều ảnh, mỗi ảnh tối đa 5MB
 
-class MediaFiles(StaticFiles):
-    """Thư mục upload chỉ được tạo khi có ảnh đầu tiên: chưa có thư mục thì trả 404, không phải lỗi cấu hình."""
+
+class SafeStaticFiles(StaticFiles):
+    """Đường dẫn hệ điều hành không chấp nhận (tên quá dài, ký tự cấm trên Windows) là 404, không phải 500.
+    Thư mục upload chỉ được tạo khi có ảnh đầu tiên: chưa có thư mục cũng là 404."""
+
+    def lookup_path(self, path: str):
+        try:
+            return super().lookup_path(path)
+        except (OSError, ValueError):
+            return "", None
 
     async def check_config(self) -> None:
         return None
 
 
+class HeadAsGet:
+    """Xử lý HEAD như GET rồi bỏ thân (uptime monitor mặc định dùng HEAD). Không đếm lượt xem/click:
+    /go/* giữ 405, các route khác kiểm tra `is_head`."""
+
+    def __init__(self, app) -> None:
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http" or scope["method"] != "HEAD" or scope["path"].startswith("/go/"):
+            return await self.app(scope, receive, send)
+        finished = False
+
+        async def send_no_body(message):
+            nonlocal finished
+            if message["type"] == "http.response.body":
+                if finished:
+                    return
+                finished = True
+                message = {"type": "http.response.body", "body": b"", "more_body": False}
+            await send(message)
+
+        await self.app({**scope, "method": "GET", "is_head": True}, receive, send_no_body)
+
+
+class BodyLimit:
+    """Trần kích thước thân request. Không có Content-Length thì đọc tối đa tới trần rồi phát lại."""
+
+    def __init__(self, app) -> None:
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http" or scope["method"] not in ("POST", "PUT", "PATCH"):
+            return await self.app(scope, receive, send)
+        path = scope["path"]
+        limit = ADMIN_BODY_LIMIT if path.startswith("/admin") and path != "/admin/login" else PUBLIC_BODY_LIMIT
+        too_large = PlainTextResponse("Dữ liệu gửi lên quá lớn.", status_code=413)
+        length = dict(scope["headers"]).get(b"content-length")
+        if length is not None:
+            if length.isdigit() and int(length) > limit:
+                return await too_large(scope, receive, send)
+            return await self.app(scope, receive, send)
+        messages, total = [], 0
+        while True:
+            message = await receive()
+            messages.append(message)
+            total += len(message.get("body", b""))
+            if total > limit:
+                return await too_large(scope, receive, send)
+            if message["type"] != "http.request" or not message.get("more_body"):
+                break
+        pending = iter(messages)
+
+        async def replay():
+            return next(pending, None) or await receive()
+
+        await self.app(scope, replay, send)
+
+
+def _relative_redirect(request: Request, response) -> None:
+    """Redirect tự sinh (dấu / cuối URL) mang scheme nội bộ http: đổi thành đường dẫn tương đối để không hạ https."""
+    location = response.headers.get("location", "")
+    prefix = f"{request.url.scheme}://{request.url.netloc}"
+    if 300 <= response.status_code < 400 and location.startswith(prefix + "/"):
+        path = location[len(prefix):]
+        if not path.startswith("//") and "\\" not in path:
+            response.headers["location"] = path
+
+
 def create_app() -> FastAPI:
-    config.require_secret()
+    config.validate()
+    for warning in config.warnings():
+        log.warning(warning)
     from app.routes import admin, public
     from app.routes.admin_base import LoginRequired, login_redirect
 
-    docs = None if config.is_production else "/docs"
-    app = FastAPI(title="TradingBonusHub", docs_url=docs, redoc_url=None,
-                  openapi_url=None if config.is_production else "/openapi.json")
+    app = FastAPI(title="TradingBonusHub", docs_url=None, redoc_url=None, openapi_url=None)
+    app.add_middleware(BodyLimit)
 
     @app.middleware("http")
     async def security_headers(request: Request, call_next):
-        response = await call_next(request)
+        try:
+            response = await call_next(request)
+        except Exception:
+            # Xử lý tại đây (không để handler Exception ở ngoài middleware) để trang 500 cũng có header bảo mật.
+            log.exception("Lỗi không xử lý: %s %s", request.method, request.url.path)
+            response = _error_page(request, 500)
+        _relative_redirect(request, response)
         path = request.url.path
         analytics = getattr(request.state, "analytics", False)
         h = response.headers
@@ -61,11 +147,24 @@ def create_app() -> FastAPI:
             h.setdefault("Cache-Control", "no-store")
         return response
 
+    app.add_middleware(HeadAsGet)
+
     @app.exception_handler(StarletteHTTPException)
     async def http_error(request: Request, exc: StarletteHTTPException):
         if exc.status_code == 404 and not request.url.path.startswith(("/static/", "/media/")):
             return _error_page(request, 404)
         return PlainTextResponse(str(exc.detail), status_code=exc.status_code)
+
+    @app.exception_handler(RequestValidationError)
+    async def bad_request(request: Request, exc: RequestValidationError):
+        # Tham số sai kiểu (/go/broker/abc, ?page=abc): khách thấy trang 404, không thấy JSON.
+        if request.method == "GET":
+            return _error_page(request, 404)
+        return PlainTextResponse("Dữ liệu gửi lên không hợp lệ.", status_code=400)
+
+    @app.exception_handler(OverflowError)
+    async def id_too_large(request: Request, exc: OverflowError):
+        return _error_page(request, 404)  # id vượt quá số nguyên của SQLite: chắc chắn không tồn tại
 
     @app.exception_handler(LoginRequired)
     async def need_login(request: Request, exc: LoginRequired):
@@ -76,8 +175,8 @@ def create_app() -> FastAPI:
         log.exception("Lỗi không xử lý: %s %s", request.method, request.url.path)
         return _error_page(request, 500)
 
-    app.mount("/static", StaticFiles(directory=str(config.static_dir), check_dir=False), name="static")
-    app.mount("/media", MediaFiles(directory=str(config.upload_dir), check_dir=False), name="media")
+    app.mount("/static", SafeStaticFiles(directory=str(config.static_dir), check_dir=False), name="static")
+    app.mount("/media", SafeStaticFiles(directory=str(config.upload_dir), check_dir=False), name="media")
     app.include_router(public.router)
     app.include_router(admin.router)
     return app

@@ -50,9 +50,9 @@
 {% set opts = [] %}{% for k in broker_options %}{% set _ = opts.append({'id': k.id, 'label': k.name ~ ('' if k.is_active else ' (đang ẩn)')}) %}{% endfor %}
 {{ ui.select('broker_id', 'Sàn', opts, d.broker_id, e, empty_label='— Chọn sàn —', required=true, hint='' if broker_options else '<a href="/admin/brokers/new">Thêm sàn trước</a>') }}
 {{ ui.pills('type', 'Loại bonus', type_options, d.type, e) }}
-{{ ui.field('title', 'Tiêu đề', d.title, e, required=true, placeholder='Ví dụ: Thưởng nạp tiền lần đầu') }}
+{{ ui.field('title', 'Tiêu đề', d.title, e, required=true, placeholder='Tên ưu đãi, ngắn gọn') }}
 <div class="fields-2">
-  {{ ui.field('amount', 'Mức thưởng', d.amount, e, placeholder='50%, $30, $4/lot…') }}
+  {{ ui.field('amount', 'Mức thưởng', d.amount, e, placeholder='Phần trăm, số tiền hoặc mức theo lot') }}
   {{ ui.field('value_num', 'Giá trị để sắp xếp', d.value_num, e, hint='Số, dùng cho "Giá trị cao". Có thể trống.', attrs='inputmode="decimal"') }}
 </div>
 <div class="fields-2">

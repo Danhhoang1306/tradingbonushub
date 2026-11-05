@@ -3,11 +3,13 @@
 {% block content %}
 {% if current_tab == 'mail' %}
 {% set mf = mail_form %}{% set e = mf.errors %}
+{% set retry = campaigns|selectattr('id', 'equalto', mf.draft_id)|selectattr('status', 'equalto', 'partial')|first %}
 <div class="stack-lg">
-  <form class="card stack mail-card" method="post" action="{{ mf.action }}" data-audience-form data-audience-url="{{ audience_count_url }}">
+  <form class="card stack mail-card" method="post" action="{{ mf.action }}" data-audience-form data-audience-url="{{ audience_count_url }}"{% if retry %} data-retry{% endif %}>
     {{ ui.csrf() }}
     <input type="hidden" name="draft_id" value="{{ mf.draft_id or '' }}">
     {{ ui.form_errors(e, ['subject', 'body']) }}
+    {% if retry %}<div class="alert alert-info">Chiến dịch gửi dở: đã gửi {{ retry.sent_count|num }} người. Gửi lại chỉ tới người chưa nhận.</div>{% endif %}
     <fieldset class="field pills-field">
       <legend class="field-label">Gửi tới nhóm quan tâm <span class="field-hint">(không chọn = tất cả người đã xác nhận)</span></legend>
       <div class="pills">
@@ -17,7 +19,7 @@
       </div>
     </fieldset>
     <label class="field{% if e.subject %} has-error{% endif %}"><span class="field-label">Tiêu đề</span>
-      <input type="text" name="subject" value="{{ mf.subject }}" placeholder="Bonus mới tuần này" class="input-lg">
+      <input type="text" name="subject" value="{{ mf.subject }}" maxlength="255" placeholder="Bonus mới tuần này" class="input-lg">
       {{ ui.err(e, 'subject') }}
     </label>
     <label class="field{% if e.body %} has-error{% endif %}"><span class="field-label">Nội dung</span>
@@ -29,24 +31,28 @@
     <div class="mail-actions">
       <button type="submit" name="action" value="draft" class="btn-secondary btn-lg">Lưu nháp</button>
       <button type="submit" formaction="{{ mf.test_action }}" class="btn-secondary btn-lg">Gửi thử cho tôi</button>
-      <button type="submit" name="action" value="send" class="btn-primary btn-lg"
-        data-confirm="Gửi email này tới {{ audience_count|num }} người đăng ký?" data-confirm-ok="Gửi" data-confirm-variant="primary"><span class="js-only">Gửi tới <span data-audience-count>{{ audience_count|num }}</span> người</span><span class="nojs-only">Gửi email</span></button>
+      <button type="submit" name="action" value="send" class="btn-primary btn-lg"{% if not audience_count and not retry %} disabled{% endif %}
+        data-confirm="{{ 'Gửi lại tới những người chưa nhận?' if retry else 'Gửi email này tới ' ~ audience_count|num ~ ' người đăng ký?' }}" data-confirm-ok="Gửi" data-confirm-variant="primary">{% if retry %}<span>Gửi lại người chưa nhận</span>{% else %}<span class="js-only"><span data-send-some{% if not audience_count %} hidden{% endif %}>Gửi tới <span data-audience-count>{{ audience_count|num }}</span> người</span><span data-send-none{% if audience_count %} hidden{% endif %}>Chưa có người nhận</span></span><span class="nojs-only">{{ 'Gửi email' if audience_count else 'Chưa có người nhận' }}</span>{% endif %}</button>
     </div>
   </form>
 
-  {% set cols = 'minmax(0,1fr) 200px 110px 90px 140px' %}
+  {% set cols = 'minmax(0,1fr) 180px 100px 80px 130px 150px' %}
   <div>
     <div class="card-title section-title">Lịch sử gửi</div>
     <div class="table-wrap">
-      <div class="table" style="--min: 720px; --cols: {{ cols }}">
-        <div class="t-head"><span>Tiêu đề</span><span>Nhóm</span><span>Trạng thái</span><span>Đã gửi</span><span>Ngày</span></div>
+      <div class="table" style="--min: 860px; --cols: {{ cols }}">
+        <div class="t-head"><span>Tiêu đề</span><span>Nhóm</span><span>Trạng thái</span><span>Đã gửi</span><span>Ngày</span><span></span></div>
         {% for c in campaigns %}
         <div class="t-row">
-          <span class="cell-medium cell-ellipsis" title="{{ c.subject }}">{% if c.edit_url %}<a class="row-link cell-ellipsis" href="{{ c.edit_url }}">{{ c.subject }}<span class="cell-sub">Mở lại bản nháp</span></a>{% else %}{{ c.subject }}{% endif %}</span>
+          <span class="cell-medium cell-ellipsis" title="{{ c.subject }}">{{ c.subject }}</span>
           <span class="cell-muted cell-ellipsis">{{ c.audience_labels|join(', ') or 'Tất cả' }}</span>
-          <span class="{{ 'status-ok' if c.status == 'sent' else 'status-muted' }}">{{ {'sent': 'Đã gửi', 'sending': 'Đang gửi', 'draft': 'Nháp'}.get(c.status, c.status) }}</span>
-          <span>{% if c.status == 'sent' %}{{ c.sent_count|num }}{% else %}—{% endif %}</span>
+          <span class="{{ 'status-ok' if c.status == 'sent' else 'status-bad' if c.status == 'partial' else 'status-muted' }}">{{ {'sent': 'Đã gửi', 'sending': 'Đang gửi', 'draft': 'Nháp', 'partial': 'Gửi dở'}.get(c.status, c.status) }}</span>
+          <span>{% if c.status in ('sent', 'partial') %}{{ c.sent_count|num }}{% else %}—{% endif %}</span>
           <span class="cell-muted">{{ (c.sent_at or c.created_at)|datetime_vn }}</span>
+          <span class="t-actions">
+            {% if c.edit_url %}<a class="btn-sm" href="{{ c.edit_url }}">{{ 'Gửi lại' if c.status == 'partial' else 'Mở' }}</a>{% endif %}
+            {% if c.delete_url %}{{ ui.delete_form(c.delete_url, 'Xóa chiến dịch "' ~ c.subject ~ '"?', back='/admin/subscribers?tab=mail') }}{% endif %}
+          </span>
         </div>
         {% else %}
         {{ ui.empty('Chưa gửi email nào.') }}

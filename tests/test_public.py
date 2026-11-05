@@ -40,13 +40,9 @@ def test_robots_and_sitemap(client, db):
     assert "<loc>http://testserver/san/san-a</loc>" in xml
 
 
-def test_no_docs_in_production(monkeypatch):
-    from app import main
-    monkeypatch.setattr(main.config, "is_production", True)
-    from fastapi.testclient import TestClient
-    c = TestClient(main.create_app())
-    assert c.get("/docs").status_code == 404
-    assert c.get("/openapi.json").status_code == 404
+def test_no_api_docs(client):
+    for url in ("/docs", "/redoc", "/openapi.json"):
+        assert client.get(url).status_code == 404
 
 
 def test_expired_bonus_leaves_public(client, db):

@@ -13,7 +13,7 @@
       <div class="t-row">
         <span class="cell-strong cell-ellipsis">{{ b.name }}<span class="cell-sub">{% if b.broker %}{{ b.broker.name }} · {% endif %}{{ b.placement|placement_label }}</span></span>
         <span>{{ b.views|num }}</span><span>{{ b.clicks|num }}</span><span>{{ ctr(b.clicks, b.views) }}</span>
-        <span class="{{ 'status-ok' if b.state == 'running' else 'status-muted' }}">{{ b.state|banner_state_label }}</span>
+        <span class="{{ 'status-ok' if b.state == 'running' else 'status-bad' if b.state in ('no_link', 'broker_hidden') else 'status-muted' }}">{{ b.state|banner_state_label }}</span>
       </div>
       {% else %}
       {{ ui.empty('Chưa có banner nào.') }}
@@ -37,7 +37,7 @@
     <div class="ad-body">
       <div class="ad-top">
         <div class="ad-name">{% if b.broker %}{{ b.broker.name }} · {% endif %}{{ b.name }}</div>
-        <div class="ad-state">{{ b.state|banner_state_label }}{{ ui.toggle(b.toggle_url, b.is_active, 'Bật banner ' ~ b.name) }}</div>
+        <div class="ad-state{% if b.state in ('no_link', 'broker_hidden') %} status-bad{% endif %}">{{ b.state|banner_state_label }}{{ ui.toggle(b.toggle_url, b.is_active, 'Bật banner ' ~ b.name) }}</div>
       </div>
       <form class="ad-form" method="post" action="{{ b.edit_url }}">
         {{ ui.csrf() }}
@@ -50,7 +50,7 @@
             <select name="placement">{% for p in placement_options %}<option value="{{ p.id }}"{% if p.id == b.placement %} selected{% endif %}>{{ p.label }}</option>{% endfor %}</select>
           </label>
           <label class="field"><span class="field-label">Link đích</span>
-            <input type="url" name="target_url" value="{{ b.target_url }}" placeholder="Trống = link affiliate của sàn">
+            <input type="url" name="target_url" value="{{ b.target_url }}" maxlength="1000" placeholder="Trống = link affiliate của sàn">
           </label>
           <div class="field"><span class="field-label">Chạy từ – đến</span>
             <div class="ad-dates">

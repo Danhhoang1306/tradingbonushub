@@ -29,6 +29,9 @@ FLASH_MESSAGES = {
     "csrf": ("error", "Phiên làm việc đã hết hạn, vui lòng thử lại."),
     "self_delete": ("error", "Không thể xóa hoặc khóa chính tài khoản đang đăng nhập."),
     "no_recipients": ("error", "Không có người nhận phù hợp."),
+    "send_failed": ("error", "Không gửi được email nào. Kiểm tra cấu hình SMTP rồi gửi lại từ bản nháp."),
+    "send_partial": ("error", "Mới gửi được một phần. Mở chiến dịch trong Lịch sử gửi để gửi tiếp cho người còn lại."),
+    "too_long": ("error", "Nội dung quá dài."),
     "invalid_url": ("error", "Link phải bắt đầu bằng http:// hoặc https://"),
 }
 
@@ -37,7 +40,8 @@ PLACEMENT_LABELS = {"after-bonus": "Sau Bonus mới nhất", "before-blog": "Tr�
 POST_STATUS_LABELS = {"draft": "Nháp", "published": "Đã đăng"}
 SUBSCRIBER_STATUS_LABELS = {"pending": "Chờ xác nhận", "confirmed": "Đã xác nhận", "unsubscribed": "Đã hủy"}
 ROLE_LABELS = {"admin": "Quản trị", "editor": "Biên tập"}
-BANNER_STATE_LABELS = {"running": "Đang chạy", "paused": "Tạm dừng", "scheduled": "Chưa bắt đầu", "ended": "Đã kết thúc"}
+BANNER_STATE_LABELS = {"running": "Đang chạy", "paused": "Tạm dừng", "scheduled": "Chưa bắt đầu", "ended": "Đã kết thúc",
+                       "no_link": "Thiếu link đích", "broker_hidden": "Sàn đang ẩn"}
 
 
 def _as_date(value):

@@ -23,12 +23,12 @@ def test_unicode_digits_do_not_crash(client, admin, db):
 
 
 def test_upload_survives_failed_form(admin, db):
-    r = admin.post("/admin/brokers/new", {"name": "", "kind": "forex"},
+    r = admin.post("/admin/brokers/new", {"name": "", "kind": "forex", "license": "FSC"},
                    files=[("logo_path_file", ("l.png", png(), "image/png"))])
     assert r.status_code == 400
     m = db.query(MediaFile).one()  # ảnh đã vào thư viện dù form lỗi
     assert (Path(os.environ["UPLOAD_DIR"]) / m.path.rsplit("/", 1)[1]).exists()
-    r = admin.post("/admin/brokers/new", {"name": "Sàn A", "kind": "forex", "logo_path": m.path})
+    r = admin.post("/admin/brokers/new", {"name": "Sàn A", "kind": "forex", "license": "FSC", "logo_path": m.path})
     assert r.status_code == 303 and db.query(Broker).one().logo_path == m.path
 
 

@@ -20,7 +20,7 @@
           {% if p.views %}<span class="cell-sub">{{ p.views|num }} lượt xem</span>{% endif %}</span>
         <span class="cell-muted">{{ p.category }}</span>
         <span class="cell-muted">{{ p.published_at|date_vn or '—' }}</span>
-        <span class="{{ 'status-ok' if p.status == 'published' else 'status-muted' }}">{{ p.status|post_status_label }}</span>
+        <span class="{{ 'status-ok' if p.status == 'published' else 'status-muted' }}">{{ p.status|post_status_label }}{% if p.scheduled %}<span class="cell-sub">Hẹn giờ</span>{% endif %}</span>
         {{ ui.toggle(p.toggle_url, p.show_home, 'Hiện ở trang chủ: ' ~ p.title) }}
         <span class="t-actions">
           {% if p.view_url %}<a class="btn-sm" href="{{ p.view_url }}" target="_blank" rel="noopener" title="Xem trên site" aria-label="Xem trên site">↗</a>{% endif %}

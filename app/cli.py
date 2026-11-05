@@ -30,7 +30,8 @@ def _has_console() -> bool:
         return False
 
 
-def create_admin(email: str, role: str, password: str | None = None) -> int:
+def create_admin(email: str, role: str | None = None, password: str | None = None) -> int:
+    """Tạo tài khoản (mặc định role admin) hoặc đặt lại mật khẩu (role giữ nguyên trừ khi truyền rõ)."""
     _utf8_console()
     email = email.strip().lower()
     if "@" not in email:
@@ -51,14 +52,16 @@ def create_admin(email: str, role: str, password: str | None = None) -> int:
     with SessionLocal() as db:
         user = db.scalar(select(AdminUser).where(AdminUser.email == email))
         if user:
-            user.password_hash, user.role, user.is_active = hash_password(password), role, True
+            user.password_hash, user.is_active = hash_password(password), True
+            user.role = role or user.role
             revoke_sessions(db, user.id)
             action = "Đã cập nhật mật khẩu (và đăng xuất mọi phiên) cho"
         else:
-            db.add(AdminUser(email=email, password_hash=hash_password(password), role=role))
+            user = AdminUser(email=email, password_hash=hash_password(password), role=role or "admin")
+            db.add(user)
             action = "Đã tạo tài khoản"
         db.commit()
-    print(f"{action} {email} ({role}).")
+        print(f"{action} {email} ({user.role}).")
     return 0
 
 
@@ -68,7 +71,7 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("create-admin", help="Tạo hoặc đặt lại mật khẩu tài khoản quản trị")
     p.add_argument("--email", required=True)
-    p.add_argument("--role", choices=ROLES, default="admin")
+    p.add_argument("--role", choices=ROLES, help="mặc định: admin khi tạo mới, giữ nguyên khi đặt lại mật khẩu")
     args = parser.parse_args(argv)
     if args.cmd == "create-admin":
         return create_admin(args.email, args.role)

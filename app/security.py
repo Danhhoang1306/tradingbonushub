@@ -87,8 +87,11 @@ def cookie_kwargs() -> dict:
     return {"httponly": True, "samesite": "lax", "secure": config.is_production, "path": "/"}
 
 
-def csrf_ok(expected: str | None, given: str | None) -> bool:
-    return bool(expected) and bool(given) and hmac.compare_digest(expected, given)
+def csrf_ok(expected: str | None, given) -> bool:
+    """So sánh theo byte: compare_digest từ chối chuỗi có ký tự ngoài ASCII; `given` có thể là file do client gửi."""
+    if not expected or not given or not isinstance(given, str):
+        return False
+    return hmac.compare_digest(expected.encode(), given.encode())
 
 
 def client_ip(request: Request) -> str:
@@ -143,6 +146,7 @@ class RateLimiter:
 
 
 login_limiter = RateLimiter(5, 15 * 60)       # 5 lần sai / 15 phút theo IP+email
+login_ip_limiter = RateLimiter(20, 15 * 60)   # 20 lần sai / 15 phút theo IP: chặn đổi email để né giới hạn trên
 public_form_limiter = RateLimiter(5, 10 * 60)  # subscribe/contact: 5 lần / 10 phút theo IP
 ad_view_limiter = RateLimiter(30, 60)          # beacon đếm view quảng cáo dọc theo IP
 

@@ -4,9 +4,11 @@
 
 {% block header %}
 {% if "hero" in home_sections %}
-<section class="hero">
+<section class="hero{% if not hero.image_path %} hero--plain{% endif %}">
+  {% if hero.image_path %}
   {{ media(hero.image_path, "", "hero__bg", eager=true) }}
   <div class="hero__shade" aria-hidden="true"></div>
+  {% endif %}
   {{ site_header("hero") }}
   <div class="hero__body">
     <div class="hero__grid">
@@ -244,7 +246,7 @@
         </div>
         {% else %}
         <form method="post" action="/api/subscribe" class="form-stack">
-          {% if flash and flash.code in ("sub_invalid", "sub_rate") %}<p class="form-error" role="alert">{{ flash.text }}</p>{% endif %}
+          {% if flash and flash.code in ("sub_invalid", "sub_rate", "sub_failed") %}<p class="form-error" role="alert">{{ flash.text }}</p>{% endif %}
           <div class="field-pair">
             <label><span class="sr-only">Họ tên</span><input type="text" name="name" placeholder="Họ tên" autocomplete="name" maxlength="120" class="input"></label>
             <label><span class="sr-only">Email</span><input type="email" name="email" placeholder="Email" autocomplete="email" required maxlength="255" class="input"></label>

@@ -2,6 +2,11 @@
 {% block content %}
 <div class="status-box">
   <p class="status-box__text">{{ site.system_text["sub_" ~ status ~ "_text"] }}</p>
+  {% if action_url is defined and action_url %}
+  <form method="post" action="{{ action_url }}">
+    <button type="submit" class="btn btn--blue">{{ site.system_text["sub_" ~ status ~ "_button"] }}</button>
+  </form>
+  {% endif %}
   <div class="status-box__actions">
     <a href="/" class="btn btn--navy">Về trang chủ</a>
     <a href="/bonus" class="btn btn--outline">Xem bonus</a>

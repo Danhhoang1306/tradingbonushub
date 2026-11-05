@@ -14,7 +14,7 @@
 
 {# Vòng tròn logo sàn: ảnh logo nếu có, không thì 2 ký tự mono. #}
 {% macro avatar(k, cls="") -%}
-<div class="avatar {{ cls }}"{% if k.logo_path %} data-has-logo{% endif %}>{% if k.logo_path %}<img src="{{ k.logo_path }}" alt="{{ k.name }}" loading="lazy" decoding="async">{% else %}<span aria-hidden="true">{{ k.mono }}</span>{% endif %}</div>
+<div class="avatar {{ cls }}"{% if k.logo_path %} data-has-logo{% endif %}>{% if k.logo_path %}<img src="{{ k.logo_path }}" alt="{{ k.name }}" loading="lazy" decoding="async">{% else %}<span aria-hidden="true">{{ k.mono or k.name[:1] }}</span>{% endif %}</div>
 {%- endmacro %}
 
 {% macro post_card(p, tone="white", index=none, heading="h2") -%}
@@ -94,6 +94,7 @@
     <div class="ad__label"><span>Tài trợ</span>{% if ad.broker %}<span>{{ ad.broker.name }}</span>{% endif %}</div>
     {% if ad.image_path %}
     <a href="{{ ad.url }}" class="rail__image" rel="sponsored nofollow noopener" target="_blank"><img src="{{ ad.image_path }}" alt="{{ ad.name }}" loading="lazy" decoding="async"></a>
+    {% if note %}<p class="rail__note rail__note--plain">{{ note }}</p>{% endif %}
     {% else %}
     <div class="rail__native">
       {% if ad.broker %}<div class="rail__brand">{{ avatar(ad.broker, "avatar--36") }}<span>{{ ad.broker.name }}</span></div>{% endif %}

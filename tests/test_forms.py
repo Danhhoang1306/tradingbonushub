@@ -24,21 +24,21 @@ def test_subscribe_double_opt_in_and_unsubscribe(client, db):
     unsub = re.search(r"http://testserver(/huy-dang-ky/\S+)", text).group(1)
     assert mailer.outbox[0]["List-Unsubscribe"]
 
-    assert client.get(confirm).status_code == 200
+    assert client.post(confirm).status_code == 200
     db.expire_all()
     sub = db.query(Subscriber).one()
     assert sub.status == "confirmed" and sub.confirmed_at is not None
 
-    assert client.get(unsub).status_code == 200
+    assert client.post(unsub).status_code == 200
     db.expire_all()
     assert db.query(Subscriber).one().status == "unsubscribed"
-    assert client.get(confirm).status_code == 404  # link xác nhận cũ không còn dùng được
+    assert client.post(confirm).status_code == 404  # link xác nhận cũ không còn dùng được
 
 
 def test_subscribe_again_after_confirmed_sends_nothing(client, db):
     subscribe(client)
     token = db.query(Subscriber).one().token
-    client.get(f"/xac-nhan/{token}")
+    client.post(f"/xac-nhan/{token}")
     mailer.outbox.clear()
     subscribe(client)
     assert mailer.outbox == [] and db.query(Subscriber).count() == 1
@@ -47,7 +47,13 @@ def test_subscribe_again_after_confirmed_sends_nothing(client, db):
 def test_resubscribe_after_unsubscribe(client, db):
     subscribe(client)
     old = db.query(Subscriber).one().token
-    client.get(f"/huy-dang-ky/{old}")
+    client.post(f"/huy-dang-ky/{old}")
+    from datetime import timedelta
+
+    from app.models import utcnow
+    db.expire_all()
+    db.query(Subscriber).one().confirm_sent_at = utcnow() - timedelta(days=31)  # quá hạn chờ dành cho người đã hủy
+    db.commit()
     subscribe(client, email="KHACH@example.test")
     db.expire_all()
     sub = db.query(Subscriber).one()

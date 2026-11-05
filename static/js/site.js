@@ -6,10 +6,18 @@
   // Menu mobile
   document.querySelectorAll('[data-nav-toggle]').forEach(function (btn) {
     var header = btn.closest('[data-header]');
-    btn.addEventListener('click', function () {
-      var open = header.classList.toggle('is-nav-open');
+    function setOpen(open) {
+      header.classList.toggle('is-nav-open', open);
       btn.setAttribute('aria-expanded', String(open));
       btn.setAttribute('aria-label', open ? 'Đóng menu' : 'Mở menu');
+    }
+    btn.addEventListener('click', function () {
+      setOpen(!header.classList.contains('is-nav-open'));
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape' || !header.classList.contains('is-nav-open')) return;
+      setOpen(false);
+      btn.focus();
     });
   });
 

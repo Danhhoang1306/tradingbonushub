@@ -19,7 +19,10 @@ def today_vn() -> date:
 
 
 def render_markdown(text: str) -> str:
-    html = md.markdown(text or "", extensions=["tables", "sane_lists"])
+    html = md.markdown(text or "", extensions=["tables", "sane_lists", "fenced_code"])
+    # Trang đã có <h1>: giữ định dạng của tiêu đề nhập trong bài bằng cách đưa về h2..h4.
+    html = re.sub(r"<(/?)h1\b", r"<\1h2", html)
+    html = re.sub(r"<(/?)h[56]\b", r"<\1h4", html)
     return nh3.clean(html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS, url_schemes={"http", "https", "mailto"},
                      link_rel="noopener noreferrer nofollow")
 
@@ -31,7 +34,7 @@ def read_minutes(text: str) -> int:
 def slugify(text: str) -> str:
     text = (text or "").replace("đ", "d").replace("Đ", "D")
     text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
-    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:120]
+    return re.sub(r"[^a-z0-9]+", "-", text.lower())[:120].strip("-")
 
 
 def parse_date(value: str) -> date | None:
@@ -51,7 +54,10 @@ def parse_float(value: str) -> float | None:
     value = (value or "").strip().replace(",", ".")
     if not value:
         return None
-    return float(value)
+    number = float(value)
+    if not math.isfinite(number):
+        raise ValueError(value)
+    return number
 
 
 def to_int(value: str) -> int | None:
@@ -61,8 +67,14 @@ def to_int(value: str) -> int | None:
 
 
 def mono_from_name(name: str) -> str:
-    letters = re.sub(r"[^A-Za-z0-9]", "", slugify(name).replace("-", ""))
-    return letters[:2].upper()
+    letters = slugify(name).replace("-", "") or re.sub(r"[\W_]", "", name or "")  # tên không Latin: lấy nguyên chữ
+    return letters[:2].upper()[:2]
+
+
+def plain_excerpt(markdown_text: str, limit: int = 160) -> str:
+    """Đoạn chữ thuần đầu bài, dùng làm meta description khi bài không có tóm tắt."""
+    text = nh3.clean(render_markdown(markdown_text), tags=set(), attributes={})
+    return " ".join(text.split())[:limit]
 
 
 def as_utc_naive(dt: datetime) -> datetime:

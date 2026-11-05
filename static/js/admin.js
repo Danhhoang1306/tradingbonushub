@@ -313,15 +313,22 @@
   /* ---------- Gửi email: đếm lại người nhận khi đổi nhóm ---------- */
   function initAudience() {
     var form = $('[data-audience-form]');
-    if (!form) return;
+    if (!form || form.hasAttribute('data-retry')) return;  // gửi lại: nhãn cố định, không đếm theo nhóm
     var out = $('[data-audience-count]', form), send = out.closest('button');
+    var some = $('[data-send-some]', form), none = $('[data-send-none]', form);
     var pending = null;
+    function setEmpty(empty) {  // 0 người: khóa nút (server trả lỗi nếu gửi) và nói rõ lý do
+      send.disabled = empty;
+      some.hidden = empty;
+      none.hidden = !empty;
+    }
     function recount() {
       var params = new URLSearchParams();
       $$('input[name=audience]:checked', form).forEach(function (c) { params.append('aud', c.value); });
       if (pending) pending.abort();  // chỉ lấy kết quả của lần chọn cuối
       out.textContent = '…';  // số cũ không còn đúng, kể cả khi yêu cầu dưới đây lỗi
       send.setAttribute('data-confirm', 'Gửi email này tới các nhóm đã chọn?');
+      setEmpty(false);
       send.disabled = true;
       pending = new AbortController();
       fetch(form.getAttribute('data-audience-url') + '?' + params.toString(), { credentials: 'same-origin', signal: pending.signal })
@@ -330,7 +337,7 @@
           var n = d.count.toLocaleString('vi-VN');
           out.textContent = n;
           send.setAttribute('data-confirm', 'Gửi email này tới ' + n + ' người đăng ký?');
-          send.disabled = d.count === 0;  // gửi 0 người: server trả lỗi và mất nội dung đang soạn
+          setEmpty(d.count === 0);
         }).catch(function (err) {  // lỗi: giữ "…" và câu xác nhận chung, không hiện số sai
           if (err.name !== 'AbortError') send.disabled = false;
         });
@@ -340,7 +347,7 @@
     window.addEventListener('pageshow', function () {
       var restored = $$('input[name=audience]', form).some(function (c) { return c.checked !== c.defaultChecked; });
       if (restored) recount();
-      else send.disabled = out.textContent === '0';
+      else setEmpty(out.textContent === '0');
     });
   }
 

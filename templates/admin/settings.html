@@ -17,11 +17,12 @@
       <div class="t-row{% if not u.is_active %} is-muted{% endif %}">
         <span class="cell-medium cell-ellipsis">{{ u.email }}{% if u.is_self %}<span class="cell-sub">Bạn</span>{% endif %}</span>
         {% set row_err = e if form.errors_user_id == u.id else {} %}
+        {% set row_role = fd.get('edit_role', u.role) if form.errors_user_id == u.id else u.role %}
         <div class="field user-cell{% if row_err %} has-error{% endif %}">
         <form method="post" action="{{ u.edit_url }}" class="user-edit">
           {{ ui.csrf() }}
           <select name="role" aria-label="Vai trò của {{ u.email }}"{% if u.is_self %} disabled{% endif %}>
-            {% for r in role_options %}<option value="{{ r.id }}"{% if r.id == u.role %} selected{% endif %}>{{ r.label }}</option>{% endfor %}
+            {% for r in role_options %}<option value="{{ r.id }}"{% if r.id == row_role %} selected{% endif %}>{{ r.label }}</option>{% endfor %}
           </select>
           {% if u.is_self %}<input type="hidden" name="role" value="{{ u.role }}">{% endif %}
           <input type="password" name="password" placeholder="Mật khẩu mới" autocomplete="new-password" aria-label="Mật khẩu mới cho {{ u.email }}">
@@ -47,9 +48,9 @@
     {{ ui.csrf() }}
     <div class="form-block-title">Thêm tài khoản quản trị</div>
     <div class="fields-3">
-      {{ ui.field('email', 'Email', fd.get('email', ''), e, type='email', required=true, attrs='autocomplete="off"') }}
+      {{ ui.field('email', 'Email', '' if form.errors_user_id else fd.get('email', ''), e, type='email', required=true, attrs='autocomplete="off"') }}
       {{ ui.field('password', 'Mật khẩu', '', e, type='password', required=true, hint='Tối thiểu 10 ký tự.', attrs='autocomplete="new-password" minlength="10"') }}
-      {{ ui.select('role', 'Vai trò', role_options, fd.get('role', 'editor'), e) }}
+      {{ ui.select('role', 'Vai trò', role_options, 'editor' if form.errors_user_id else fd.get('role', 'editor'), e) }}
     </div>
     <div><button type="submit" class="btn-primary">+ Thêm tài khoản</button></div>
   </form>
