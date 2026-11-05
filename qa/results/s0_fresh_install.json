@@ -13,13 +13,13 @@
  },
  {
   "id": "F0.3",
-  "desc": "README nói mặc định development: chạy được khi không đặt SECRET_KEY",
-  "ok": false,
-  "detail": "aude\\17ec8c0066fedc03\\0e1ca350-6c2d-4075-8d81-f49e661aa4cb\\scratchpad\\qa-func\\fresh\\app\\config.py\", line 32, in require_secret\r\n    raise RuntimeError(\"Thiếu SECRET_KEY khi APP_ENV=production\")\r\nRuntimeError: Thiếu SECRET_KEY khi APP_ENV=production\r\n"
+  "desc": "Không đặt gì: mặc định production, thoát mã 2, liệt kê cấu hình thiếu, không traceback",
+  "ok": true,
+  "detail": "(2, 'Cấu hình không hợp lệ:\\r\\n- Thiếu SECRET_KEY.\\r\\n- Thiếu BASE_URL (dùng trong email, sitemap, canonical), ví dụ https://ten-mien-cua-ban.\\r\\n- Thiếu SMTP_BACKEND: đặt smtp để gửi email thật, hoặc console nếu chủ động không gửi.\\r\\nXem mục Biến môi trường trong README.md.\\r\\n')"
  },
  {
   "id": "F0.4",
-  "desc": "python run.py (chỉ PORT + SECRET_KEY theo README) lên được, /health 200",
+  "desc": "python run.py (APP_ENV=development + PORT theo README) lên được, /health 200",
   "ok": true,
   "detail": ""
  },
@@ -75,6 +75,6 @@
   "id": "F0.12",
   "desc": "README Test: pytest xanh trên bản sao sạch",
   "ok": true,
-  "detail": "........................................................................ [ 33%]\n........................................................................ [ 66%]\n........................................................................ [ 99%]\n.                                                                        [100%]\n217 passed in 20.48s\n"
+  "detail": "........................................................................ [ 20%]\n........................................................................ [ 41%]\n........................................................................ [ 62%]\n........................................................................ [ 82%]\n............................................................             [100%]\n348 passed in 26.93s\n"
  }
 ]

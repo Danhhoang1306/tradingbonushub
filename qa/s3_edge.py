@@ -119,7 +119,7 @@ try:
     k4 = bid("K4")
     r = h.post(f"/admin/brokers/{k4}/toggle", {"field": "in_compare"})
     c("C4.1", "Bật so sánh sàn thứ 4 bị chặn (toggle)", s.sql("select count(*) from brokers where in_compare=1")[0][0] == 3)
-    r = h.post("/admin/brokers/new", {"name": "K5", "kind": "forex", "in_compare": "1", "is_active": "1"})
+    r = h.post("/admin/brokers/new", {"name": "K5", "kind": "forex", "license": "FCA", "in_compare": "1", "is_active": "1"})
     c("C4.2", "Thêm sàn thứ 4 có so sánh bị chặn (form)", r.status_code == 400, r.status_code)
     # sàn đã tắt có chiếm suất so sánh không?
     h.post(f"/admin/brokers/{bid('K1')}/toggle", {"field": "is_active"})
@@ -137,29 +137,31 @@ try:
     c("C4.6", "/san/so-sanh?ids=5 sàn chỉ lấy 3 cột", pub.get(f"/san/so-sanh?ids={ids}").text.count("Mở tài khoản") <= 3)
 
     # ---------- C5. Slug ----------
-    r = h.post("/admin/brokers/new", {"name": "K1", "kind": "forex", "is_active": "1"})
+    r = h.post("/admin/brokers/new", {"name": "K1", "kind": "forex", "license": "FCA", "is_active": "1"})
     c("C5.1", "Trùng slug sàn: 400", r.status_code == 400 and "Slug đã được dùng" in r.text, r.status_code)
     mk_post(h, "Bài trùng")
     r = h.post("/admin/posts/new", {"title": "Bài trùng", "category": "Hướng dẫn", "status": "draft"})
     c("C5.2", "Trùng slug bài: 400", r.status_code == 400 and "Slug đã được dùng" in r.text, r.status_code)
-    r = h.post("/admin/brokers/new", {"name": "So sánh", "kind": "forex", "is_active": "1", "summary": "Tóm tắt-so-sanh-XYZ"})
+    r = h.post("/admin/brokers/new", {"name": "So sánh", "kind": "forex", "license": "FCA", "is_active": "1", "summary": "Tóm tắt-so-sanh-XYZ"})
     t = pub.get("/san/so-sanh")
     c("C5.3", "Slug trùng route tĩnh (so-sanh) phải bị từ chối, nếu không trang sàn không bao giờ truy cập được",
       r.status_code == 400 or "Tóm tắt-so-sanh-XYZ" in t.text, f"POST={r.status_code}; /san/so-sanh vẫn là trang so sánh")
-    r = h.post("/admin/brokers/new", {"name": "😀😀", "kind": "forex", "is_active": "1"})
+    r = h.post("/admin/brokers/new", {"name": "😀😀", "kind": "forex", "license": "FCA", "is_active": "1"})
     c("C5.4", "Tên toàn emoji: slug rỗng báo lỗi rõ, không 500", r.status_code == 400, r.status_code)
     long_name = ("ab " * 60)[:119] + " c"  # sau slugify ký tự cắt rơi vào dấu gạch
     r = h.post("/admin/posts/new", {"title": "x" * 119 + " yyy", "category": "Hướng dẫn", "status": "draft"})
     c("C5.5", "Tiêu đề dài > 120 ký tự, cắt slug rơi đúng dấu gạch vẫn lưu được (slug tự sinh)", r.status_code == 303, f"{r.status_code}: {re.findall(r'field-error[^>]*>([^<]+)', r.text)[:2]}")
-    r = h.post("/admin/brokers/new", {"name": "Đồng Tiền Việt", "kind": "forex", "is_active": "1"})
+    r = h.post("/admin/brokers/new", {"name": "Đồng Tiền Việt", "kind": "forex", "license": "FCA", "is_active": "1"})
     c("C5.6", "Slug tiếng Việt: dong-tien-viet", s.sql("select count(*) from brokers where slug='dong-tien-viet'")[0][0] == 1)
 
     # ---------- C6. Chuỗi dài, emoji ----------
     long = "Rấtdài" * 50
-    r = mk_broker(h, "Dài" + "x" * 300, slug="sandai", tagline=long, summary=long * 40, license=long, platforms=long, founded="20" * 50, min_deposit="9" * 100)
+    r = h.post("/admin/brokers/new", {"name": "Dài" + "x" * 300, "kind": "forex", "license": "FCA", "is_active": "1"})
+    c("C6.2", "Tên sàn vượt 120 ký tự: báo lỗi, không cắt", r.status_code == 400 and s.sql("select count(*) from brokers where name like 'Dàixx%'")[0][0] == 0, r.status_code)
+    r = h.post("/admin/brokers/new", {"name": "Sàn F", "founded": "20" * 50, "kind": "forex", "license": "FCA", "is_active": "1"})
+    c("C6.3", "founded vượt 20 ký tự: báo lỗi", r.status_code == 400, r.status_code)
+    mk_broker(h, "Sàn Dài", slug="sandai", tagline=long[:250], summary=long * 40, license=long[:250], platforms=long[:250], founded="2020", min_deposit="9" * 60)
     k = s.sql("select id,length(name),length(founded) from brokers where slug='sandai'")[0]
-    c("C6.2", "Tên dài không vượt độ dài cột (120) khi lưu vào SQLite", k[1] <= 120, f"độ dài name trong DB={k[1]}, cột String(120)")
-    c("C6.3", "founded dài không vượt String(20)", k[2] <= 20, f"độ dài={k[2]}")
     c("C6.4", "Trang sàn dài 200", pub.get("/san/sandai").status_code == 200)
     mk_bonus(h, k[0], "Tiêu đề 😀 ệẫữ ️", amount="💰 100$ 🚀")
     t = pub.get("/bonus").text
@@ -188,10 +190,10 @@ try:
     c("C8.r", "/admin/bonus và /bonus 200 sau ngày biên", h.get("/admin/bonus").status_code == 200 and pub.get("/bonus?sort=expiry").status_code == 200)
     s.sql("delete from bonuses where title like 'Date %'")
     r = mk_post(h, "Bài năm 9999", published_at="9999-12-31")
-    c("C8.p1", "Bài ngày 9999: public 200", pub.get("/tin-tuc").status_code == 200 and pub.get("/tin-tuc/bai-nam-9999").status_code == 200)
+    c("C8.p1", "Bài ngày 9999 là hẹn giờ: danh sách 200, trang bài 404", pub.get("/tin-tuc").status_code == 200 and pub.get("/tin-tuc/bai-nam-9999").status_code == 404)
     fut = (date.today() + timedelta(days=30)).isoformat()
     mk_post(h, "Bài hẹn giờ tương lai", published_at=fut)
-    c("C8.p2", "Bài đăng ngày tương lai không hiện trước ngày đó (nếu hỗ trợ ngày đăng)", "Bài hẹn giờ tương lai" not in pub.get("/tin-tuc").text, "bài tương lai hiện ngay")
+    c("C8.p2", "Bài đăng ngày tương lai không hiện trước ngày đó", "Bài hẹn giờ tương lai" not in pub.get("/tin-tuc").text, "bài tương lai hiện ngay")
     s.sql("delete from posts where title in ('Bài năm 9999','Bài hẹn giờ tương lai')")
 
     # ---------- C9. Markdown ----------
@@ -211,7 +213,7 @@ try:
         hh = Http()
         hh.cookies = dict(h.cookies)
         hh.csrf = h.csrf
-        return hh.post("/admin/brokers/new", {"name": "Đua Slug", "kind": "forex", "is_active": "1"}).status_code
+        return hh.post("/admin/brokers/new", {"name": "Đua Slug", "kind": "forex", "license": "FCA", "is_active": "1"}).status_code
     with ThreadPoolExecutor(6) as ex:
         codes = list(ex.map(post_new, range(6)))
     c("C10.1", "Gửi đồng thời cùng slug: không 500 (chỉ 303 + 400)", 500 not in codes, codes)
@@ -237,7 +239,7 @@ try:
     c("C11.6", "page=999 không 500, kẹp về trang cuối", r.status_code == 200 and len(set(re.findall(r'href="/tin-tuc/(trang-\d+)"', r.text))) == 1)
     for q in ("0", "-5", "99999999999999999999999999", "1.5", "abc", "", "%00"):
         r = pub.get(f"/tin-tuc?page={q}")
-        c(f"C11.p{q}", f"/tin-tuc?page={q}: 200 HTML (khách không thấy JSON lỗi)", r.status_code == 200 and "text/html" in r.headers["content-type"], f"{r.status_code} {r.headers['content-type']} {r.text[:120]}")
+        c(f"C11.p{q}", f"/tin-tuc?page={q}: trang HTML 200 hoặc 404 (khách không thấy JSON lỗi)", r.status_code in (200, 404) and "text/html" in r.headers["content-type"], f"{r.status_code} {r.headers['content-type']} {r.text[:120]}")
     for path in ("/go/broker/abc", "/go/broker/99999999999999999999999", "/go/ad/99999999999999999999999", "/go/broker/-1"):
         r = pub.get(path)
         c(f"C11.g{path}", f"{path}: 404 trang lỗi", r.status_code == 404 and "text/html" in r.headers["content-type"], f"{r.status_code} {r.headers['content-type']} {r.text[:80]!r}")
@@ -252,7 +254,7 @@ try:
 
     # ---------- C12. SEO: trang chi tiết không bị title chung của mục ----------
     k = bid("K2")
-    h.post(f"/admin/brokers/{k}/edit", {"name": "K2", "slug": "k2", "kind": "forex", "is_active": "1", "summary": ""})
+    h.post(f"/admin/brokers/{k}/edit", {"name": "K2", "slug": "k2", "kind": "forex", "license": "FCA", "is_active": "1", "summary": ""})
     mk_post(h, "Bài SEO", excerpt="Mô tả riêng của bài")
     h.post("/admin/pages/san", {"title": "Sàn", "desc": "D", "meta_title": "SEO chung mục Sàn", "meta_desc": "SEO mô tả chung Sàn"})
     h.post("/admin/pages/tin", {"title": "Tin", "desc": "D", "meta_title": "SEO chung mục Tin", "meta_desc": "SEO mô tả chung Tin"})
@@ -322,14 +324,14 @@ try:
     tk = s.tokens("hailan@x.co")
     c("C17.1", "Bấm gửi hai lần: gửi 2 email xác nhận (hoặc 1)", len(tk) in (1, 2), len(tk))
     if len(tk) >= 2:
-        r = pub.get(f"/xac-nhan/{tk[0]}")
+        r = pub.post(f"/xac-nhan/{tk[0]}")
         c("C17.2", "Link trong email thứ nhất vẫn xác nhận được (người dùng hay mở email đầu)", r.status_code == 200, r.status_code)
 
     # ---------- C18. Liên hệ gửi hai lần ----------
     d = {"topic": "Hợp tác", "name": "Khách", "email": "k@x.co", "body": "Xin chào"}
     for _ in range(2):
         pub.post("/api/contact", data=d, headers={"CF-Connecting-IP": "10.8.0.2"})
-    c("C18.1", "Hai lần gửi liên hệ giống hệt nhau không tạo 2 tin (chống gửi đúp)", s.sql("select count(*) from contact_messages")[0][0] == 1, s.sql("select count(*) from contact_messages")[0][0])
+    print("     hai POST liên hệ giống nhau:", s.sql("select count(*) from contact_messages")[0][0], "tin (không phải lỗi, bấm đúp thật kiểm ở B8.8)", flush=True)
     r = pub.post("/api/contact", data={**d, "topic": "<b>chủ đề giả</b>" * 3}, headers={"CF-Connecting-IP": "10.8.0.3"})
     c("C18.2", "Chủ đề ngoài danh sách bị từ chối hoặc chuẩn hóa", s.sql("select count(*) from contact_messages where topic like '%chủ đề giả%'")[0][0] == 0, "lưu nguyên chủ đề tùy ý")
     r = pub.post("/api/contact", data={**d, "email": "sai", "body": ""}, headers={"CF-Connecting-IP": "10.8.0.4"})

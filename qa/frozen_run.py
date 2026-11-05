@@ -13,7 +13,7 @@ os.chdir(ROOT)
 import uvicorn  # noqa: E402
 
 import run  # noqa: E402
-from app import utils  # noqa: E402
+from app import models, utils  # noqa: E402
 
 
 class Fake(dt.datetime):
@@ -24,6 +24,7 @@ class Fake(dt.datetime):
 
 
 utils.datetime = Fake
+models.datetime = Fake  # utcnow(): phiên, hẹn giờ bài viết
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

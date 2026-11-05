@@ -18,7 +18,7 @@ STRESS = "Khôngcókhoảngtrắngrấtrấtrấtdàiđểkiểmtratràn" * 4  #
 
 def seed(mode):
     global s, h, mp, k1, k2, k3, W
-    W = (NORMAL * 3) if mode == "normal" else STRESS
+    W = (NORMAL * 3)[:250].strip() if mode == "normal" else STRESS
     s = Server(f"ui_{mode}").start()
     s.cli_admin()
     h = Http().login()

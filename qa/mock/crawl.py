@@ -225,9 +225,15 @@ def form_states(page, net, out, vw, db_path):
     con = sqlite3.connect(db_path)
     token = con.execute("select token from subscribers where email=?", (f"qa-sub-{vw}@example.test",)).fetchone()[0]
     con.close()
-    for tag, path in (("sub-confirmed", f"/xac-nhan/{token}"), ("sub-unsubscribed", f"/huy-dang-ky/{token}")):
+    # Từ 2e4229e: GET chỉ hiện nút, POST mới đổi trạng thái
+    for ask, done, path in (("sub-ask-confirm", "sub-confirmed", f"/xac-nhan/{token}"),
+                            ("sub-ask-unsubscribe", "sub-unsubscribed", f"/huy-dang-ky/{token}")):
         net.clear()
-        rec(tag, page.goto(BASE + path), path)
+        rec(ask, page.goto(BASE + path), path)
+        net.clear()
+        with page.expect_navigation():
+            page.click('.status-box form button[type="submit"]')
+        rec(done, None, path)
 
     # Trang 500 thật: thiếu bảng bonuses làm trang chủ lỗi DB, rồi trả lại ngay. (Thiếu settings thì app tự dùng mặc định, vẫn 200.)
     con = sqlite3.connect(db_path, timeout=20)

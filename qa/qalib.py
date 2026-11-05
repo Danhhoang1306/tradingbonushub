@@ -28,9 +28,26 @@ WORK = Path(os.environ.get("QA_WORK") or (Path(tempfile.gettempdir()) / "tbh_qa"
 RESULTS = ROOT / "qa" / "results"
 PORT = 8014
 BASE = f"http://127.0.0.1:{PORT}"
+PROD_KEY = "qa-prod-secret-" + "k" * 40
 ADMIN_EMAIL, ADMIN_PASS = "admin@qa.test", "QaAdmin-12345"
 EDITOR_EMAIL, EDITOR_PASS = "editor@qa.test", "QaEditor-12345"
 assert PORT != 8000
+
+
+def prod_env(**kw):
+    """Cấu hình production tối thiểu hợp lệ (vòng 2: SECRET_KEY >= 32, BASE_URL, SMTP_BACKEND bắt buộc)."""
+    return {"APP_ENV": "production", "SECRET_KEY": PROD_KEY, "BASE_URL": BASE, "SMTP_BACKEND": "console", **kw}
+
+
+def admin_routes(env):
+    """Danh sách route admin (GET/POST). /openapi.json đã bị bỏ nên đọc trực tiếp từ app."""
+    code = ("from app.main import app\n"
+            "for r in app.routes:\n"
+            "    m = getattr(r, 'methods', None)\n"
+            "    if m and r.path.startswith('/admin'):\n"
+            "        print(r.path, ','.join(sorted(m)))\n")
+    out = subprocess.run([PY, "-c", code], cwd=ROOT, env=env, capture_output=True, text=True, encoding="utf-8", check=True).stdout
+    return [(ln.split()[0], ln.split()[1].lower().split(",")) for ln in out.splitlines() if ln.strip()]
 
 
 def port_free(port: int) -> bool:
@@ -63,7 +80,7 @@ class Server:
         assert port_free(self.port), f"Cổng {self.port} đang bận"
         atexit.register(self.stop)  # script chết giữa chừng cũng không bỏ lại server
         self.log = open(self.log_path, "ab")
-        self.proc = subprocess.Popen([PY, self.entry], cwd=ROOT, env=self.env, stdout=self.log, stderr=subprocess.STDOUT)
+        self.proc = subprocess.Popen([PY, self.entry], cwd=getattr(self, "cwd", ROOT), env=self.env, stdout=self.log, stderr=subprocess.STDOUT)
         end = time.time() + wait
         while time.time() < end:
             if self.proc.poll() is not None:
@@ -92,7 +109,7 @@ class Server:
 
     def cli_admin(self, email=ADMIN_EMAIL, password=ADMIN_PASS, role="admin"):
         env = {**self.env, "ADMIN_PASSWORD": password}
-        r = subprocess.run([PY, "-m", "app.cli", "create-admin", "--email", email, "--role", role], cwd=ROOT, env=env,
+        r = subprocess.run([PY, "-m", "app.cli", "create-admin", "--email", email, "--role", role], cwd=getattr(self, "cwd", ROOT), env=env,
                            capture_output=True, text=True, encoding="utf-8", stdin=subprocess.DEVNULL, timeout=60)
         assert r.returncode == 0, r.stderr
         return r

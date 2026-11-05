@@ -61,6 +61,13 @@ Chạy lại lệnh với email đã có = đặt lại mật khẩu, vai trò g
 Không tương tác (script, CI, terminal không có console): đặt biến `ADMIN_PASSWORD` trước khi chạy lệnh. Không có tham số
 dòng lệnh cho mật khẩu.
 
+## Chạy thật qua Cloudflare Tunnel
+
+`start.bat` nạp `.env`, chạy server ở cổng 8000 và tunnel; `stop.bat` tắt cả hai (không đụng tunnel dự án khác). Log ở `logs/`.
+Site tắt khi tắt máy hoặc khi đóng các cửa sổ đó.
+
+`.env` đang dùng `SMTP_BACKEND=console`: email chỉ ghi log. Khi có SMTP, đặt `SMTP_BACKEND=smtp` + `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `FROM_EMAIL`, rồi bật lại section "Form đăng ký" ở Trang chủ.
+
 ## Test
 
 ```powershell

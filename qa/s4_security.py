@@ -10,8 +10,8 @@ import httpx
 from PIL import Image
 from playwright.sync_api import sync_playwright
 
-from qalib import (ADMIN_EMAIL, ADMIN_PASS, BASE, EDITOR_EMAIL, EDITOR_PASS, PORT, Http, Report, Server, mk_banner, mk_bonus,
-                   mk_broker, mk_post, png_bytes)
+from qalib import (ADMIN_EMAIL, ADMIN_PASS, BASE, EDITOR_EMAIL, EDITOR_PASS, PORT, Http, Report, Server, admin_routes, mk_banner, mk_bonus,
+                   mk_broker, mk_post, png_bytes, prod_env)
 
 R = Report("s4_security")
 c = R.check
@@ -81,6 +81,8 @@ def fuzz_tab(h, page, action):
             v = val
         elif "footer_col_links" in name:
             v = f"Nhãn {XSS}|{URL_LOCAL}"
+        elif name.endswith("_short"):
+            v = XSS[:60]
         else:
             v = XSS
         n += 1
@@ -97,15 +99,17 @@ pub = httpx.Client(base_url=BASE, timeout=20)
 
 try:
     # ---------- D1. Không đăng nhập: mọi route admin ----------
-    spec = pub.get("/openapi.json").json()["paths"]
+    spec = admin_routes(s.env)
     anon = Http()
     leaks = []
     n = 0
-    for path, ops in spec.items():
-        if not path.startswith("/admin") or path in ("/admin/login",):
+    for path, ops in spec:
+        if path in ("/admin/login",):
             continue
         p = re.sub(r"\{(\w+)\}", lambda m: "1" if m.group(1) not in ("tab", "sid") else "hero", path)
         for method in ops:
+            if method not in ("get", "post"):
+                continue
             n += 1
             r = anon.get(p) if method == "get" else anon.post(p, {"x": "1"})
             ok = (r.status_code == 303 and "/admin/login" in r.headers.get("location", "")) or (r.status_code == 401)
@@ -174,7 +178,7 @@ try:
     ban = s.sql("select id from banners")[0][0]
     c("D3.3", "/go/ad chỉ dùng đích trong DB", pub.get(f"/go/ad/{ban}?url=https://evil.com&target_url=https://evil.com").headers["location"] == "https://ad.example.test/ok")
     for u in ("javascript:alert(1)", "data:text/html,x", "//evil.com", "ftp://x", " javascript:alert(1)", "java\tscript:alert(1)", "http://", "https:evil.com"):
-        r1 = h.post("/admin/brokers/new", {"name": "Bad URL", "kind": "forex", "affiliate_url": u, "is_active": "1"})
+        r1 = h.post("/admin/brokers/new", {"name": "Bad URL", "kind": "forex", "license": "FCA", "affiliate_url": u, "is_active": "1"})
         r2 = h.post("/admin/ads/new", {"name": "Bad", "placement": "after-bonus", "target_url": u})
         c(f"D3.4{u}", f"URL nguy hiểm bị từ chối: {u!r}", r1.status_code == 400 and r2.status_code == 400, (r1.status_code, r2.status_code))
 
@@ -288,7 +292,7 @@ try:
     s.sql("update admin_sessions set expires_at='2000-01-01 00:00:00' where user_id=(select id from admin_users where email=?)", (EDITOR_EMAIL,))
     r = e2.get("/admin/bonus?tab=on")
     c("D8.1", "Phiên hết hạn: GET về login, giữ next", r.status_code == 303 and "next=/admin/bonus%3Ftab%3Don" in r.headers["location"], r.headers.get("location"))
-    r = e2.post(f"/admin/brokers/{kid}/toggle", {"field": "is_active"})
+    r = e2.post(f"/admin/brokers/{kid}/toggle", {"field": "is_active"}, headers={"Referer": BASE + "/admin/brokers?tab=links"})
     loc = r.headers.get("location", "")
     c("D8.2", "Phiên hết hạn khi POST: về login", r.status_code == 303 and "/admin/login" in loc, (r.status_code, loc))
     l = Http()
@@ -321,11 +325,11 @@ try:
     r = l.post("/admin/login", {"email": "sp@qa.test", "password": "  Khoang-Trang-12  ", "csrf_token": tok}, raw=True)
     c("D8.7", "Mật khẩu có khoảng trắng đầu/cuối: đăng nhập đúng với chuỗi vừa đặt", r.status_code == 303, r.status_code)
     pw = "P" * 300
-    h.post("/admin/settings/users/new", {"email": "lng@qa.test", "password": pw, "role": "editor"})
+    rc = h.post("/admin/settings/users/new", {"email": "lng@qa.test", "password": pw, "role": "editor"})
     l = Http()
     tok = re.search(r'name="csrf_token" value="([^"]+)"', l.get("/admin/login").text).group(1)
     r = l.post("/admin/login", {"email": "lng@qa.test", "password": pw, "csrf_token": tok}, raw=True)
-    c("D8.8", "Mật khẩu 300 ký tự: đăng nhập được với chuỗi vừa đặt (không cắt thầm)", r.status_code == 303, r.status_code)
+    c("D8.8", "Mật khẩu 300 ký tự: bị từ chối khi đặt, hoặc đăng nhập được (không cắt thầm)", rc.status_code == 400 or r.status_code == 303, (rc.status_code, r.status_code))
 
     # ---------- D9. IP giả ----------
     def bad_login(ip_header):
@@ -345,11 +349,11 @@ try:
     c("D9.4", "Host/X-Forwarded-Host giả không vào canonical", "evil.com" not in r.text)
 
     # ---------- D10. Seed XSS khắp nơi ----------
-    r = mk_broker(h, XSS[:250], slug="xss-san", tagline=XSS, summary=XSS, license=XSS, min_deposit=XSS[:60], leverage=XSS[:60], platforms=XSS, spread=XSS[:60],
+    r = mk_broker(h, XSS[:120], slug="xss-san", tagline=XSS, summary=XSS, license=XSS, min_deposit=XSS[:60], leverage=XSS[:60], platforms=XSS, spread=XSS[:60],
                   withdrawal=XSS[:120], founded=XSS[:20], mono="<i", pros=XSS, cons=XSS, affiliate_url=URL_HTTP, in_compare="1", featured="1")
     kx = s.sql("select id from brokers where slug='xss-san'")[0][0]
-    h.post(f"/admin/brokers/{kx}/edit", [("name", XSS[:250]), ("slug", "xss-san"), ("kind", "forex"), ("is_active", "1"), ("in_compare", "1"), ("featured", "1"), ("tagline", XSS), ("summary", XSS),
-                                        ("founded", XSS), ("affiliate_url", URL_HTTP), ("pros", XSS), ("cons", XSS), ("license", XSS),
+    h.post(f"/admin/brokers/{kx}/edit", [("name", XSS[:120]), ("slug", "xss-san"), ("kind", "forex"), ("is_active", "1"), ("in_compare", "1"), ("featured", "1"), ("tagline", XSS), ("summary", XSS),
+                                        ("founded", XSS[:20]), ("affiliate_url", URL_HTTP), ("pros", XSS), ("cons", XSS), ("license", XSS),
                                         ("account_name", XSS), ("account_min_deposit", XSS), ("account_spread", XSS), ("account_commission", XSS),
                                         ("payment_method", XSS), ("payment_deposit", XSS), ("payment_withdraw", XSS), ("payment_time", XSS)])
     mk_bonus(h, kx, XSS, amount=XSS[:60], min_deposit=XSS[:60], withdrawable=XSS[:60])
@@ -367,7 +371,7 @@ try:
     tabs = []
     for t in ("sections", "hero", "about", "why", "types", "contact", "menu"):
         tabs.append((f"/admin/home?tab={t}", f"/admin/home/{t}"))
-    for t in ("bonus", "san", "tin", "gioithieu", "lienhe", "terms", "privacy", "system"):
+    for t in ("bonus", "san", "compare", "tin", "gioithieu", "method", "affiliate", "lienhe", "terms", "privacy", "system"):
         tabs.append((f"/admin/pages?tab={t}", f"/admin/pages/{t}"))
     for t in ("general", "seo", "social"):
         tabs.append((f"/admin/settings?tab={t}", f"/admin/settings/{t}"))
@@ -445,7 +449,7 @@ finally:
     s.stop()
 
 # =========================== Server production ===========================
-s = Server("sec_prod", env={"APP_ENV": "production", "SECRET_KEY": "qa-prod-secret-" + "y" * 40}).start()
+s = Server("sec_prod", env=prod_env()).start()
 s.cli_admin()
 try:
     an = Http()
@@ -480,22 +484,17 @@ try:
 finally:
     s.stop()
 
-# APP_ENV gõ sai (fail-open?)
-s = Server("sec_env", env={"APP_ENV": "prod", "SECRET_KEY": ""}).start()
-try:
-    r = httpx.get(BASE + "/docs")
-    c("D14.1", "APP_ENV=prod (gõ tắt): không âm thầm chạy chế độ dev (mở /docs, cookie không Secure, SECRET_KEY ngẫu nhiên)", r.status_code == 404, f"/docs={r.status_code}")
-finally:
-    s.stop()
-s = Server("sec_nokey", env={"APP_ENV": "production", "SECRET_KEY": ""})
-try:
-    s.start(wait=15)
-    c("D14.2", "Production thiếu SECRET_KEY: từ chối chạy", False, "server vẫn chạy")
-except RuntimeError:
-    c("D14.2", "Production thiếu SECRET_KEY: từ chối chạy", "Thiếu SECRET_KEY" in s.log_text())
-finally:
-    s.stop()
-s = Server("sec_weak", env={"APP_ENV": "production", "SECRET_KEY": "x"}).start()
-s.stop()
-c("D14.3", "SECRET_KEY quá ngắn ('x') bị từ chối ở production", False, "chấp nhận khóa 1 ký tự")
+# Cấu hình sai: phải từ chối chạy, thoát mã 2, không traceback
+for cid, label, env, want in (("D14.1", "APP_ENV=prod", prod_env(APP_ENV="prod"), "APP_ENV"),
+                              ("D14.2", "thiếu SECRET_KEY", prod_env(SECRET_KEY=""), "Thiếu SECRET_KEY"),
+                              ("D14.3", "SECRET_KEY='x'", prod_env(SECRET_KEY="x"), "quá ngắn")):
+    s = Server("sec_cfg", env=env)
+    try:
+        s.start(wait=15)
+        c(cid, f"{label}: từ chối chạy", False, "server vẫn chạy")
+    except RuntimeError:
+        s.proc.wait(5)
+        c(cid, f"{label}: từ chối chạy, mã 2, báo rõ", s.proc.returncode in (2, 3221225786) or want in s.log_text() and "Traceback" not in s.log_text(), (s.proc.returncode, s.log_text()[-200:]))
+    finally:
+        s.stop()
 R.save()

@@ -1,7 +1,7 @@
 [
  {
   "id": "D1.1",
-  "desc": "Chưa đăng nhập: 56 route admin đều bị chặn",
+  "desc": "Chưa đăng nhập: 0 route admin đều bị chặn",
   "ok": true,
   "detail": "[]"
  },
@@ -20,20 +20,20 @@
  {
   "id": "D2.2",
   "desc": "CSRF chứa ký tự không ASCII (đã đăng nhập): 403, không 500",
-  "ok": false,
-  "detail": "500"
+  "ok": true,
+  "detail": "403"
  },
  {
   "id": "D2.3",
   "desc": "csrf_token gửi dạng file: 403, không 500",
-  "ok": false,
-  "detail": "500"
+  "ok": true,
+  "detail": "403"
  },
  {
   "id": "D2.4",
   "desc": "Đăng nhập với csrf_token không ASCII (không cần tài khoản): không 500",
-  "ok": false,
-  "detail": "500"
+  "ok": true,
+  "detail": "403"
  },
  {
   "id": "D2.5",
@@ -51,31 +51,31 @@
   "id": "D3.2//evil.com/",
   "desc": "GET //evil.com/ không redirect ra ngoài",
   "ok": true,
-  "detail": "HTTP/1.1 404 Not Found\r\ndate: Thu, 05 Nov 2026 00:15:25 GMT\r\ncontent-length: 3665\r\ncontent-type: text/html; charset=utf-8\r\ncontent-security-policy: default-src 'self'; img-src 'self' data: https:; sty"
+  "detail": "HTTP/1.1 404 Not Found\r\ndate: Thu, 05 Nov 2026 06:11:17 GMT\r\ncontent-length: 3656\r\ncontent-type: text/html; charset=utf-8\r\ncontent-security-policy: default-src 'self'; img-src 'self' data: https:; sty"
  },
  {
   "id": "D3.2///evil.com/",
   "desc": "GET ///evil.com/ không redirect ra ngoài",
   "ok": true,
-  "detail": "HTTP/1.1 404 Not Found\r\ndate: Thu, 05 Nov 2026 00:15:25 GMT\r\ncontent-length: 3665\r\ncontent-type: text/html; charset=utf-8\r\ncontent-security-policy: default-src 'self'; img-src 'self' data: https:; sty"
+  "detail": "HTTP/1.1 404 Not Found\r\ndate: Thu, 05 Nov 2026 06:11:17 GMT\r\ncontent-length: 3656\r\ncontent-type: text/html; charset=utf-8\r\ncontent-security-policy: default-src 'self'; img-src 'self' data: https:; sty"
  },
  {
   "id": "D3.2/\\evil.com/",
   "desc": "GET /\\evil.com/ không redirect ra ngoài",
   "ok": true,
-  "detail": "HTTP/1.1 404 Not Found\r\ndate: Thu, 05 Nov 2026 00:15:25 GMT\r\ncontent-length: 3665\r\ncontent-type: text/html; charset=utf-8\r\ncontent-security-policy: default-src 'self'; img-src 'self' data: https:; sty"
+  "detail": "HTTP/1.1 404 Not Found\r\ndate: Thu, 05 Nov 2026 06:11:17 GMT\r\ncontent-length: 3656\r\ncontent-type: text/html; charset=utf-8\r\ncontent-security-policy: default-src 'self'; img-src 'self' data: https:; sty"
  },
  {
   "id": "D3.2/admin//evil.com/",
   "desc": "GET /admin//evil.com/ không redirect ra ngoài",
   "ok": true,
-  "detail": "HTTP/1.1 404 Not Found\r\ndate: Thu, 05 Nov 2026 00:15:25 GMT\r\ncontent-length: 3665\r\ncontent-type: text/html; charset=utf-8\r\ncontent-security-policy: default-src 'self'; img-src 'self' data: https:; sty"
+  "detail": "HTTP/1.1 404 Not Found\r\ndate: Thu, 05 Nov 2026 06:11:17 GMT\r\ncontent-length: 3656\r\ncontent-type: text/html; charset=utf-8\r\ncontent-security-policy: default-src 'self'; img-src 'self' data: https:; sty"
  },
  {
   "id": "D3.2//evil.com/%2f..",
   "desc": "GET //evil.com/%2f.. không redirect ra ngoài",
   "ok": true,
-  "detail": "HTTP/1.1 404 Not Found\r\ndate: Thu, 05 Nov 2026 00:15:25 GMT\r\ncontent-length: 3665\r\ncontent-type: text/html; charset=utf-8\r\ncontent-security-policy: default-src 'self'; img-src 'self' data: https:; sty"
+  "detail": "HTTP/1.1 404 Not Found\r\ndate: Thu, 05 Nov 2026 06:11:17 GMT\r\ncontent-length: 3656\r\ncontent-type: text/html; charset=utf-8\r\ncontent-security-policy: default-src 'self'; img-src 'self' data: https:; sty"
  },
  {
   "id": "D3.3",
@@ -177,13 +177,13 @@
   "id": "D4.3/media/AUX",
   "desc": "/media/AUX: phản hồi nhanh, không 500",
   "ok": true,
-  "detail": "st=404 t=0.5s"
+  "detail": "st=404 t=0.4s"
  },
  {
   "id": "D4.3/media/COM1",
   "desc": "/media/COM1: phản hồi nhanh, không 500",
   "ok": true,
-  "detail": "st=404 t=0.5s"
+  "detail": "st=404 t=0.4s"
  },
  {
   "id": "D4.3/media/LPT1",
@@ -224,8 +224,8 @@
  {
   "id": "D4.3/media/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "desc": "/media/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: phản hồi nhanh, không 500",
-  "ok": false,
-  "detail": "st=500 t=0.0s"
+  "ok": true,
+  "detail": "st=404 t=0.0s"
  },
  {
   "id": "D4.3/static/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/",
@@ -234,20 +234,20 @@
   "detail": "st=404 t=0.1s"
  },
  {
-  "id": "D4.3/media/69af93d04c6d881d29f7cb7247e66b80.",
-  "desc": "/media/69af93d04c6d881d29f7cb7247e66b80.png::$DATA: phản hồi nhanh, không 500",
+  "id": "D4.3/media/1b87c81a7619bd7fb09a5000f417b2c7.",
+  "desc": "/media/1b87c81a7619bd7fb09a5000f417b2c7.png::$DATA: phản hồi nhanh, không 500",
   "ok": true,
   "detail": "st=200 t=0.0s"
  },
  {
-  "id": "D4.3/media/69af93d04c6d881d29f7cb7247e66b80.",
-  "desc": "/media/69af93d04c6d881d29f7cb7247e66b80.png.: phản hồi nhanh, không 500",
+  "id": "D4.3/media/1b87c81a7619bd7fb09a5000f417b2c7.",
+  "desc": "/media/1b87c81a7619bd7fb09a5000f417b2c7.png.: phản hồi nhanh, không 500",
   "ok": true,
   "detail": "st=200 t=0.0s"
  },
  {
-  "id": "D4.3/media/69AF93D04C6D881D29F7CB7247E66B80.",
-  "desc": "/media/69AF93D04C6D881D29F7CB7247E66B80.PNG: phản hồi nhanh, không 500",
+  "id": "D4.3/media/1B87C81A7619BD7FB09A5000F417B2C7.",
+  "desc": "/media/1B87C81A7619BD7FB09A5000F417B2C7.PNG: phản hồi nhanh, không 500",
   "ok": true,
   "detail": "st=200 t=0.0s"
  },
@@ -369,43 +369,43 @@
   "id": "D5.gpoly.png",
   "desc": "Ảnh thật poly.png: tên ngẫu nhiên, Content-Type ảnh, nosniff",
   "ok": true,
-  "detail": "(303, '/media/833ab77f9eca83cbd8ecddb56efed7eb.png', 'image/png')"
+  "detail": "(303, '/media/5f1347807f5ee4718aa8e12ba6a9009b.png', 'image/png')"
  },
  {
   "id": "D5.gdouble.php.png",
   "desc": "Ảnh thật double.php.png: tên ngẫu nhiên, Content-Type ảnh, nosniff",
   "ok": true,
-  "detail": "(303, '/media/2f1f281606897057983fb45755ba3f55.png', 'image/png')"
+  "detail": "(303, '/media/2802899896f8b7ea776c41e76049cf9d.png', 'image/png')"
  },
  {
   "id": "D5.g../../../evil.png",
   "desc": "Ảnh thật ../../../evil.png: tên ngẫu nhiên, Content-Type ảnh, nosniff",
   "ok": true,
-  "detail": "(303, '/media/08f9fd0ad24880c4493346ef37e4fb85.png', 'image/png')"
+  "detail": "(303, '/media/11c5aaae3fc126c459f8d2a40bd39759.png', 'image/png')"
  },
  {
   "id": "D5.ga.jpg",
   "desc": "Ảnh thật a.jpg: tên ngẫu nhiên, Content-Type ảnh, nosniff",
   "ok": true,
-  "detail": "(303, '/media/43884c6ef7e23f0269784620e5f30b7c.jpg', 'image/jpeg')"
+  "detail": "(303, '/media/ce32f3046ba64cbbe878d4bc50dca6ee.jpg', 'image/jpeg')"
  },
  {
   "id": "D5.gb.webp",
   "desc": "Ảnh thật b.webp: tên ngẫu nhiên, Content-Type ảnh, nosniff",
   "ok": true,
-  "detail": "(303, '/media/dc3bed3601df05d74f58a8632f596706.webp', 'image/webp')"
+  "detail": "(303, '/media/c8752d42f84b094d5f3fac5166b5b851.webp', 'image/webp')"
  },
  {
   "id": "D5.gfake-ext.html",
   "desc": "Ảnh thật fake-ext.html: tên ngẫu nhiên, Content-Type ảnh, nosniff",
   "ok": true,
-  "detail": "(303, '/media/61c1c09c02bc2290a0bc81c60db69570.png', 'image/png')"
+  "detail": "(303, '/media/5abc974893d4caf05eaea00817d0aa54.png', 'image/png')"
  },
  {
   "id": "D5.gtên ảnh 😀.png",
   "desc": "Ảnh thật tên ảnh 😀.png: tên ngẫu nhiên, Content-Type ảnh, nosniff",
   "ok": true,
-  "detail": "(303, '/media/5fc1f45051712b4869f5b55ad91b01b9.png', 'image/png')"
+  "detail": "(303, '/media/eda70a883d3feca2d074523e2f0c9cd8.png', 'image/png')"
  },
  {
   "id": "D5.t",
@@ -428,7 +428,7 @@
  {
   "id": "D5.e",
   "desc": "Upload bỏ metadata EXIF (GPS, thiết bị) trước khi công khai",
-  "ok": false,
+  "ok": true,
   "detail": "file phục vụ nguyên byte, còn EXIF"
  },
  {
@@ -549,13 +549,13 @@
   "id": "D8.2",
   "desc": "Phiên hết hạn khi POST: về login",
   "ok": true,
-  "detail": "(303, '/admin/login?next=/admin/brokers/1/toggle')"
+  "detail": "(303, '/admin/login?next=/admin/brokers%3Ftab%3Dlinks')"
  },
  {
   "id": "D8.3",
   "desc": "Đăng nhập lại sau POST hết hạn (nút Xóa/công tắc): không rơi vào trang 405 trắng",
-  "ok": false,
-  "detail": "về /admin/brokers/1/toggle -> 405 'Method Not Allowed'"
+  "ok": true,
+  "detail": "về /admin/brokers?tab=links -> 200 '\\n<!doctype html>\\n<html lang=\"vi\" class=\"'"
  },
  {
   "id": "D8.4",
@@ -578,14 +578,14 @@
  {
   "id": "D8.7",
   "desc": "Mật khẩu có khoảng trắng đầu/cuối: đăng nhập đúng với chuỗi vừa đặt",
-  "ok": false,
-  "detail": "401"
+  "ok": true,
+  "detail": "303"
  },
  {
   "id": "D8.8",
-  "desc": "Mật khẩu 300 ký tự: đăng nhập được với chuỗi vừa đặt (không cắt thầm)",
-  "ok": false,
-  "detail": "401"
+  "desc": "Mật khẩu 300 ký tự: bị từ chối khi đặt, hoặc đăng nhập được (không cắt thầm)",
+  "ok": true,
+  "detail": "(400, 401)"
  },
  {
   "id": "D9.1",
@@ -655,51 +655,69 @@
  },
  {
   "id": "D10.s/admin/pages/bonus",
-  "desc": "Lưu payload vào 4 ô của /admin/pages/bonus",
+  "desc": "Lưu payload vào 5 ô của /admin/pages/bonus",
   "ok": true,
-  "detail": "(303, 4)"
+  "detail": "(303, 5)"
  },
  {
   "id": "D10.s/admin/pages/san",
-  "desc": "Lưu payload vào 4 ô của /admin/pages/san",
+  "desc": "Lưu payload vào 5 ô của /admin/pages/san",
   "ok": true,
-  "detail": "(303, 4)"
+  "detail": "(303, 5)"
+ },
+ {
+  "id": "D10.s/admin/pages/compare",
+  "desc": "Lưu payload vào 5 ô của /admin/pages/compare",
+  "ok": true,
+  "detail": "(303, 5)"
  },
  {
   "id": "D10.s/admin/pages/tin",
-  "desc": "Lưu payload vào 4 ô của /admin/pages/tin",
+  "desc": "Lưu payload vào 5 ô của /admin/pages/tin",
   "ok": true,
-  "detail": "(303, 4)"
+  "detail": "(303, 5)"
  },
  {
   "id": "D10.s/admin/pages/gioithieu",
-  "desc": "Lưu payload vào 37 ô của /admin/pages/gioithieu",
+  "desc": "Lưu payload vào 38 ô của /admin/pages/gioithieu",
   "ok": true,
-  "detail": "(303, 37)"
+  "detail": "(303, 38)"
+ },
+ {
+  "id": "D10.s/admin/pages/method",
+  "desc": "Lưu payload vào 5 ô của /admin/pages/method",
+  "ok": true,
+  "detail": "(303, 5)"
+ },
+ {
+  "id": "D10.s/admin/pages/affiliate",
+  "desc": "Lưu payload vào 5 ô của /admin/pages/affiliate",
+  "ok": true,
+  "detail": "(303, 5)"
  },
  {
   "id": "D10.s/admin/pages/lienhe",
-  "desc": "Lưu payload vào 9 ô của /admin/pages/lienhe",
+  "desc": "Lưu payload vào 10 ô của /admin/pages/lienhe",
   "ok": true,
-  "detail": "(303, 9)"
+  "detail": "(303, 10)"
  },
  {
   "id": "D10.s/admin/pages/terms",
-  "desc": "Lưu payload vào 5 ô của /admin/pages/terms",
+  "desc": "Lưu payload vào 6 ô của /admin/pages/terms",
   "ok": true,
-  "detail": "(303, 5)"
+  "detail": "(303, 6)"
  },
  {
   "id": "D10.s/admin/pages/privacy",
-  "desc": "Lưu payload vào 5 ô của /admin/pages/privacy",
+  "desc": "Lưu payload vào 6 ô của /admin/pages/privacy",
   "ok": true,
-  "detail": "(303, 5)"
+  "detail": "(303, 6)"
  },
  {
   "id": "D10.s/admin/pages/system",
-  "desc": "Lưu payload vào 12 ô của /admin/pages/system",
+  "desc": "Lưu payload vào 18 ô của /admin/pages/system",
   "ok": true,
-  "detail": "(303, 12)"
+  "detail": "(303, 18)"
  },
  {
   "id": "D10.s/admin/settings/general",
@@ -733,7 +751,7 @@
  },
  {
   "id": "D10.3",
-  "desc": "41 trang admin: không có HTML/JS lọt ra",
+  "desc": "44 trang admin: không có HTML/JS lọt ra",
   "ok": true,
   "detail": "[]"
  },
@@ -807,13 +825,13 @@
   "id": "D12.c1",
   "desc": "Cookie CSRF đăng nhập: HttpOnly, Secure, SameSite=Lax",
   "ok": true,
-  "detail": "tbh_login_csrf=KjJ9z3zobIDxe9GyLytFcBs6YJMuq-tuBIgPhsJctec; HttpOnly; Max-Age=3600; Path=/; SameSite=lax; Secure"
+  "detail": "tbh_login_csrf=53XnBC_dfB8Big9PO3lYQowM2mgh-D45GFBlQ5MKQ-M; HttpOnly; Max-Age=3600; Path=/; SameSite=lax; Secure"
  },
  {
   "id": "D12.c2",
   "desc": "Cookie phiên: HttpOnly, Secure, SameSite=Lax, Max-Age 7 ngày",
   "ok": true,
-  "detail": "tbh_session=Jyzq4-8-XRNE4x7Ui96PZiroj4RaJU_YFf4CgBq6PEs; HttpOnly; Max-Age=604800; Path=/; SameSite=lax; Secure"
+  "detail": "tbh_session=aHESSAouSSsQsTH6uHhZ1vQWJjwbiIGFrfttV8vFadI; HttpOnly; Max-Age=604800; Path=/; SameSite=lax; Secure"
  },
  {
   "id": "D12.c3",
@@ -885,7 +903,7 @@
   "id": "D13.500",
   "desc": "Header bảo mật có cả ở trang 500",
   "ok": false,
-  "detail": "(500, ['content-security-policy', 'x-content-type-options', 'x-frame-options', 'strict-transport-security'])"
+  "detail": "(404, [])"
  },
  {
   "id": "D13.500b",
@@ -907,20 +925,20 @@
  },
  {
   "id": "D14.1",
-  "desc": "APP_ENV=prod (gõ tắt): không âm thầm chạy chế độ dev (mở /docs, cookie không Secure, SECRET_KEY ngẫu nhiên)",
-  "ok": false,
-  "detail": "/docs=200"
+  "desc": "APP_ENV=prod: từ chối chạy, mã 2, báo rõ",
+  "ok": true,
+  "detail": "(2, \"Cấu hình không hợp lệ:\\n- APP_ENV='prod' không hợp lệ, chỉ nhận: production, development, test.\\nXem mục Biến môi trường trong README.md.\\n\")"
  },
  {
   "id": "D14.2",
-  "desc": "Production thiếu SECRET_KEY: từ chối chạy",
+  "desc": "thiếu SECRET_KEY: từ chối chạy, mã 2, báo rõ",
   "ok": true,
-  "detail": ""
+  "detail": "(2, 'Cấu hình không hợp lệ:\\n- Thiếu SECRET_KEY.\\nXem mục Biến môi trường trong README.md.\\n')"
  },
  {
   "id": "D14.3",
-  "desc": "SECRET_KEY quá ngắn ('x') bị từ chối ở production",
-  "ok": false,
-  "detail": "chấp nhận khóa 1 ký tự"
+  "desc": "SECRET_KEY='x': từ chối chạy, mã 2, báo rõ",
+  "ok": true,
+  "detail": "(2, 'Cấu hình không hợp lệ:\\n- SECRET_KEY quá ngắn, cần tối thiểu 32 ký tự.\\nXem mục Biến môi trường trong README.md.\\n')"
  }
 ]

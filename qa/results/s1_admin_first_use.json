@@ -204,6 +204,12 @@
   "detail": "'Đã lưu' url=http://127.0.0.1:8014/admin/pages?tab=san"
  },
  {
+  "id": "A5.pages.compare",
+  "desc": "Lưu nguyên trạng pages/compare: Đã lưu",
+  "ok": true,
+  "detail": "'Đã lưu' url=http://127.0.0.1:8014/admin/pages?tab=compare"
+ },
+ {
   "id": "A5.pages.tin",
   "desc": "Lưu nguyên trạng pages/tin: Đã lưu",
   "ok": true,
@@ -214,6 +220,18 @@
   "desc": "Lưu nguyên trạng pages/gioithieu: Đã lưu",
   "ok": true,
   "detail": "'Đã lưu' url=http://127.0.0.1:8014/admin/pages?tab=gioithieu"
+ },
+ {
+  "id": "A5.pages.method",
+  "desc": "Lưu nguyên trạng pages/method: Đã lưu",
+  "ok": true,
+  "detail": "'Đã lưu' url=http://127.0.0.1:8014/admin/pages?tab=method"
+ },
+ {
+  "id": "A5.pages.affiliate",
+  "desc": "Lưu nguyên trạng pages/affiliate: Đã lưu",
+  "ok": true,
+  "detail": "'Đã lưu' url=http://127.0.0.1:8014/admin/pages?tab=affiliate"
  },
  {
   "id": "A5.pages.lienhe",
@@ -271,15 +289,15 @@
  },
  {
   "id": "A6.0",
-  "desc": "Lưu 186 ô qua UI không lỗi",
+  "desc": "Lưu 214 ô qua UI không lỗi",
   "ok": true,
   "detail": "[]"
  },
  {
   "id": "A6.1",
-  "desc": "Mọi ô đã sửa xuất hiện ở public (186 ô)",
-  "ok": true,
-  "detail": "[]"
+  "desc": "Mọi ô đã sửa xuất hiện ở public (214 ô)",
+  "ok": false,
+  "detail": "[('pages/terms', 'label', 'ZQ198Z'), ('pages/privacy', 'label', 'ZQ204Z'), ('pages/system', 'error_title', 'ZQ212Z'), ('pages/system', 'error_text', 'ZQ213Z')]"
  },
  {
   "id": "A6.2",

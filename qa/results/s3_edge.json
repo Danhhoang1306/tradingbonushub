@@ -116,13 +116,13 @@
  {
   "id": "C3.3",
   "desc": "Banner không còn đích (sàn đã xóa, không target_url) không được hiện link chết trên trang chủ",
-  "ok": false,
-  "detail": "banner #1 hiện=True, /go/ad=404"
+  "ok": true,
+  "detail": "banner #1 hiện=False, /go/ad=404"
  },
  {
   "id": "C3.4",
   "desc": "Admin thấy banner mồ côi không phải 'Đang chạy'",
-  "ok": false,
+  "ok": true,
   "detail": "vẫn báo Đang chạy"
  },
  {
@@ -140,8 +140,8 @@
  {
   "id": "C4.3",
   "desc": "Sàn đã ẩn không chiếm suất: bật được sàn thứ 3 đang hiển thị",
-  "ok": false,
-  "detail": "đang hiển thị=2, flash=compare_limit"
+  "ok": true,
+  "detail": "đang hiển thị=3, flash=toggled"
  },
  {
   "id": "C4.4",
@@ -176,8 +176,8 @@
  {
   "id": "C5.3",
   "desc": "Slug trùng route tĩnh (so-sanh) phải bị từ chối, nếu không trang sàn không bao giờ truy cập được",
-  "ok": false,
-  "detail": "POST=303; /san/so-sanh vẫn là trang so sánh"
+  "ok": true,
+  "detail": "POST=400; /san/so-sanh vẫn là trang so sánh"
  },
  {
   "id": "C5.4",
@@ -188,8 +188,8 @@
  {
   "id": "C5.5",
   "desc": "Tiêu đề dài > 120 ký tự, cắt slug rơi đúng dấu gạch vẫn lưu được (slug tự sinh)",
-  "ok": false,
-  "detail": "400: ['Slug chỉ gồm chữ thường, số và dấu gạch ngang.']"
+  "ok": true,
+  "detail": "303: []"
  },
  {
   "id": "C5.6",
@@ -199,15 +199,15 @@
  },
  {
   "id": "C6.2",
-  "desc": "Tên dài không vượt độ dài cột (120) khi lưu vào SQLite",
-  "ok": false,
-  "detail": "độ dài name trong DB=255, cột String(120)"
+  "desc": "Tên sàn vượt 120 ký tự: báo lỗi, không cắt",
+  "ok": true,
+  "detail": "400"
  },
  {
   "id": "C6.3",
-  "desc": "founded dài không vượt String(20)",
-  "ok": false,
-  "detail": "độ dài=100"
+  "desc": "founded vượt 20 ký tự: báo lỗi",
+  "ok": true,
+  "detail": "400"
  },
  {
   "id": "C6.4",
@@ -225,25 +225,25 @@
   "id": "C7.inf",
   "desc": "value_num=inf: không 500",
   "ok": true,
-  "detail": "303"
+  "detail": "400"
  },
  {
   "id": "C7.-inf",
   "desc": "value_num=-inf: không 500",
   "ok": true,
-  "detail": "303"
+  "detail": "400"
  },
  {
   "id": "C7.nan",
   "desc": "value_num=nan: không 500",
   "ok": true,
-  "detail": "303"
+  "detail": "400"
  },
  {
   "id": "C7.1e999",
   "desc": "value_num=1e999: không 500",
   "ok": true,
-  "detail": "303"
+  "detail": "400"
  },
  {
   "id": "C7.1,5",
@@ -260,8 +260,8 @@
  {
   "id": "C7.x",
   "desc": "value_num vô cực phải bị từ chối (số để sort)",
-  "ok": false,
-  "detail": "3 dòng value_num=inf đã lưu"
+  "ok": true,
+  "detail": "0 dòng value_num=inf đã lưu"
  },
  {
   "id": "C7.r/",
@@ -280,12 +280,6 @@
   "desc": "Sau khi lưu giá trị lạ, /admin/bonus vẫn 200",
   "ok": true,
   "detail": "200"
- },
- {
-  "id": "C7.e",
-  "desc": "Mở form sửa bonus inf",
-  "ok": true,
-  "detail": ""
  },
  {
   "id": "C8.0001-01-01",
@@ -325,27 +319,27 @@
  },
  {
   "id": "C8.p1",
-  "desc": "Bài ngày 9999: public 200",
+  "desc": "Bài ngày 9999 là hẹn giờ: danh sách 200, trang bài 404",
   "ok": true,
   "detail": ""
  },
  {
   "id": "C8.p2",
-  "desc": "Bài đăng ngày tương lai không hiện trước ngày đó (nếu hỗ trợ ngày đăng)",
-  "ok": false,
+  "desc": "Bài đăng ngày tương lai không hiện trước ngày đó",
+  "ok": true,
   "detail": "bài tương lai hiện ngay"
  },
  {
   "id": "C9.1",
   "desc": "h2, ul, ol, table, blockquote, img, link render",
   "ok": true,
-  "detail": "class=\"prose\">Tiêu đề một\n<h2>Tiêu đề hai</h2>\n<p>Dòng một\nDòng hai</p>\n<ul>\n<li>a</li>\n<li>b</li>\n</ul>\n<ol>\n<li>x</li>\n<li>y</li>\n</ol>\n<p><code>code block\n&lt;b&gt;x&lt;/b&gt;</code></p>\n<table>\n<thead>\n<tr>\n<th>A</th>\n<th>B</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>1</td>\n<td>2</td>\n</tr>\n</tbody>\n</"
+  "detail": "class=\"prose\"><h2>Tiêu đề một</h2>\n<h2>Tiêu đề hai</h2>\n<p>Dòng một\nDòng hai</p>\n<ul>\n<li>a</li>\n<li>b</li>\n</ul>\n<ol>\n<li>x</li>\n<li>y</li>\n</ol>\n<pre><code>code block\n&lt;b&gt;x&lt;/b&gt;\n</code></pre>\n<table>\n<thead>\n<tr>\n<th>A</th>\n<th>B</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>1</td>\n<td>2</td>\n</t"
  },
  {
   "id": "C9.2",
   "desc": "'# Tiêu đề' (h1) không bị mất định dạng thành chữ thường",
-  "ok": false,
-  "detail": "['class=\"prose\">Tiêu đề một']"
+  "ok": true,
+  "detail": "['class=\"prose\"><h2>Tiêu đề một</h2>']"
  },
  {
   "id": "C9.3",
@@ -356,20 +350,20 @@
  {
   "id": "C9.4",
   "desc": "Khối ``` hiển thị thành khối code và escape <b>",
-  "ok": false,
-  "detail": "['li>\\n<li>y</li>\\n</ol>\\n<p><code>code block\\n&lt;b&gt;x&lt;/b&gt;</code></p>\\n<table>']"
+  "ok": true,
+  "detail": "['>\\n<li>y</li>\\n</ol>\\n<pre><code>code block\\n&lt;b&gt;x&lt;/b&gt;\\n</code></pre>\\n<tab']"
  },
  {
   "id": "C9.5",
   "desc": "##### H5 không mất định dạng",
-  "ok": false,
-  "detail": "['H5 nhỏ']"
+  "ok": true,
+  "detail": "['<h4>H5 nhỏ</h4>']"
  },
  {
   "id": "C10.1",
   "desc": "Gửi đồng thời cùng slug: không 500 (chỉ 303 + 400)",
   "ok": true,
-  "detail": "[400, 400, 400, 303, 400, 400]"
+  "detail": "[400, 400, 400, 400, 303, 400]"
  },
  {
   "id": "C10.2",
@@ -415,63 +409,63 @@
  },
  {
   "id": "C11.p0",
-  "desc": "/tin-tuc?page=0: 200 HTML (khách không thấy JSON lỗi)",
+  "desc": "/tin-tuc?page=0: trang HTML 200 hoặc 404 (khách không thấy JSON lỗi)",
   "ok": true,
   "detail": "200 text/html; charset=utf-8 <!doctype html>\n<html lang=\"vi\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initia"
  },
  {
   "id": "C11.p-5",
-  "desc": "/tin-tuc?page=-5: 200 HTML (khách không thấy JSON lỗi)",
+  "desc": "/tin-tuc?page=-5: trang HTML 200 hoặc 404 (khách không thấy JSON lỗi)",
   "ok": true,
   "detail": "200 text/html; charset=utf-8 <!doctype html>\n<html lang=\"vi\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initia"
  },
  {
   "id": "C11.p99999999999999999999999999",
-  "desc": "/tin-tuc?page=99999999999999999999999999: 200 HTML (khách không thấy JSON lỗi)",
+  "desc": "/tin-tuc?page=99999999999999999999999999: trang HTML 200 hoặc 404 (khách không thấy JSON lỗi)",
   "ok": true,
   "detail": "200 text/html; charset=utf-8 <!doctype html>\n<html lang=\"vi\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initia"
  },
  {
   "id": "C11.p1.5",
-  "desc": "/tin-tuc?page=1.5: 200 HTML (khách không thấy JSON lỗi)",
-  "ok": false,
-  "detail": "422 application/json {\"detail\":[{\"type\":\"int_parsing\",\"loc\":[\"query\",\"page\"],\"msg\":\"Input should be a valid integer, unable to parse string a"
+  "desc": "/tin-tuc?page=1.5: trang HTML 200 hoặc 404 (khách không thấy JSON lỗi)",
+  "ok": true,
+  "detail": "404 text/html; charset=utf-8 <!doctype html>\n<html lang=\"vi\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initia"
  },
  {
   "id": "C11.pabc",
-  "desc": "/tin-tuc?page=abc: 200 HTML (khách không thấy JSON lỗi)",
-  "ok": false,
-  "detail": "422 application/json {\"detail\":[{\"type\":\"int_parsing\",\"loc\":[\"query\",\"page\"],\"msg\":\"Input should be a valid integer, unable to parse string a"
+  "desc": "/tin-tuc?page=abc: trang HTML 200 hoặc 404 (khách không thấy JSON lỗi)",
+  "ok": true,
+  "detail": "404 text/html; charset=utf-8 <!doctype html>\n<html lang=\"vi\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initia"
  },
  {
   "id": "C11.p",
-  "desc": "/tin-tuc?page=: 200 HTML (khách không thấy JSON lỗi)",
-  "ok": false,
-  "detail": "422 application/json {\"detail\":[{\"type\":\"int_parsing\",\"loc\":[\"query\",\"page\"],\"msg\":\"Input should be a valid integer, unable to parse string a"
+  "desc": "/tin-tuc?page=: trang HTML 200 hoặc 404 (khách không thấy JSON lỗi)",
+  "ok": true,
+  "detail": "404 text/html; charset=utf-8 <!doctype html>\n<html lang=\"vi\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initia"
  },
  {
   "id": "C11.p%00",
-  "desc": "/tin-tuc?page=%00: 200 HTML (khách không thấy JSON lỗi)",
-  "ok": false,
-  "detail": "422 application/json {\"detail\":[{\"type\":\"int_parsing\",\"loc\":[\"query\",\"page\"],\"msg\":\"Input should be a valid integer, unable to parse string a"
+  "desc": "/tin-tuc?page=%00: trang HTML 200 hoặc 404 (khách không thấy JSON lỗi)",
+  "ok": true,
+  "detail": "404 text/html; charset=utf-8 <!doctype html>\n<html lang=\"vi\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initia"
  },
  {
   "id": "C11.g/go/broker/abc",
   "desc": "/go/broker/abc: 404 trang lỗi",
-  "ok": false,
-  "detail": "422 application/json '{\"detail\":[{\"type\":\"int_parsing\",\"loc\":[\"path\",\"broker_id\"],\"msg\":\"Input should '"
+  "ok": true,
+  "detail": "404 text/html; charset=utf-8 '<!doctype html>\\n<html lang=\"vi\">\\n<head>\\n<meta charset=\"utf-8\">\\n<meta name=\"viewp'"
  },
  {
   "id": "C11.g/go/broker/99999999999999999999999",
   "desc": "/go/broker/99999999999999999999999: 404 trang lỗi",
-  "ok": false,
-  "detail": "500 text/html; charset=utf-8 '<!doctype html>\\n<html lang=\"vi\">\\n<head>\\n<meta charset=\"utf-8\">\\n<meta name=\"viewp'"
+  "ok": true,
+  "detail": "404 text/html; charset=utf-8 '<!doctype html>\\n<html lang=\"vi\">\\n<head>\\n<meta charset=\"utf-8\">\\n<meta name=\"viewp'"
  },
  {
   "id": "C11.g/go/ad/99999999999999999999999",
   "desc": "/go/ad/99999999999999999999999: 404 trang lỗi",
-  "ok": false,
-  "detail": "500 text/html; charset=utf-8 '<!doctype html>\\n<html lang=\"vi\">\\n<head>\\n<meta charset=\"utf-8\">\\n<meta name=\"viewp'"
+  "ok": true,
+  "detail": "404 text/html; charset=utf-8 '<!doctype html>\\n<html lang=\"vi\">\\n<head>\\n<meta charset=\"utf-8\">\\n<meta name=\"viewp'"
  },
  {
   "id": "C11.g/go/broker/-1",
@@ -482,86 +476,86 @@
  {
   "id": "C11.b",
   "desc": "ad-view id khổng lồ: không 500",
-  "ok": false,
-  "detail": "500"
+  "ok": true,
+  "detail": "404"
  },
  {
   "id": "C11.a/admin/bonus/99999999999999999999999/edit",
   "desc": "/admin/bonus/99999999999999999999999/edit: không 500",
-  "ok": false,
-  "detail": "500"
+  "ok": true,
+  "detail": "404"
  },
  {
   "id": "C11.a/admin/brokers/abc/edit",
   "desc": "/admin/brokers/abc/edit: không 500",
   "ok": true,
-  "detail": "422"
+  "detail": "404"
  },
  {
   "id": "C11.a/admin/subscribers?draft=abc",
   "desc": "/admin/subscribers?draft=abc: không 500",
   "ok": true,
-  "detail": "422"
+  "detail": "404"
  },
  {
   "id": "C11.a/admin/subscribers?draft=99999999999999999999999",
   "desc": "/admin/subscribers?draft=99999999999999999999999: không 500",
-  "ok": false,
-  "detail": "500"
+  "ok": true,
+  "detail": "404"
  },
  {
   "id": "C11.a/admin/messages/99999999999999999999999",
   "desc": "/admin/messages/99999999999999999999999: không 500",
-  "ok": false,
-  "detail": "500"
+  "ok": true,
+  "detail": "404"
  },
  {
   "id": "C11.h/",
   "desc": "HEAD / không 405 (uptime check, bot)",
-  "ok": false,
-  "detail": "405"
+  "ok": true,
+  "detail": "200"
  },
  {
   "id": "C11.h/bonus",
   "desc": "HEAD /bonus không 405 (uptime check, bot)",
-  "ok": false,
-  "detail": "405"
+  "ok": true,
+  "detail": "200"
  },
  {
   "id": "C11.h/san",
   "desc": "HEAD /san không 405 (uptime check, bot)",
-  "ok": false,
-  "detail": "405"
+  "ok": true,
+  "detail": "200"
  },
  {
   "id": "C11.h/health",
   "desc": "HEAD /health không 405 (uptime check, bot)",
-  "ok": false,
-  "detail": "405"
+  "ok": true,
+  "detail": "200"
  },
  {
   "id": "C11.h/robots.txt",
   "desc": "HEAD /robots.txt không 405 (uptime check, bot)",
-  "ok": false,
-  "detail": "405"
+  "ok": true,
+  "detail": "200"
  },
  {
   "id": "C11.h/sitemap.xml",
   "desc": "HEAD /sitemap.xml không 405 (uptime check, bot)",
-  "ok": false,
-  "detail": "405"
+  "ok": true,
+  "detail": "200"
  },
  {
   "id": "C12.1",
   "desc": "<title> trang sàn riêng từng sàn, không phải meta_title của mục Sàn",
-  "ok": false,
-  "detail": "SEO chung mục Sàn"
+  "ok": true,
+  "detail": "Đánh giá K2 – TradingBonusHub"
  },
  {
   "id": "C12.2",
   "desc": "So sánh có <title> riêng khác /san",
-  "ok": false,
-  "detail": "SEO chung mục Sàn"
+  "ok": true,
+  "detail": "So sánh sàn giao dịch – TradingBonusHub"
  },
  {
   "id": "C12.3",
@@ -572,8 +566,8 @@
  {
   "id": "C12.4",
   "desc": "meta description bài viết là excerpt riêng, không phải meta_desc của mục Tin",
-  "ok": false,
-  "detail": "SEO mô tả chung Tin"
+  "ok": true,
+  "detail": "Mô tả riêng của bài"
  },
  {
   "id": "C13.1",
@@ -584,26 +578,26 @@
  {
   "id": "C13.2",
   "desc": "Tắt section: không cộng lượt hiển thị (không hiển thị thì không tính)",
-  "ok": false,
-  "detail": "views 1 -> 4 dù section tắt"
+  "ok": true,
+  "detail": "views 1 -> 1 dù section tắt"
  },
  {
   "id": "C14.1",
   "desc": "Mở bài viết không làm đổi lastmod",
-  "ok": false,
-  "detail": "['bai-seo</loc><lastmod>2026-11-05']"
+  "ok": true,
+  "detail": "['bai-seo</loc><lastmod>2020-01-01']"
  },
  {
   "id": "C14.2",
   "desc": "Click affiliate không làm đổi lastmod của sàn",
-  "ok": false,
-  "detail": "['/san/k2</loc><lastmod>2026-11-05']"
+  "ok": true,
+  "detail": "['/san/k2</loc><lastmod>2020-01-01']"
  },
  {
   "id": "C15.1",
   "desc": "Sàn mới không thừa hưởng click 30 ngày của sàn đã xóa",
-  "ok": false,
-  "detail": "id cũ=10, id mới=10, dòng: Sàn Mới Tinh \n         \n           \n           \n           Lưu \n         \n         0 \n         3 \n       \n      \n       \n         Đua Slug \n         \n          "
+  "ok": true,
+  "detail": "id cũ=9, id mới=9, dòng: Sàn Mới Tinh \n         \n           \n           \n           Lưu \n         \n         0 \n         0 \n       \n      \n       \n         Đua Slug \n         \n          "
  },
  {
   "id": "C16.0",
@@ -710,26 +704,20 @@
  {
   "id": "C17.2",
   "desc": "Link trong email thứ nhất vẫn xác nhận được (người dùng hay mở email đầu)",
-  "ok": false,
-  "detail": "404"
- },
- {
-  "id": "C18.1",
-  "desc": "Hai lần gửi liên hệ giống hệt nhau không tạo 2 tin (chống gửi đúp)",
-  "ok": false,
-  "detail": "2"
+  "ok": true,
+  "detail": "200"
  },
  {
   "id": "C18.2",
   "desc": "Chủ đề ngoài danh sách bị từ chối hoặc chuẩn hóa",
-  "ok": false,
+  "ok": true,
   "detail": "lưu nguyên chủ đề tùy ý"
  },
  {
   "id": "C18.3",
   "desc": "Lỗi validate liên hệ: 400, không index (canonical không trỏ /api/contact)",
-  "ok": false,
-  "detail": "['rel=\"canonical\" href=\"http://127.0.0.1:8014/api/contact\"']"
+  "ok": true,
+  "detail": "[]"
  },
  {
   "id": "C18.4",
@@ -747,13 +735,13 @@
   "id": "C18.6",
   "desc": "Thân form 3MB: không 500",
   "ok": true,
-  "detail": "400"
+  "detail": "413"
  },
  {
   "id": "C19.1",
   "desc": "Banner không ảnh, không sàn: vẫn có link và nội dung nhìn thấy (tên banner), không phải hộp trống",
   "ok": true,
-  "detail": "/div> Tài trợ QC chỉ link Mở tài khoản Liên kết affiliate. CFD có rủi ro mất vốn cao do đòn bẩy. <div class=\"stat-light\""
+  "detail": "/div> Tài trợ QC chỉ link Mở tài khoản Liên kết affiliate. CFD có rủi ro mất vốn cao do đòn bẩy. <div class=\"media why-g"
  },
  {
   "id": "C19.2",

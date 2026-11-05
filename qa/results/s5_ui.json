@@ -2,8 +2,8 @@
  {
   "id": "E1.normal.360",
   "desc": "[normal] Public 360px: không cuộn ngang (21 trang, có chuỗi dài)",
-  "ok": false,
-  "detail": "[('/san/so-sanh', 489, ['A.tabs__tab is-active', 'A.pill is-active', 'DIV.compare-grid']), ('/san/so-sanh?ids=1,2,3', 489, ['A.tabs__tab is-active', 'A.pill is-active', 'DIV.compare-grid'])]"
+  "ok": true,
+  "detail": "[]"
  },
  {
   "id": "E2.normal.360",
@@ -14,8 +14,8 @@
  {
   "id": "E1.normal.390",
   "desc": "[normal] Public 390px: không cuộn ngang (21 trang, có chuỗi dài)",
-  "ok": false,
-  "detail": "[('/san/so-sanh', 459, ['A.tabs__tab is-active', 'A.pill is-active', 'DIV.compare-grid']), ('/san/so-sanh?ids=1,2,3', 459, ['A.tabs__tab is-active', 'A.pill is-active', 'DIV.compare-grid'])]"
+  "ok": true,
+  "detail": "[]"
  },
  {
   "id": "E2.normal.390",
@@ -26,8 +26,8 @@
  {
   "id": "E1.normal.768",
   "desc": "[normal] Public 768px: không cuộn ngang (21 trang, có chuỗi dài)",
-  "ok": false,
-  "detail": "[('/san/so-sanh', 89, ['A.pill is-active', 'DIV.compare-grid', 'DIV.compare-grid__head']), ('/san/so-sanh?ids=1,2,3', 89, ['A.pill is-active', 'DIV.compare-grid', 'DIV.compare-grid__head'])]"
+  "ok": true,
+  "detail": "[]"
  },
  {
   "id": "E2.normal.768",
@@ -116,8 +116,8 @@
  {
   "id": "E4.m3",
   "desc": "Esc đóng menu mobile",
-  "ok": false,
-  "detail": "true"
+  "ok": true,
+  "detail": "false"
  },
  {
   "id": "E5.1",
@@ -152,14 +152,14 @@
  {
   "id": "E7.1",
   "desc": "Tương phản WCAG AA",
-  "ok": false,
-  "detail": "3 kiểu chữ dưới ngưỡng"
+  "ok": true,
+  "detail": "0 kiểu chữ dưới ngưỡng"
  },
  {
   "id": "E1.stress.360",
   "desc": "[stress] Public 360px: không cuộn ngang (21 trang, có chuỗi dài)",
-  "ok": false,
-  "detail": "[('/', 1373, ['DD.', 'DD.', 'DD.']), ('/bonus', 1284, ['A.tabs__tab', 'A.tabs__tab', 'A.tabs__tab']), ('/san', 913, ['A.tabs__tab', 'DIV.broker-row__main', 'DIV.']), ('/san/so-sanh', 479, ['A.tabs__tab is-active', 'A.pill is-active', 'DIV.compare-grid']), ('/san/so-sanh?ids=1,2,3', 479, ['A.tabs__tab is-active', 'A.pill is-active', 'DIV.compare-grid']), ('/san/san-dai', 1052, ['SPAN.', 'A.tabs__tab', 'DIV.'])]"
+  "ok": true,
+  "detail": "[]"
  },
  {
   "id": "E2.stress.360",
@@ -170,8 +170,8 @@
  {
   "id": "E1.stress.390",
   "desc": "[stress] Public 390px: không cuộn ngang (21 trang, có chuỗi dài)",
-  "ok": false,
-  "detail": "[('/', 1343, ['DD.', 'DD.', 'DD.']), ('/bonus', 1254, ['A.tabs__tab', 'A.tabs__tab', 'A.tabs__tab']), ('/san', 883, ['A.tabs__tab', 'DIV.broker-row__main', 'DIV.']), ('/san/so-sanh', 449, ['A.tabs__tab is-active', 'A.pill is-active', 'DIV.compare-grid']), ('/san/so-sanh?ids=1,2,3', 449, ['A.tabs__tab is-active', 'A.pill is-active', 'DIV.compare-grid']), ('/san/san-dai', 1022, ['SPAN.', 'A.tabs__tab', 'DIV.'])]"
+  "ok": true,
+  "detail": "[]"
  },
  {
   "id": "E2.stress.390",
@@ -182,8 +182,8 @@
  {
   "id": "E1.stress.768",
   "desc": "[stress] Public 768px: không cuộn ngang (21 trang, có chuỗi dài)",
-  "ok": false,
-  "detail": "[('/', 1345, ['DD.', 'DD.', 'DD.']), ('/bonus', 1256, []), ('/san', 772, ['DIV.', 'H2.broker-row__name', 'A.']), ('/san/so-sanh', 79, ['A.pill is-active', 'DIV.compare-grid', 'A.link-plain']), ('/san/so-sanh?ids=1,2,3', 79, ['A.pill is-active', 'DIV.compare-grid', 'A.link-plain']), ('/san/san-dai', 1767, ['SPAN.', 'DIV.', 'H2.proscons__title'])]"
+  "ok": true,
+  "detail": "[]"
  },
  {
   "id": "E2.stress.768",
@@ -194,8 +194,8 @@
  {
   "id": "E1.stress.1440",
   "desc": "[stress] Public 1440px: không cuộn ngang (21 trang, có chuỗi dài)",
-  "ok": false,
-  "detail": "[('/', 690, ['DD.']), ('/bonus', 601, []), ('/san', 232, []), ('/san/san-dai', 1165, ['DIV.', 'H2.proscons__title', 'UL.']), ('/san/san-dai?tab=bonus', 832, ['DIV.', 'DIV.broker-aside__name', 'DIV.broker-aside__license']), ('/san/san-dai?tab=accounts', 832, ['DIV.', 'DIV.broker-aside__name', 'DIV.broker-aside__license'])]"
+  "ok": true,
+  "detail": "[]"
  },
  {
   "id": "E2.stress.1440",
@@ -206,8 +206,8 @@
  {
   "id": "E1.stress.1920",
   "desc": "[stress] Public 1920px: không cuộn ngang (21 trang, có chuỗi dài)",
-  "ok": false,
-  "detail": "[('/', 450, ['DD.']), ('/bonus', 361, []), ('/san/san-dai', 925, ['DIV.', 'H2.proscons__title', 'UL.']), ('/san/san-dai?tab=bonus', 592, ['DIV.', 'DIV.broker-aside__name', 'DIV.broker-aside__license']), ('/san/san-dai?tab=accounts', 592, ['DIV.', 'DIV.broker-aside__name', 'DIV.broker-aside__license']), ('/san/san-dai?tab=pay', 592, ['DIV.', 'DIV.broker-aside__name', 'DIV.broker-aside__license'])]"
+  "ok": true,
+  "detail": "[]"
  },
  {
   "id": "E2.stress.1920",

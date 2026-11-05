@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).parent
-names = ["s3_edge", "s4_security", "s1_admin_first_use", "s2_visitor", "s5_ui", "s6_ops", "s7_probes"]
+names = ["s3_edge", "s4_security", "s1_admin_first_use", "s2_visitor", "s5_ui", "s6_ops", "s7_probes", "s9_round2", "s10_upgrade_prod"]
 if "--full" in sys.argv:
     names = ["s0_fresh_install"] + names + ["s8_design_compare"]
 total = bad = 0

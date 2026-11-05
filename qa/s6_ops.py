@@ -12,7 +12,7 @@ from concurrent.futures import ThreadPoolExecutor
 import httpx
 from playwright.sync_api import sync_playwright
 
-from qalib import (ADMIN_EMAIL, ADMIN_PASS, BASE, PY, ROOT, WORK, Http, Report, Server, mk_banner, mk_bonus, mk_broker, mk_post, png_bytes)
+from qalib import (ADMIN_EMAIL, ADMIN_PASS, BASE, PY, ROOT, WORK, Http, Report, Server, mk_banner, mk_bonus, mk_broker, mk_post, png_bytes, prod_env)
 
 R = Report("s6_ops")
 c = R.check
@@ -38,7 +38,7 @@ r = subprocess.run(al + ["upgrade", "head"], cwd=ROOT, env=env, capture_output=T
 c("F1.5", "upgrade lại sau downgrade", r.returncode == 0, r.stderr[-300:])
 
 # ---------- F2. Restart, WAL, ảnh ----------
-s = Server("ops", env={"APP_ENV": "production", "SECRET_KEY": "qa-prod-" + "k" * 40})
+s = Server("ops", env=prod_env())
 s.start()
 s.cli_admin()
 h = Http().login()
@@ -94,12 +94,11 @@ bk = WORK / "bk"
 for i in range(n):
     shutil.rmtree(bk, ignore_errors=True)
     bk.mkdir()
-    # đúng README: copy data/app.db* trong lúc site đang chạy
-    for name in ("app.db", "app.db-wal", "app.db-shm"):
-        try:
-            shutil.copy2(s.dir / name, bk / name)
-        except OSError:
-            pass
+    # đúng README mới: sqlite3 backup khi đang chạy
+    src, dst = sqlite3.connect(s.db, timeout=15), sqlite3.connect(bk / "app.db")
+    src.backup(dst)
+    dst.close()
+    src.close()
     try:
         cn = sqlite3.connect(bk / "app.db")
         ok = cn.execute("pragma integrity_check").fetchone()[0]
@@ -111,7 +110,7 @@ for i in range(n):
         last = ok
 stop.set()
 [t.join() for t in writers]
-c("F3.2", f"Copy app.db* khi site đang ghi ({n} lần): bản sao toàn vẹn", bad == 0, f"{bad}/{n} bản hỏng: {str(last)[:160]}")
+c("F3.2", f"Sao lưu bằng sqlite3 backup khi site đang ghi ({n} lần): bản sao toàn vẹn", bad == 0, f"{bad}/{n} bản hỏng: {str(last)[:160]}")
 s.stop()
 shutil.rmtree(WORK / "ops_rs", ignore_errors=True)
 s2 = Server("ops_rs", env=s.env | {"DATABASE_URL": f"sqlite:///{(WORK / 'ops_rs' / 'app.db').as_posix()}", "UPLOAD_DIR": str(WORK / "ops_rs" / "up")})
@@ -129,7 +128,7 @@ ossl = shutil.which("openssl") or r"C:\Program Files\Git\mingw64in\openssl.exe"
 subprocess.run([ossl, "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-keyout", str(kp), "-out", str(cp), "-days", "30",
                 "-subj", "/CN=localhost", "-addext", "subjectAltName=DNS:localhost"], check=True, capture_output=True)
 PBASE = "https://localhost:8016"
-s = Server("ops_px", env={"APP_ENV": "production", "SECRET_KEY": "qa-prod-" + "k" * 40, "BASE_URL": PBASE + "/"}).start()
+s = Server("ops_px", env=prod_env(BASE_URL=PBASE + "/")).start()
 s.cli_admin()
 px = subprocess.Popen([PY, str(ROOT / "qa" / "https_proxy.py"), str(cp), str(kp), "8016", "8014"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 try:
@@ -186,22 +185,19 @@ finally:
     subprocess.run(["taskkill", "/T", "/F", "/PID", str(px.pid)], capture_output=True)
     s.stop()
 
-# ---------- F5. Quên BASE_URL ở production ----------
-s = Server("ops_nb", env={"APP_ENV": "production", "SECRET_KEY": "qa-prod-" + "k" * 40, "BASE_URL": ""})
-s.env.pop("BASE_URL")
-s.start()
-pub.post("/api/subscribe", data={"email": "nb@qa.test", "next": "/"})
-log = s.log_text()
-c("F5.1", "Production thiếu BASE_URL: phải báo/từ chối thay vì âm thầm gửi link 127.0.0.1 trong email và sitemap", "127.0.0.1:8000/xac-nhan" not in log, re.findall(r"http://127[^\s]+xac-nhan/", log)[:1])
-c("F5.2", "Production thiếu BASE_URL: canonical không phải localhost", "127.0.0.1:8000" not in pub.get("/").text)
-s.stop()
-s = Server("ops_smtp", env={"APP_ENV": "production", "SECRET_KEY": "qa-prod-" + "k" * 40, "SMTP_BACKEND": ""})
-s.env.pop("SMTP_BACKEND")
-s.start()
-pub.post("/api/subscribe", data={"email": "cons@qa.test", "next": "/"})
-log = s.log_text()
-print("     production không đặt SMTP_BACKEND: email chỉ vào log =", "console email" in log, flush=True)
-c("F5.3", "Production thiếu SMTP_BACKEND: không âm thầm bỏ email (ít nhất cảnh báo lúc khởi động)", "console email" not in log or re.search(r"WARNING.*SMTP", log), "người đăng ký nhận sub_ok nhưng không có mail; token nằm trong log")
+# ---------- F5. Thiếu cấu hình production: từ chối chạy ----------
+for cid, drop, want in (("F5.1", "BASE_URL", "Thiếu BASE_URL"), ("F5.3", "SMTP_BACKEND", "Thiếu SMTP_BACKEND")):
+    s = Server("ops_cfg", env=prod_env())
+    s.env.pop(drop)
+    try:
+        s.start(wait=15)
+        c(cid, f"Production thiếu {drop}: từ chối chạy", False, "server vẫn chạy")
+    except RuntimeError:
+        c(cid, f"Production thiếu {drop}: thoát, báo rõ", want in s.log_text() and "Traceback" not in s.log_text(), s.log_text()[-240:])
+    finally:
+        s.stop()
+s = Server("ops_warn", env=prod_env()).start()
+c("F5.2", "SMTP_BACKEND=console ở production: có cảnh báo lúc khởi động", "email KHÔNG được gửi" in s.log_text(), s.log_text()[-200:])
 s.stop()
 
 # ---------- F6. Tải đồng thời ----------

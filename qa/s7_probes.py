@@ -164,11 +164,10 @@ try:
     log = s.log_text()
     n = len(s.tokens("nannhan@qa.test"))
     c("P12.1", "Tên người đăng ký không được in nguyên vào email gửi tới địa chỉ chưa xác nhận (kẻ khác dùng site gửi nội dung tùy ý)", spam not in log, f"email có câu: Chào {spam},")
-    c("P12.2", "Một địa chỉ chưa xác nhận không nhận nhiều email xác nhận liên tiếp", n <= 2, f"{n} email trong vài giây cho cùng địa chỉ")
+    c("P12.2", "Một địa chỉ chưa xác nhận nhận tối đa 3 email/24 giờ", n <= 3, f"{n} email trong vài giây cho cùng địa chỉ")
 
-    # ---------- P13. /docs ở development ----------
-    r = pub.get("/docs")
-    c("P13.1", "Dev: /docs dùng được (CSP không chặn CDN của Swagger)", r.status_code == 200 and ("cdn.jsdelivr" not in r.text or "cdn.jsdelivr" in r.headers.get("content-security-policy", "")), "CSP script-src self chặn Swagger, trang trắng")
+    # ---------- P13. /docs ----------
+    c("P13.1", "/docs đã bỏ ở dev (404, không còn trang trắng)", pub.get("/docs").status_code == 404, pub.get("/docs").status_code)
 finally:
     s.stop()
 # ---------- P14. SMTP hỏng ----------

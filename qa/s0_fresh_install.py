@@ -41,10 +41,10 @@ try:
 except subprocess.TimeoutExpired:
     subprocess.run(["taskkill", "/T", "/F", "/PID", str(p.pid)], capture_output=True)
     txt = "(đang chạy)"
-R.check("F0.3", "README nói mặc định development: chạy được khi không đặt SECRET_KEY", "Thiếu SECRET_KEY" not in txt, txt[-250:])
+R.check("F0.3", "Không đặt gì: mặc định production, thoát mã 2, liệt kê cấu hình thiếu, không traceback", p.returncode == 2 and "Thiếu SECRET_KEY" in txt and "Traceback" not in txt, (p.returncode, txt[-300:]))
 
 # 2) Theo đúng mục Chạy của README
-env = {**clean_env, "PORT": PORT, "SECRET_KEY": "doan-chuoi-ngau-nhien-dai-" + "z" * 30}
+env = {**clean_env, "APP_ENV": "development", "PORT": PORT}
 log = open(D / "run.log", "wb")
 p = subprocess.Popen([vpy, "run.py"], cwd=D, env=env, stdout=log, stderr=subprocess.STDOUT)
 try:
@@ -56,7 +56,7 @@ try:
                 break
         except httpx.HTTPError:
             time.sleep(0.3)
-    R.check("F0.4", "python run.py (chỉ PORT + SECRET_KEY theo README) lên được, /health 200", up)
+    R.check("F0.4", "python run.py (APP_ENV=development + PORT theo README) lên được, /health 200", up)
     R.check("F0.5", "DB rỗng: trang chủ 200", httpx.get(f"http://127.0.0.1:{PORT}/").status_code == 200)
     R.check("F0.6", "Tự tạo data/app.db trong bản sao", (D / "data" / "app.db").exists())
     ae = {**env, "ADMIN_PASSWORD": "MatKhauManh-123"}

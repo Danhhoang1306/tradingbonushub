@@ -187,7 +187,8 @@ def wipe_fiction(a: AdminClient, srv: Server):
         for i in ids[table]:
             a.post(f"/admin/{group}/{i}/delete")
         out[table] = len(ids[table])
-    for name, path in (("subscriber", "/admin/subscribers?tab=list"), ("message", "/admin/messages")):
+    for name, path in (("subscriber", "/admin/subscribers?tab=list"), ("campaign", "/admin/subscribers?tab=mail"),
+                       ("message", "/admin/messages")):
         out[name] = a.delete_all(path)
     a.post("/admin/settings/general", {"site_name": "TradingBonusHub", "contact_email": "", "partner_email": "", "telegram": "",
                                        "logo_path": "/static/img/logo.png", "favicon_path": "/static/img/logo.png"})

@@ -186,7 +186,7 @@ with sync_playwright() as p:
 
     # ---------- A5. Lưu không đổi gì ở mọi tab: public y nguyên ----------
     HOME_TABS = ("sections", "hero", "about", "why", "types", "contact", "menu")
-    PAGE_TABS = ("bonus", "san", "tin", "gioithieu", "lienhe", "terms", "privacy", "system")
+    PAGE_TABS = ("bonus", "san", "compare", "tin", "gioithieu", "method", "affiliate", "lienhe", "terms", "privacy", "system")
     SET_TABS = ("general", "seo", "social", "tracking")
     tabs = [("home", t) for t in HOME_TABS] + [("pages", t) for t in PAGE_TABS] + [("settings", t) for t in SET_TABS]
     before = snapshot()
@@ -280,8 +280,10 @@ with sync_playwright() as p:
     ck = {"tbh_flash": "sub_ok"}
     corpus["home+sub_ok"] = httpx.get(BASE + "/", cookies=ck).text
     tk = s.tokens("s@qa.test")[-1]
-    corpus["confirm"] = pub.get(f"/xac-nhan/{tk}").text
-    corpus["unsub"] = pub.get(f"/huy-dang-ky/{tk}").text
+    corpus["ask_confirm"] = pub.get(f"/xac-nhan/{tk}").text
+    corpus["ask_unsub"] = pub.get(f"/huy-dang-ky/{tk}").text
+    corpus["confirm"] = pub.post(f"/xac-nhan/{tk}").text
+    corpus["unsub"] = pub.post(f"/huy-dang-ky/{tk}").text
     corpus["contact_ok"] = httpx.get(BASE + "/lien-he", cookies={"tbh_flash": "contact_ok"}).text
     corpus["500"] = pub.get("/go/broker/99999999999999999999999").text
     all_html = "\n".join(corpus.values())
@@ -361,7 +363,7 @@ with sync_playwright() as p:
     c("A8.1", "Bấm đúp nút Lưu bonus: chỉ tạo 1 bản ghi", n == 1, f"{n} bản ghi")
     for i in range(2):
         pub.post("/api/subscribe", data={"email": f"cf{i}@qa.test", "next": "/"}, headers={"CF-Connecting-IP": f"7.7.8.{i}"})
-        pub.get("/xac-nhan/" + s.tokens(f"cf{i}@qa.test")[-1])
+        pub.post("/xac-nhan/" + s.tokens(f"cf{i}@qa.test")[-1])
     pg.goto(BASE + "/admin/subscribers?tab=mail")
     pg.fill("input[name=subject]", "Tin QA bấm đúp")
     pg.fill("textarea[name=body]", "Nội dung")
