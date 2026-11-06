@@ -666,3 +666,12 @@ def test_campaign_dev_console_still_sends(admin, db):
     r = admin.post("/admin/subscribers/mail", MAIL | {"action": "send"})
     assert r.headers["location"] == "/admin/subscribers?tab=mail" and len(mailer.outbox) == 1
     assert db.query(Campaign).one().status == "sent"
+
+
+def test_templates_do_not_reload_from_disk_in_production():
+    import subprocess
+    import sys
+    code = ("from app.templating import templates; import sys; "
+            "sys.exit(0 if templates.env.auto_reload is False else 1)")
+    env = {**__import__("os").environ, "APP_ENV": "production", "SECRET_KEY": "x" * 40}
+    assert subprocess.run([sys.executable, "-c", code], env=env).returncode == 0

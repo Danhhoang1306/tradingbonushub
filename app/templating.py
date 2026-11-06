@@ -13,6 +13,8 @@ from app.security import FLASH_COOKIE, cookie_kwargs
 from app.utils import render_markdown, to_vn, today_vn
 
 templates = Jinja2Templates(directory=str(config.templates_dir))
+# Production không nạp lại template từ đĩa: sửa file khi site đang chạy không được làm hỏng site.
+templates.env.auto_reload = not config.is_production
 env = templates.env
 
 FLASH_MESSAGES = {
