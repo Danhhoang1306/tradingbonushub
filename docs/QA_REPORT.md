@@ -517,3 +517,15 @@ Tương phản: nhãn "Tài trợ" 2,64 và `nav-count` 3,46 dưới AA, nhưng 
 - Firefox, Safari, thiết bị thật, trình đọc màn hình. Điện thoại chỉ giả lập Chromium.
 - So từng màn với thiết kế: `s8` chạy và tạo ảnh ghép, nhưng tôi không xem lại vòng này. Báo cáo so thiết kế ở `docs/design-diff/` là của người khác.
 - Chạy dài ngày, DB lớn.
+
+
+## Vòng 4: chạy lại sau Phase 7 (06/11)
+**Kết quả: pytest 519 đạt (không tính tests/test_hub_sync.py, của việc khác). QA: 755/774 đạt. Audit mock: không còn dữ liệu mock; 18 khóa không sửa được từ admin đều là nhãn nội bộ, không có khóa mới.**
+
+Script `s1`, `s7`, `s11` đã lỗi từ Phase 6 (ô nằm trong khối thu gọn, công tắc đổi tại chỗ), nên kết quả cũ của chúng là từ trước đó. Đã sửa script để chạy hết.
+
+Dòng không đạt, không dòng nào là lỗi mới:
+- Kỳ vọng cũ, trái quyết định sau đó, chưa sửa script: B6.*, B7.* (190fa19: lưu dòng hợp lệ, nêu tên dòng lỗi, có test ở `tests/test_phase6_design.py`); C11.1, C11.3 (13.1: in số 0); B4.0 (Phase 6.1: bỏ chọn hết hiện bảng nhãn); A1, D10.s (tab Section không còn form; route `/admin/home/sections`, `/admin/brokers/{id}/link`, `/admin/media/{id}/edit` còn nhưng UI không dùng).
+- Đã biết từ trước: C9.3 (Markdown đúng chuẩn), E7.1 (màu lấy từ thiết kế).
+
+So thiết kế: `s8` tạo ảnh ghép 10 màn. Chỉ xem 3 ảnh (home 1440, bonus 1440, sàn 390): bố cục khớp, khác biệt là dữ liệu mẫu và menu mobile đã chốt. 7 ảnh còn lại và màn admin chưa so bằng mắt vòng này. Rail, thẻ hero, thẻ so sánh, chân trang xem riêng bằng dữ liệu tạm ở 1920 và 390: không tràn, không lỗi JS.

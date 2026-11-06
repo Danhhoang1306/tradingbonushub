@@ -70,7 +70,7 @@ s.stop()
 
 s = Server("up", env=env_up, fresh=False).start()
 try:
-    c("U1", "run.py nâng lên head (0003)", s.sql("select version_num from alembic_version") == [("0003",)], s.sql("select version_num from alembic_version"))
+    c("U1", "run.py nâng lên head (0004)", s.sql("select version_num from alembic_version") == [("0004",)], s.sql("select version_num from alembic_version"))
     after = {t: s.sql(f"select count(*) from {t}")[0][0] for t in TABLES}
     c("U2", "Số dòng mọi bảng không đổi", before == after, {k: (before[k], after[k]) for k in before if before[k] != after[k]})
     c("U3", "Subscriber giữ nguyên email/token/trạng thái", s.sql("select email,status,token,interests,confirmed_at from subscribers order by id") == rows_before)

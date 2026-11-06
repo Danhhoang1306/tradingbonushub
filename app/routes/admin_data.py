@@ -181,12 +181,12 @@ def bonus_delete(bid: int, a: Admin = Depends(admin_post)):
 # ======================= SÀN =======================
 
 BROKER_TEXT = ("name", "slug", "mono", "kind", "tagline", "license", "min_deposit", "leverage", "platforms", "spread",
-               "withdrawal", "founded", "affiliate_url", "logo_path")
+               "withdrawal", "founded", "affiliate_url", "logo_path", "featured_bonus_text")
 ACCOUNT_FIELDS = ("name", "min_deposit", "spread", "commission")
 PAYMENT_FIELDS = ("method", "deposit", "withdraw", "time")
 BROKER_LIMITS = {"name": 120, "slug": 120, "mono": 2, "kind": 10, "tagline": 255, "license": 255, "min_deposit": 60,
                  "leverage": 60, "platforms": 255, "spread": 60, "withdrawal": 120, "founded": 20, "affiliate_url": 1000,
-                 "logo_path": 255}  # khớp cột trong models.py
+                 "logo_path": 255, "featured_bonus_text": 60}  # khớp cột trong models.py
 RESERVED_BROKER_SLUGS = {"so-sanh"}  # trùng route tĩnh /san/so-sanh
 
 
@@ -396,11 +396,14 @@ def broker_delete(kid: int, a: Admin = Depends(admin_post)):
 
 # ======================= QUẢNG CÁO =======================
 
+RAIL_LIMITS = {"rail_amount": 20, "rail_note": 60, "rail_desc": 255, "rail_line": 60}  # khớp cột trong models.py
+
+
 def _banner_values(b: Banner | None) -> dict:
     if b is None:
         return {"name": "", "broker_id": None, "placement": "after-bonus", "target_url": "", "image_path": "",
-                "start_date": "", "end_date": "", "is_active": True}
-    return {"name": b.name, "broker_id": b.broker_id, "placement": b.placement, "target_url": b.target_url,
+                "start_date": "", "end_date": "", "is_active": True} | {f: "" for f in RAIL_LIMITS}
+    return {f: getattr(b, f) for f in RAIL_LIMITS} | {"name": b.name, "broker_id": b.broker_id, "placement": b.placement, "target_url": b.target_url,
             "image_path": b.image_path, "start_date": b.start_date.isoformat() if b.start_date else "",
             "end_date": b.end_date.isoformat() if b.end_date else "", "is_active": b.is_active}
 
@@ -452,6 +455,7 @@ def _ads_save(a: Admin, b: Banner | None):
     v = {"name": a.text("name", 120), "broker_id": a.text("broker_id"), "placement": a.text("placement"),
          "target_url": a.text("target_url", 1000), "start_date": a.text("start_date", 20),
          "end_date": a.text("end_date", 20), "is_active": a.flag("is_active")}
+    v |= {f: a.text(f, n) for f, n in RAIL_LIMITS.items()}
     v["image_path"] = a.image("image_path", errors, b.image_path if b else "")
     broker = None
     if v["broker_id"]:
@@ -484,6 +488,8 @@ def _ads_save(a: Admin, b: Banner | None):
         db.add(b)
     b.name, b.broker_id, b.placement, b.target_url = v["name"], broker.id if broker else None, v["placement"], v["target_url"]
     b.image_path, b.start_date, b.end_date, b.is_active = v["image_path"], start, end, v["is_active"]
+    for f in RAIL_LIMITS:
+        setattr(b, f, v[f])
     db.commit()
     return done(with_query("/admin/ads", **a.filters("tab")), "created" if is_new else "saved")
 

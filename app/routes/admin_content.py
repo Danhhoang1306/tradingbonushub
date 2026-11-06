@@ -1,10 +1,11 @@
 """Quản trị nội dung: Trang chủ, Trang, Thư viện ảnh, Cài đặt (gồm tài khoản quản trị)."""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 from starlette.datastructures import UploadFile
 
 from app import content, uploads
-from app.models import ROLES, AdminUser, MediaFile
+from app.models import ROLES, AdminUser, Bonus, MediaFile
 from app.routes.admin_base import (Admin, _tab, admin_get, admin_post, bulk_errors_flash, done, get_or_404, media_library,
                                    render_admin, require_admin_role, subtabs, with_query)
 from app.security import SESSION_COOKIE, hash_password, is_http_url, is_link, revoke_sessions
@@ -39,6 +40,21 @@ def _check_links(rows: list[dict], errors: dict, field: str) -> None:
 
 # ======================= TRANG CHỦ =======================
 
+def _bonus_options(db) -> list[dict]:
+    rows = db.scalars(select(Bonus).options(joinedload(Bonus.broker)).order_by(Bonus.created_at.desc(), Bonus.id.desc()))
+    return [{"id": b.id, "label": " · ".join(x for x in (b.broker.name, b.amount, b.title) if x)} for b in rows]
+
+
+def _link_lines(text: str) -> list[dict]:
+    """Mỗi dòng "Nhãn | đường dẫn"; dòng trống bị bỏ."""
+    rows = []
+    for line in text.splitlines():
+        if line.strip():
+            label, _, url = line.partition("|")
+            rows.append({"label": label.strip(), "url": url.strip()})
+    return rows
+
+
 def _home_page(a: Admin, tab: str, errors: dict | None = None, values: dict | None = None, status_code=200):
     tab = _tab(tab, HOME_TABS)
     s = content.get_all(a.db)
@@ -49,7 +65,8 @@ def _home_page(a: Admin, tab: str, errors: dict | None = None, values: dict | No
         a, "admin/home.html", "home", "Nội dung trang chủ", status_code,
         subtabs=subtabs("/admin/home", HOME_TABS, tab), current_tab=tab, settings=s, sections=sections,
         form={"action": f"/admin/home/{tab}", "data": values or {}, "errors": errors or {}},
-        view_url=HOME_VIEW[tab], media_library=media_library(a.db) if tab in HOME_IMAGE_TABS else [])
+        view_url=HOME_VIEW[tab], media_library=media_library(a.db) if tab in HOME_IMAGE_TABS else [],
+        bonus_options=_bonus_options(a.db) if tab == "hero_extra" else [])
 
 
 @router.get("/home")
@@ -104,7 +121,14 @@ def home_save(tab: str, a: Admin = Depends(admin_post)):
                                      "title": a.keep(f"{prefix}_title", s[key]["title"], 255)}
         updates["home_compare"]["featured_label"] = a.keep("compare_featured_label", s["home_compare"]["featured_label"], 120)
     elif tab == "hero_extra":
-        updates["hero"] = s["hero"] | {"card_label": a.keep("card_label", s["hero"]["card_label"], 120)}
+        card_bonus_id = s["hero"]["card_bonus_id"]
+        if "card_bonus_id" in a.form:
+            raw = a.text("card_bonus_id", 20)
+            card_bonus_id = int(raw) if raw.isdigit() else None
+            if raw and (card_bonus_id is None or a.db.get(Bonus, card_bonus_id) is None):
+                errors["card_bonus_id"] = "Bonus không tồn tại."
+        updates["hero"] = s["hero"] | {"card_label": a.keep("card_label", s["hero"]["card_label"], 120),
+                                       "card_bonus_id": card_bonus_id}
     elif tab == "hero":
         hero = _text_fields(a, s["hero"], ("eyebrow", "headline", "sub", "cta"), ("sub",))
         hero["image_path"] = a.image("image_path", errors, s["hero"]["image_path"])
@@ -145,16 +169,16 @@ def home_save(tab: str, a: Admin = Depends(admin_post)):
             columns = parsed["columns"] = []
             titles, links = a.many("footer_col_title", 120), a.many("footer_col_links", 5000)
             for i, title in enumerate(titles):
-                rows = []
-                for line in (links[i] if i < len(links) else "").splitlines():
-                    if line.strip():
-                        label, _, url = line.partition("|")
-                        rows.append({"label": label.strip(), "url": url.strip()})
+                rows = _link_lines(links[i] if i < len(links) else "")
                 if title or rows:
                     _check_links(rows, errors, "footer_col_links")
                     columns.append({"title": title, "links": rows})
         f = s["footer"]
-        updates["footer"] = f | {"about_text": a.keep("about_text", f["about_text"], 2000),
+        legal_links = f["legal_links"]
+        if "legal_links" in a.form:
+            legal_links = _link_lines(a.text("legal_links", 2000))
+            _check_links(legal_links, errors, "legal_links")
+        updates["footer"] = f | {"legal_links": legal_links, "about_text": a.keep("about_text", f["about_text"], 2000),
                                  "risk_note": a.keep("risk_note", f["risk_note"], 2000),
                                  "copyright": a.keep("copyright", f["copyright"], 500), "columns": columns,
                                  "affiliate_note": a.keep("affiliate_note", f["affiliate_note"], 500)}

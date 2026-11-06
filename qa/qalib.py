@@ -34,6 +34,9 @@ EDITOR_EMAIL, EDITOR_PASS = "editor@qa.test", "QaEditor-12345"
 assert PORT != 8000
 
 
+OPEN_DETAILS = "addEventListener('DOMContentLoaded', () => document.querySelectorAll('details.drawer-more').forEach(d => { d.open = true; }));"  # ô phụ của drawer nằm trong khối đóng sẵn (brief 13.1)
+
+
 def prod_env(**kw):
     """Cấu hình production tối thiểu hợp lệ (vòng 2: SECRET_KEY >= 32, BASE_URL, SMTP_BACKEND bắt buộc)."""
     return {"APP_ENV": "production", "SECRET_KEY": PROD_KEY, "BASE_URL": BASE, "SMTP_BACKEND": "console", **kw}

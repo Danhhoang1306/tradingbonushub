@@ -182,7 +182,9 @@ Bỏ cột Xem trước và thanh lưu dính đáy ở các tab có trong thiế
 GIỮ thêm: font nút Be Vietnam Pro; nút Đăng xuất; "+ Thêm"; nút Sửa bài; hộp xác nhận Xóa và Gửi; Esc đóng drawer; sort
 "Sắp hết hạn" theo ngày thật; hàng bonus xếp dọc ở 390; câu báo rỗng trung tính ở danh sách.
 Số 0: theo thiết kế, tab và thống kê in "0" (đè quy tắc ẩn số 0 ở mục 5).
-Chưa làm, chờ user: trường dữ liệu mới cho thẻ hero, "Bonus nổi bật", chữ phụ rail (K16, K18, K24, K25); link Điều khoản, Bảo mật ở footer.
+Chốt 06/11 (user): thêm trường tùy chọn, để trống thì giữ logic cũ. Thẻ hero: `hero.card_bonus_id` (Hero nâng cao); bonus đã chọn bị ẩn, hết hạn, xóa thì về tự động.
+"Bonus nổi bật": `Broker.featured_bonus_text`. Rail dạng không ảnh: `Banner.rail_amount`, `rail_note`, `rail_desc`, `rail_line`.
+Link pháp lý: `footer.legal_links` (tab Chân trang), hiện ở cả chân trang đầy đủ và thu gọn.
 
 ## 11. Cách làm việc (vibe coding có kỷ luật)
 - Trước khi code: đọc đúng phần cần, nêu kế hoạch ngắn trong đầu; không đoán, xem file thật.

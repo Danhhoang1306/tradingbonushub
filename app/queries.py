@@ -50,6 +50,13 @@ def bonus_count_by_broker(db: Session) -> dict[int, int]:
     return {b: n for b, n in rows}
 
 
+def visible_bonus(db: Session, bonus_id) -> Bonus | None:
+    if not isinstance(bonus_id, int) or isinstance(bonus_id, bool):
+        return None
+    return db.scalar(select(Bonus).join(Bonus.broker).options(joinedload(Bonus.broker))
+                     .where(Bonus.id == bonus_id, bonus_visible_clause(today_vn())))
+
+
 def top_bonus_by_broker(db: Session) -> dict[int, Bonus]:
     """Bonus giá trị cao nhất (rồi mới nhất) đang hiển thị của mỗi sàn."""
     out: dict[int, Bonus] = {}
@@ -174,6 +181,7 @@ def broker_view(k: Broker, labels: dict[str, str], bonus_count: int = 0, top: Bo
         "platforms": k.platforms, "spread": k.spread, "withdrawal": k.withdrawal, "founded": k.founded,
         "pros": list(k.pros or []), "cons": list(k.cons or []), "accounts": list(k.accounts or []),
         "payment_methods": list(k.payment_methods or []), "featured": k.featured, "in_compare": k.in_compare,
+        "featured_bonus_text": k.featured_bonus_text,
         "bonus_count": bonus_count, "top_bonus": bonus_view(top, labels) if top else None,
     }
 
@@ -191,4 +199,5 @@ def banner_view(b: Banner, labels: dict[str, str], top: Bonus | None = None) -> 
     return {"id": b.id, "name": b.name, "image_path": b.image_path, "placement": b.placement,
             "url": f"/go/ad/{b.id}", "view_url": f"/api/ad-view/{b.id}" if b.placement in RAIL_PLACEMENTS else None,
             "broker": broker_mini(b.broker) if b.broker else None,
-            "bonus": bonus_view(top, labels) if top else None}
+            "bonus": bonus_view(top, labels) if top else None,
+            "rail_amount": b.rail_amount, "rail_note": b.rail_note, "rail_desc": b.rail_desc, "rail_line": b.rail_line}

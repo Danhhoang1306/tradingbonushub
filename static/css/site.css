@@ -197,6 +197,8 @@ a.btn-arrow--blue:hover { background: var(--c-surface); color: var(--c-navy); }
 }
 .site-footer__compact .site-footer__social { margin-top: 0; font-size: 13px; }
 .site-footer__risk { max-width: 560px; }
+.site-footer__legal-links { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; font-size: 13px; }
+.site-footer__compact .site-footer__legal-links { margin-top: 0; }
 @media (max-width: 520px) {
   /* Như thiết kế ở 390 (215px + 87px), nhưng cột đầu co được nên không tràn ở 360. */
   .site-footer__grid { grid-template-columns: minmax(0, 1fr) auto; }
@@ -326,8 +328,12 @@ a.btn-arrow--blue:hover { background: var(--c-surface); color: var(--c-navy); }
 .rail__brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; min-width: 0; }
 .rail--right .rail__brand .avatar { color: var(--c-blue); }
 .rail__tag { align-self: flex-start; margin-top: 20px; padding: 5px 12px; border-radius: var(--radius-pill); background: rgba(255, 255, 255, 0.16); font-size: 12px; white-space: nowrap; }
-.rail__amount { font-size: 44px; font-weight: 600; letter-spacing: var(--tracking-tight); line-height: 1; overflow-wrap: anywhere; margin-top: 28px; }
-.rail--right .rail__amount { font-size: 52px; margin-top: 0; }
+.rail__figure { margin-top: 28px; }
+.rail--right .rail__figure { margin-top: 0; }
+.rail__amount { font-size: 44px; font-weight: 600; letter-spacing: var(--tracking-tight); line-height: 1; overflow-wrap: anywhere; }
+.rail--right .rail__amount { font-size: 52px; }
+.rail__sub { font-size: 14px; color: var(--c-on-dark-3); margin-top: 4px; }
+.rail--right .rail__sub { color: var(--c-blue-soft); margin-top: 6px; }
 .rail .rail__amount--long { font-size: 30px; }
 .rail__title { font-size: 16px; font-weight: 600; line-height: 1.35; }
 .rail--right .rail__title { font-size: 14px; font-weight: 400; line-height: 1.5; }

@@ -142,7 +142,8 @@ def home(request: Request, db: Session = Depends(get_db)):
 
     latest = [queries.bonus_view(b, labels) for b in queries.visible_bonuses(db, limit=8)]
     featured = db.scalar(select(Broker).where(Broker.featured.is_(True), Broker.is_active.is_(True)))
-    hero_bonus = queries.bonus_view(tops[featured.id], labels) if featured and featured.id in tops else None
+    hero_pick = queries.visible_bonus(db, site["hero"].get("card_bonus_id")) or (tops.get(featured.id) if featured else None)
+    hero_bonus = queries.bonus_view(hero_pick, labels) if hero_pick else None
 
     enabled = {s["id"] for s in site["sections"] if s["on"]}
     placement_section = {"after-bonus": "ad1", "before-blog": "ad2"}

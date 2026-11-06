@@ -2,7 +2,7 @@
 {% import "admin/_macros.html" as ui with context %}
 {% if current_tab == 'links' %}{% set page_form = 'page-form' %}{% endif %}
 {% set drawer_view_in_body = true %}
-{% set drawer_inline = ['name','slug','mono','kind','tagline','summary','license','min_deposit','leverage','platforms','spread','withdrawal','founded','affiliate_url','logo_path','pros','cons','in_compare','featured'] %}
+{% set drawer_inline = ['name','slug','mono','kind','tagline','summary','license','min_deposit','leverage','platforms','spread','withdrawal','founded','affiliate_url','logo_path','featured_bonus_text','pros','cons','in_compare','featured'] %}
 {% block content %}
 {% if current_tab == 'links' %}
 {% set cols = '140px minmax(0,1fr) 100px 100px' %}
@@ -56,7 +56,7 @@
 {{ ui.field('leverage', 'Đòn bẩy tối đa', d.leverage, e) }}
 {{ ui.field('platforms', 'Nền tảng', d.platforms, e) }}
 {{ ui.field('affiliate_url', 'Link affiliate', d.affiliate_url, e, type='url') }}
-{% call ui.more(e, ['slug','mono','kind','tagline','summary','logo_path','spread','withdrawal','founded','pros','cons','in_compare']) %}
+{% call ui.more(e, ['slug','mono','kind','tagline','summary','logo_path','spread','withdrawal','founded','featured_bonus_text','pros','cons','in_compare']) %}
 {% if drawer.view_url %}<a href="{{ drawer.view_url }}" target="_blank" rel="noopener" class="btn-sm drawer-view">Xem trên site ↗</a>{% endif %}
 <div class="fields-2">
   {{ ui.field('slug', 'Slug (đường dẫn)', d.slug, e, hint='Trống = tự tạo từ tên.') }}
@@ -78,6 +78,7 @@
 <div class="drawer-section">Nạp &amp; rút</div>
 {{ ui.rows_editor('payment', [('method','Phương thức','text'),('deposit','Nạp','text'),('withdraw','Rút','text'),('time','Thời gian','text')], d.payment_methods, add_label='+ Thêm phương thức') }}
 <div class="drawer-section">Hiển thị</div>
+{{ ui.field('featured_bonus_text', 'Dòng "Bonus nổi bật"', d.featured_bonus_text, e, placeholder='Deposit 50%', hint='Hiện ở mục So sánh trên trang chủ. Trống = tự ghép loại + mức thưởng của bonus cao nhất.') }}
 {{ ui.switch_input('in_compare', 'Đưa vào So sánh (tối đa 3 sàn)', d.in_compare, errors=e) }}
 {{ ui.switch_input('featured', 'Nổi bật (chỉ 1 sàn, tự tắt sàn khác)', d.featured) }}
 {{ ui.switch_input('is_active', 'Hiển thị trên site', d.is_active) }}

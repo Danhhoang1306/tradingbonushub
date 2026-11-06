@@ -68,6 +68,7 @@
     <span>{{ site.footer.copyright }}{% if site.footer.affiliate_note %} {{ site.footer.affiliate_note }}{% endif %}</span>
     {% if site.social %}<span class="site-footer__social">{% for s in site.social %}<a href="{{ s.url }}" rel="noopener" target="_blank">{{ s.label }}</a>{% endfor %}</span>{% endif %}
     <span class="site-footer__risk">{{ site.footer.risk_note }}</span>
+    {% if site.footer.legal_links %}<nav class="site-footer__legal-links" aria-label="Pháp lý">{% for l in site.footer.legal_links %}<a href="{{ l.url }}">{{ l.label }}</a>{% endfor %}</nav>{% endif %}
   </div>
 </footer>
 {% endblock %}

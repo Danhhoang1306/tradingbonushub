@@ -1,7 +1,7 @@
 {% extends "admin/_base.html" %}
 {% import "admin/_macros.html" as ui with context %}
 {% if current_tab != 'stats' %}{% set page_form = 'page-form' %}{% endif %}
-{% set drawer_inline = ['name','broker_id','placement','target_url','image_path','start_date','end_date'] %}
+{% set drawer_inline = ['name','broker_id','placement','target_url','image_path','start_date','end_date','rail_amount','rail_note','rail_desc','rail_line'] %}
 {% macro ad_title(b) %}{{ b.broker.name if b.broker else b.name }} · {{ b.placement|placement_label }}{% endmacro %}
 {% block content %}
 {% if current_tab == 'stats' %}
@@ -76,4 +76,11 @@
 </div>
 <span class="field-hint">Trống = không giới hạn.</span>
 {{ ui.switch_input('is_active', 'Đang chạy', d.is_active) }}
+{% call ui.more(e, ['rail_amount', 'rail_note', 'rail_desc', 'rail_line']) %}
+<p class="field-hint">Chỉ dùng cho banner hai bên hero, dạng không có ảnh. Trống = lấy từ bonus cao nhất của sàn.</p>
+{{ ui.field('rail_amount', 'Số lớn', d.rail_amount, e, placeholder='$4') }}
+{{ ui.field('rail_note', 'Chữ phụ dưới số', d.rail_note, e, placeholder='mỗi lot') }}
+{{ ui.field('rail_desc', 'Đoạn mô tả', d.rail_desc, e, rows=2) }}
+{{ ui.field('rail_line', 'Dòng thông tin (thay dòng hạn)', d.rail_line, e, placeholder='Rút trong ngày') }}
+{% endcall %}
 {% endblock %}

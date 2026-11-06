@@ -5,7 +5,7 @@ import httpx
 from PIL import Image
 from playwright.sync_api import sync_playwright
 
-from qalib import ADMIN_EMAIL, ADMIN_PASS, BASE, WORK, Http, Report, Server, mk_banner, mk_bonus, mk_broker, mk_post
+from qalib import OPEN_DETAILS, ADMIN_EMAIL, ADMIN_PASS, BASE, WORK, Http, Report, Server, mk_banner, mk_bonus, mk_broker, mk_post
 
 R = Report("s1_admin_first_use")
 c = R.check
@@ -47,7 +47,7 @@ def save_drawer(pg):
 
 def save_page(pg):
     with pg.expect_navigation():
-        pg.click("#page-form button[type=submit]:visible, .form-actions button[type=submit]:visible")
+        pg.locator("#page-form button[type=submit]:visible, .form-actions button[type=submit]:visible, button[form=page-form]:visible, [data-publish]:visible").first.click()
 
 
 def snapshot():
@@ -61,6 +61,7 @@ def snapshot():
 with sync_playwright() as p:
     b = p.chromium.launch()
     ctx = b.new_context(viewport={"width": 1440, "height": 900})
+    ctx.add_init_script(OPEN_DETAILS)
     pg = ctx.new_page()
     pg.on("pageerror", lambda e: errs.append(("pageerror", pg.url, str(e))))
     pg.on("console", lambda m: errs.append(("console", pg.url, m.text)) if m.type == "error" else None)
@@ -185,7 +186,7 @@ with sync_playwright() as p:
     pg2.close()
 
     # ---------- A5. Lưu không đổi gì ở mọi tab: public y nguyên ----------
-    HOME_TABS = ("sections", "hero", "about", "why", "types", "contact", "menu")
+    HOME_TABS = ("hero", "about", "why", "types", "contact", "menu")
     PAGE_TABS = ("bonus", "san", "compare", "tin", "gioithieu", "method", "affiliate", "lienhe", "terms", "privacy", "system")
     SET_TABS = ("general", "seo", "social", "tracking")
     tabs = [("home", t) for t in HOME_TABS] + [("pages", t) for t in PAGE_TABS] + [("settings", t) for t in SET_TABS]
@@ -312,7 +313,7 @@ with sync_playwright() as p:
     c("A7.1", "Sửa bonus: public đổi", "Thưởng đã sửa tên" in t and "Thưởng không cần nạp" not in t)
     pg.goto(BASE + "/admin/bonus")
     row = pg.locator(".t-row", has_text="Thưởng đã sửa tên")
-    with pg.expect_navigation():
+    with pg.expect_response(lambda r: r.url.endswith("/toggle")):  # công tắc đổi tại chỗ từ phase 6.1
         row.locator("button.switch").first.click()
     c("A7.2", "Ẩn bonus: biến khỏi public", "Thưởng đã sửa tên" not in pub.get("/bonus").text and "Thưởng đã sửa tên" not in pub.get("/").text)
     row = pg.locator(".t-row", has_text="Thưởng đã sửa tên")
@@ -332,7 +333,7 @@ with sync_playwright() as p:
     save_drawer(pg)
     c("A7.4", "Chuyển bài về nháp: 404, khỏi danh sách, sitemap, trang chủ", pub.get("/tin-tuc/huong-dan-nhan-bonus").status_code == 404 and "huong-dan-nhan-bonus" not in pub.get("/sitemap.xml").text and "huong-dan-nhan-bonus" not in pub.get("/tin-tuc").text and "huong-dan-nhan-bonus" not in pub.get("/").text)
     pg.goto(BASE + "/admin/ads")
-    with pg.expect_navigation():
+    with pg.expect_response(lambda r: r.url.endswith("/toggle")):  # công tắc đổi tại chỗ từ phase 6.1
         pg.locator("button.switch").first.click()
     live = s.sql("select id from banners where is_active=0")
     c("A7.5", "Tắt banner: /go/ad 404, không còn ở trang chủ", len(live) == 1 and pub.get(f"/go/ad/{live[0][0]}").status_code == 404 and f"/go/ad/{live[0][0]}\"" not in pub.get("/").text)

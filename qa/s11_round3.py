@@ -16,7 +16,7 @@ from urllib.parse import quote, urljoin, urlsplit
 import httpx
 from playwright.sync_api import sync_playwright
 
-from qalib import (ADMIN_EMAIL, ADMIN_PASS, BASE, EDITOR_EMAIL, EDITOR_PASS, PORT, PY, RESULTS, ROOT, WORK, Http, Report, Server, admin_routes,
+from qalib import (OPEN_DETAILS, ADMIN_EMAIL, ADMIN_PASS, BASE, EDITOR_EMAIL, EDITOR_PASS, PORT, PY, RESULTS, ROOT, WORK, Http, Report, Server, admin_routes,
                    mk_banner, mk_bonus, mk_broker, mk_post, png_bytes, prod_env)
 
 R = Report("s11_round3")
@@ -222,7 +222,7 @@ with sync_playwright() as p:
     j = ids["trong"]
     pg.goto(BASE + "/admin/ads")
     pg.fill(f"input[name=target_url_{i}]", "https://ad.example.test/chua-luu")
-    with pg.expect_navigation():
+    with pg.expect_response(lambda r: r.url.endswith(f"/admin/ads/{j}/toggle")):  # công tắc đổi tại chỗ từ phase 6.1
         pg.locator(f"form[action='/admin/ads/{j}/toggle'] button").click()
     c("B4.1", "Bấm công tắc chỉ đổi is_active", s.sql("select is_active from banners where id=?", (j,))[0][0] == 0 and s.sql("select target_url from banners where id=?", (i,))[0][0] == before[i][3])
     s.sql("update banners set is_active=1 where id=?", (j,))
@@ -416,9 +416,9 @@ try:
                 # sau khi vùng data-live bị thay, công tắc, nút xóa còn dùng được
                 sw = pg.locator("main form.toggle-form button")
                 if sw.count():
-                    with pg.expect_navigation():
+                    with pg.expect_response(lambda r: r.url.endswith("/toggle")) as toggled:  # công tắc đổi tại chỗ từ phase 6.1
                         sw.first.click()
-                    c(f"C15{pth}", "Sau tìm trực tiếp: công tắc còn CSRF, chạy được", "tbh" not in pg.url and pg.locator("[data-flash]").count() >= 1, pg.url)
+                    c(f"C15{pth}", "Sau tìm trực tiếp: công tắc còn CSRF, chạy được", "tbh" not in pg.url and toggled.value.status < 400, toggled.value.status)
         b.close()
     r = pub.get("/tin-tuc/bai-mot?cat=//evil.com")
     c("C16", "cat lạ không vào link về danh sách", "//evil.com" not in r.text)
@@ -459,6 +459,7 @@ h = seed(s)
 with sync_playwright() as p:
     b = p.chromium.launch()
     ctx = b.new_context(viewport={"width": 1440, "height": 900})
+    ctx.add_init_script(OPEN_DETAILS)
     ctx.route("**/*", FONTS)
     pg = ctx.new_page()
     errs = []
@@ -600,7 +601,7 @@ s.stop()
 del s
 s = Server("up3", env=envu, fresh=False).start()
 try:
-    c("F1", "Lên 0003", s.sql("select version_num from alembic_version") == [("0003",)])
+    c("F1", "Lên 0004", s.sql("select version_num from alembic_version") == [("0004",)])
     c("F2", "Số dòng không đổi", before == {t: s.sql(f"select count(*) from {t}")[0][0] for t in TABLES})
     c("F3", "Index unique reconfirm_token, nhiều NULL không đụng", s.sql("select count(*) from subscribers where reconfirm_token is null")[0][0] == before["subscribers"])
     r = subprocess.run([PY, "-m", "alembic", "check"], cwd=ROOT, env=s.env, capture_output=True, text=True, encoding="utf-8")

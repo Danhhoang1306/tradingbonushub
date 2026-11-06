@@ -108,6 +108,7 @@ DEFAULTS: dict = {
         "cta": "Xem tất cả bonus",
         "image_path": "/static/img/hero-bg.webp",
         "card_label": "Nổi bật tuần này",
+        "card_bonus_id": None,  # None = bonus cao nhất của sàn nổi bật
     },
     "sections": [
         {"id": "hero", "label": "Hero", "on": True},
@@ -146,6 +147,7 @@ DEFAULTS: dict = {
                 {"label": "Liên hệ", "url": "/lien-he"},
             ]},
         ],
+        "legal_links": [{"label": "Điều khoản", "url": "/dieu-khoan"}, {"label": "Bảo mật", "url": "/bao-mat"}],
         "risk_note": "Cảnh báo rủi ro: CFD là công cụ phức tạp và có rủi ro mất tiền nhanh do đòn bẩy. Bonus không phải lời khuyên đầu tư.",
         "copyright": "Copyright © {year} TradingBonusHub.",  # {year} được thay ở public
         "affiliate_note": "Một số liên kết là liên kết affiliate.",

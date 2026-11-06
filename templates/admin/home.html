@@ -7,7 +7,7 @@
 {% set e = form.errors %}
 {% block content %}
 {% set s = settings %}
-{% set inline = ['menu', 'footer_col_links', 'image_path', 'image', 'image_0', 'image_1', 'image_2', 'eyebrow', 'title', 'text', 'headline', 'sub', 'cta', 'card_label',
+{% set inline = ['menu', 'footer_col_links', 'image_path', 'image', 'image_0', 'image_1', 'image_2', 'eyebrow', 'title', 'text', 'headline', 'sub', 'cta', 'card_label', 'card_bonus_id', 'legal_links',
   'badge', 'count_label', 'stat_value', 'stat_label', 'success_title', 'success_text', 'about_text', 'risk_note', 'copyright', 'affiliate_note', 'cta_note', 'ads_note',
   'bonus_eyebrow', 'bonus_title', 'compare_eyebrow', 'compare_title', 'compare_featured_label', 'blog_eyebrow', 'blog_title'] %}
 {% for bt in s.bonus_types %}{% for suffix in ('_short', '_label', '_desc', '_points') %}{% set _ = inline.append(bt.id ~ suffix) %}{% endfor %}{% endfor %}
@@ -52,7 +52,8 @@
     {% elif current_tab == 'hero_extra' %}
     <div class="form-block">
       <div class="form-block-title">Hero nâng cao</div>
-      {{ ui.field('card_label', 'Nhãn thẻ bonus nổi bật', fd.get('card_label', s.hero.card_label), e, hint='Hiện trên thẻ bonus của sàn nổi bật ở hero.') }}
+      {{ ui.field('card_label', 'Nhãn thẻ bonus nổi bật', fd.get('card_label', s.hero.card_label), e, hint='Hiện trên thẻ bonus ở hero.') }}
+      {{ ui.select('card_bonus_id', 'Bonus trên thẻ', bonus_options, fd.get('card_bonus_id', s.hero.card_bonus_id), e, empty_label='Tự động: bonus cao nhất của sàn nổi bật', hint='Bonus đã chọn mà bị ẩn, hết hạn hoặc bị xóa thì thẻ quay về chế độ tự động.') }}
     </div>
 
     {% elif current_tab == 'headings' %}
@@ -173,6 +174,11 @@
       <p class="form-block-desc">Để trống = ẩn dòng tương ứng trên site.</p>
       {{ ui.field('cta_note', 'Dưới nút "Mở tài khoản"', fd.get('cta_note', s.cta_note), e, rows=2, hint='Công bố affiliate và cảnh báo rủi ro. Tối đa 500 ký tự.') }}
       {{ ui.field('ads_note', 'Dưới nút trong quảng cáo dọc', fd.get('ads_note', s.ads_note), e, rows=2) }}
+    </div>
+    <div class="form-block">
+      <div class="form-block-title">Link pháp lý</div>
+      {% set legal = [] %}{% for l in f.legal_links %}{% set _ = legal.append(l.label ~ ' | ' ~ l.url) %}{% endfor %}
+      {{ ui.field('legal_links', 'Link cuối chân trang', fd.get('legal_links', legal|join('\n')), e, rows=3, hint='Mỗi dòng: Nhãn | đường dẫn. Để trống = ẩn.') }}
     </div>
     <div class="form-block">
       <div class="form-block-title">Cột link chân trang</div>

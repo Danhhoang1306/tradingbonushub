@@ -78,19 +78,23 @@
     <div class="rail__native">
       {% if ad.broker %}<div class="rail__brand">{{ avatar(ad.broker, "avatar--36") }}<span>{{ ad.broker.name }}</span></div>{% endif %}
       {% set b = ad.bonus %}
-      {% if b %}
-      {% if side == "right" %}<span class="rail__tag">{{ b.type_label }}</span>{% endif %}
-      {% if b.amount %}<div class="rail__amount{% if b.amount|length > 4 %} rail__amount--long{% endif %}">{{ b.amount }}</div>{% endif %}
-      <div class="rail__title">{{ b.title }}</div>
+      {% set amount = ad.rail_amount or (b.amount if b else "") %}
+      {% if side == "right" and b %}<span class="rail__tag">{{ b.type_label }}</span>{% endif %}
+      {% if amount or ad.rail_note %}
+      <div class="rail__figure">
+        {% if amount %}<div class="rail__amount{% if amount|length > 4 %} rail__amount--long{% endif %}">{{ amount }}</div>{% endif %}
+        {% if ad.rail_note %}<div class="rail__sub">{{ ad.rail_note }}</div>{% endif %}
+      </div>
+      {% endif %}
+      <div class="rail__title">{{ ad.rail_desc or (b.title if b else ad.name) }}</div>
+      {% if b or ad.rail_line %}
       <ul class="rail__facts">
-        {% if side == "left" and b.min_deposit %}<li>Nạp từ {{ b.min_deposit }}</li>{% endif %}
-        <li>{% if b.expiry_date %}Hạn đến {{ b.expiry_date|short_date }}{% else %}{{ b.expiry_date|expiry_label }}{% endif %}</li>
+        {% if side == "left" and b and b.min_deposit %}<li>Nạp từ {{ b.min_deposit }}</li>{% endif %}
+        <li>{% if ad.rail_line %}{{ ad.rail_line }}{% elif b.expiry_date %}Hạn đến {{ b.expiry_date|short_date }}{% else %}{{ b.expiry_date|expiry_label }}{% endif %}</li>
         {% if side == "left" and ad.broker and ad.broker.license %}<li>{{ ad.broker.license }}</li>{% endif %}
       </ul>
-      {% else %}
-      <div class="rail__title">{{ ad.name }}</div>
       {% endif %}
-      <a href="{{ ad.url }}" class="rail__cta" rel="sponsored nofollow noopener" target="_blank">{% if side == "right" and b and b.amount %}Nhận {{ b.amount }}{% else %}Mở tài khoản{% endif %}</a>
+      <a href="{{ ad.url }}" class="rail__cta" rel="sponsored nofollow noopener" target="_blank">{% if side == "right" and amount %}Nhận {{ amount }}{% else %}Mở tài khoản{% endif %}</a>
       {% if note %}<p class="rail__note">{{ note }}</p>{% endif %}
     </div>
     {% endif %}

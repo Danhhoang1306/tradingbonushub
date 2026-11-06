@@ -221,7 +221,7 @@
             {% if k.min_deposit %}<div><dt>Nạp tối thiểu</dt><dd>{{ k.min_deposit }}</dd></div>{% endif %}
             {% if k.leverage %}<div><dt>Đòn bẩy tối đa</dt><dd>{{ k.leverage }}</dd></div>{% endif %}
             {% if k.platforms %}<div><dt>Nền tảng</dt><dd>{{ k.platforms }}</dd></div>{% endif %}
-            {% if k.top_bonus %}<div><dt>Bonus nổi bật</dt><dd>{{ k.top_bonus.type_label }}{% if k.top_bonus.amount %} {{ k.top_bonus.amount }}{% endif %}</dd></div>{% endif %}
+            {% if k.featured_bonus_text %}<div><dt>Bonus nổi bật</dt><dd>{{ k.featured_bonus_text }}</dd></div>{% elif k.top_bonus %}<div><dt>Bonus nổi bật</dt><dd>{{ k.top_bonus.type_label }}{% if k.top_bonus.amount %} {{ k.top_bonus.amount }}{% endif %}</dd></div>{% endif %}
           </dl>
           <a href="{{ k.url }}" class="ccard__cta">Xem đánh giá {{ k.name }}</a>
         </div>

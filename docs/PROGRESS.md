@@ -7,4 +7,5 @@ Brief: docs/TEAM_BRIEF.md. Bản sao code cũ: F:\Tradingbonushub_old_2026-11-04
 - [x] Phase 3: QA xong 05/11. Báo cáo: docs/QA_REPORT.md. Chạy lại: qa/run_all.py, qa/mock/run_audit.py
 - [x] Phase 4: QA 2 vòng + đợt sửa cuối xong 05/11 (395 test). Báo cáo: docs/QA_REPORT.md
 - [x] Phase 5: lên tradingbonushub.com 05/11 (start.bat, stop.bat). SMTP chưa cấu hình: backend console, section signup tắt
-- [x] Phase 6: trả về thiết kế xong 06/11, lên site (commit 190fa19, 500 test). Chưa đo độc lập lại sau đợt sửa cuối. Chờ user: K16, K18, K24, K25, link pháp lý footer
+- [x] Phase 6: trả về thiết kế xong 06/11, lên site (commit 190fa19, 500 test). 
+- [x] Phase 7: K16, K18, K24, K25 và link pháp lý footer xong 06/11 (migration 0004). QA chạy lại toàn bộ: 755/774, xem docs/QA_REPORT.md mục Vòng 4. Code đã push, CHƯA lên site: site đang tắt từ 14:52 06/11

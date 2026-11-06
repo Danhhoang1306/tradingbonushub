@@ -8,7 +8,7 @@ from app.db import Base
 BONUS_TYPES = ("nodep", "deposit", "cashback", "contest", "crypto")
 BROKER_KINDS = ("forex", "crypto")
 KIND_LABELS = {"forex": "Forex", "crypto": "Crypto"}
-POST_CATEGORIES = ("Hướng dẫn", "Kiến thức", "So sánh", "Tin sàn")
+POST_CATEGORIES = ("Hướng dẫn", "Kiến thức", "So sánh", "Tin sàn", "Phân tích")
 POST_STATUSES = ("draft", "published")
 PLACEMENTS = ("after-bonus", "before-blog", "rail-left", "rail-right")
 CAMPAIGN_RESUMABLE = ("draft", "partial")  # còn mở lại, gửi tiếp, xóa được
@@ -60,6 +60,7 @@ class Broker(TimestampMixin, Base):
     withdrawal: Mapped[str] = mapped_column(String(120), default="", nullable=False)
     founded: Mapped[str] = mapped_column(String(20), default="", nullable=False)
     affiliate_url: Mapped[str] = mapped_column(String(1000), default="", nullable=False)
+    featured_bonus_text: Mapped[str] = mapped_column(String(60), default="", server_default="", nullable=False)
     logo_path: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     pros: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
     cons: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
@@ -110,6 +111,10 @@ class Banner(TimestampMixin, Base):
     target_url: Mapped[str] = mapped_column(String(1000), default="", nullable=False)
     start_date: Mapped[date | None] = mapped_column(Date)
     end_date: Mapped[date | None] = mapped_column(Date)
+    rail_amount: Mapped[str] = mapped_column(String(20), default="", server_default="", nullable=False)
+    rail_note: Mapped[str] = mapped_column(String(60), default="", server_default="", nullable=False)
+    rail_desc: Mapped[str] = mapped_column(String(255), default="", server_default="", nullable=False)
+    rail_line: Mapped[str] = mapped_column(String(60), default="", server_default="", nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     views: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     clicks: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

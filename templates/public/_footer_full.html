@@ -17,5 +17,6 @@
       {% endfor %}
     </div>
     <p class="site-footer__legal">{{ site.footer.risk_note }}{% if site.footer.risk_note and site.footer.copyright %} {% endif %}{{ site.footer.copyright }}</p>
+    {% if site.footer.legal_links %}<nav class="site-footer__legal-links" aria-label="Pháp lý">{% for l in site.footer.legal_links %}<a href="{{ l.url }}">{{ l.label }}</a>{% endfor %}</nav>{% endif %}
   </div>
 </footer>

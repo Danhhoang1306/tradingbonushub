@@ -5,7 +5,7 @@ import subprocess
 import httpx
 from playwright.sync_api import sync_playwright
 
-from qalib import ADMIN_EMAIL, ADMIN_PASS, BASE, PY, ROOT, Http, Report, Server, mk_banner, mk_bonus, mk_broker, mk_post, png_bytes
+from qalib import OPEN_DETAILS, ADMIN_EMAIL, ADMIN_PASS, BASE, PY, ROOT, Http, Report, Server, mk_banner, mk_bonus, mk_broker, mk_post, png_bytes
 
 R = Report("s7_probes")
 c = R.check
@@ -106,6 +106,7 @@ try:
     with sync_playwright() as p:
         b = p.chromium.launch()
         ctx = b.new_context(viewport={"width": 1440, "height": 900})
+        ctx.add_init_script(OPEN_DETAILS)
         ctx.route("**/*", lambda r: r.fulfill(status=200, body="", content_type="text/css") if "fonts.g" in r.request.url else r.continue_())
         pg = ctx.new_page()
         pg.goto(BASE + "/admin/login")
