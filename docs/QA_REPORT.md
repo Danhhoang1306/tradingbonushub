@@ -520,7 +520,9 @@ Tương phản: nhãn "Tài trợ" 2,64 và `nav-count` 3,46 dưới AA, nhưng 
 
 
 ## Vòng 4: chạy lại sau Phase 7 (06/11)
-**Kết quả: pytest 519 đạt (không tính tests/test_hub_sync.py, của việc khác). QA: 755/774 đạt. Audit mock: không còn dữ liệu mock; 18 khóa không sửa được từ admin đều là nhãn nội bộ, không có khóa mới.**
+**Kết quả: pytest 519 đạt (không tính tests/test_hub_sync.py, của việc khác). QA: 755/774 đạt. Audit mock: xem dòng dưới; 18 khóa không sửa được từ admin đều là nhãn nội bộ, không có khóa mới.**
+
+Audit mock, quét mã nguồn: 6 dòng khớp chuỗi mock, trong đó có chữ gợi ý trong ô admin mới thêm (`$4`, `Deposit 50%`), không hiện trên site public. Quét trang: các chuỗi khớp cần xem theo `qa/mock/out/scan_wiped.json`.
 
 Script `s1`, `s7`, `s11` đã lỗi từ Phase 6 (ô nằm trong khối thu gọn, công tắc đổi tại chỗ), nên kết quả cũ của chúng là từ trước đó. Đã sửa script để chạy hết.
 
