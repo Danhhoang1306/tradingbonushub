@@ -58,7 +58,7 @@ a.btn-arrow--blue:hover { background: var(--c-surface); color: var(--c-navy); }
 .btn-arrow--header-sm .btn-arrow__icon { width: 36px; height: 36px; }
 .btn-arrow--sm { padding-left: 22px; font-size: 14px; }
 .btn-arrow--sm .btn-arrow__icon { width: 36px; height: 36px; }
-.btn-arrow--submit { align-self: flex-start; }
+.btn-arrow--submit { align-self: flex-start; white-space: nowrap; }
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; text-align: center; padding: 12px 20px;
@@ -198,7 +198,8 @@ a.btn-arrow--blue:hover { background: var(--c-surface); color: var(--c-navy); }
 .site-footer__compact .site-footer__social { margin-top: 0; font-size: 13px; }
 .site-footer__risk { max-width: 560px; }
 @media (max-width: 520px) {
-  .site-footer__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Như thiết kế ở 390 (215px + 87px), nhưng cột đầu co được nên không tràn ở 360. */
+  .site-footer__grid { grid-template-columns: minmax(0, 1fr) auto; }
 }
 
 /* ---------- trang chủ ---------- */
@@ -399,7 +400,8 @@ a.btn-arrow--blue:hover { background: var(--c-surface); color: var(--c-navy); }
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 10px;
 }
 .signup__img { min-height: 420px; }
-.signup__content { padding: 40px 36px; align-content: center; min-width: 0; }
+/* Thiết kế: nội dung rộng 268px ở khung tràn 340px. Khung hẹp hơn thì bớt padding ngang, giữ 268px. */
+.signup__content { padding: 40px min(36px, calc((100% - 268px) / 2)); align-content: center; min-width: 0; }
 .signup__text { font-size: 15px; line-height: 1.7; color: var(--c-text-2); margin: 0 0 24px; }
 .form-stack { display: flex; flex-direction: column; gap: 14px; }
 .field-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
@@ -489,7 +491,7 @@ textarea.input { display: block; resize: vertical; }
 .compare-pick { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .compare-pick__label { font-size: 14px; color: var(--c-text-2); margin-right: 4px; }
 .compare-table { background: var(--c-surface); overflow-x: auto; }
-.compare-grid { display: grid; grid-template-columns: 180px repeat(var(--cols, 1), minmax(200px, 1fr)); min-width: calc(180px + var(--cols, 1) * 200px); }
+.compare-grid { display: grid; grid-template-columns: 180px repeat(max(var(--cols, 1), 1), minmax(200px, 1fr)); min-width: calc(180px + var(--cols, 1) * 200px); }
 .compare-grid__head { padding: 20px; border-bottom: 1px solid var(--c-line); display: flex; flex-direction: column; gap: 4px; }
 .compare-grid__name { font-size: 19px; font-weight: 600; margin: 0; }
 .compare-grid__tagline { font-size: 13px; color: var(--c-text-2); }
@@ -516,14 +518,11 @@ textarea.input { display: block; resize: vertical; }
 .bonus-row__meta { font-size: 13px; color: var(--c-text-2); }
 .bonus-row__title { font-size: 17px; font-weight: 600; margin: 4px 0 0; }
 .table-wrap { background: var(--c-surface); overflow-x: auto; }
-.table { width: 100%; min-width: 560px; border-collapse: collapse; table-layout: fixed; }
-.table th {
-  text-align: left; padding: 14px 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;
-  color: var(--c-text-2); font-weight: 400; border-bottom: 1px solid var(--c-line);
-}
-.table td { padding: 18px 8px; font-size: 15px; border-bottom: 1px solid var(--c-line-soft); overflow-wrap: anywhere; vertical-align: top; }
-.table th:first-child, .table td:first-child { padding-left: 24px; width: 32%; }
-.table th:last-child, .table td:last-child { padding-right: 24px; width: 24%; }
+.table { display: block; width: 100%; min-width: 560px; }
+.table thead, .table tbody { display: block; }
+.table tr { display: grid; grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr)); gap: 16px; padding: 18px 24px; font-size: 15px; border-bottom: 1px solid var(--c-line-soft); }
+.table thead tr { padding: 14px 24px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--c-text-2); border-bottom-color: var(--c-line); }
+.table th, .table td { display: block; padding: 0; text-align: left; font-weight: 400; overflow-wrap: anywhere; }
 .table td:first-child { font-weight: 600; }
 .broker-aside {
   background: var(--c-navy); color: var(--c-on-dark); padding: 28px; display: flex; flex-direction: column; gap: 16px;

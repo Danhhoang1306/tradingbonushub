@@ -18,7 +18,7 @@ filter `date_vn`/`datetime_vn` để ra giờ VN), `X|None` (có thể None), `l
 3. **Link/URL tính sẵn ở backend** (`url`, `go_url`, `edit_url`...). FE không tự ghép URL có tham số.
 4. **Ảnh**: mọi trường ảnh là đường dẫn công khai dạng `/media/<hex>.<ext>` (upload) hoặc `/static/img/...`
    (mặc định FE cung cấp) hoặc chuỗi rỗng. Rỗng → khối nền trung tính, không chữ placeholder.
-5. **Danh sách rỗng** → empty state câu trung tính (ví dụ “Chưa có bonus nào.”). Số đếm `0`/`None` → ẩn.
+5. **Danh sách rỗng** → empty state câu trung tính (ví dụ “Chưa có bonus nào.”). Số đếm: tab và thống kê in `0` như thiết kế (brief 13.1), `None` = không có số thì ẩn.
 6. **Không dữ liệu mẫu trong template.** Chữ tĩnh của trang (tiêu đề, mô tả, lý do, footer...) lấy từ `site.*`
    (bảng Setting, mặc định = chữ thiết kế). Chỉ nhãn khung (nút, nhãn cột, tab) được viết cứng trong template.
 7. **Tên file template cố định** (bảng ở mục 2 và 4). Partial/base tùy FE đặt (`templates/base_public.html`,
@@ -52,7 +52,7 @@ public hiện trong khối form tương ứng dựa vào `flash.code`.
 | `test_sent` | success | Đã gửi thử tới `<email>` | admin Gửi email (sau `POST mail_form.test_action`, render trực tiếp) |
 | `test_failed` | error | Không gửi được email thử. Kiểm tra cấu hình SMTP. | như trên, HTTP 502 |
 | `invalid_url` | error | Link phải bắt đầu bằng http:// hoặc https:// | admin Sàn › Link affiliate, Quảng cáo › Banner |
-| `invalid_dates` | error | Ngày chạy không hợp lệ, ví dụ 01/11 – 30/11. | admin Quảng cáo › Banner |
+| `bulk_errors` | error | Chưa lưu: `<tên các dòng>`. Các dòng khác đã lưu. | admin Link affiliate, Banner, Thư viện ảnh khi Xuất bản, HTTP 400, render trực tiếp |
 | `sub_ok` | success | Kiểm tra hộp thư để xác nhận email. | trang có form đăng ký (sau POST /api/subscribe) |
 | `sub_invalid` | error | Vui lòng nhập email hợp lệ. | như trên |
 | `sub_rate` | error | Bạn thao tác quá nhanh, vui lòng thử lại sau ít phút. | như trên |
@@ -237,7 +237,7 @@ Có `image_path` → banner ảnh (`<a href="{{ b.url }}" rel="sponsored nofollo
 dựng từ `broker` + `bonus`. Luôn có nhãn “Tài trợ”.
 
 **Tab** (thanh tab dưới header trang con): `{"id": str, "label": str, "count": int|None, "url": str, "active": bool}`.
-`count` None hoặc 0 → ẩn số.
+`count` None → ẩn số; 0 → in `0` như thiết kế.
 
 ---
 
@@ -438,7 +438,7 @@ Form drawer (`POST drawer.action`): `broker_id` (select), `type` (pill/radio), `
 | `add_url`, `add_label`, `drawer`, `media_library` (khi drawer mở) | |
 Công tắc: `POST {{ k.toggle_url }}` với `field` = `is_active` | `in_compare` | `featured`.
 Bật so sánh khi đã đủ 3 → flash `compare_limit`. Bật nổi bật → tự tắt nổi bật ở sàn khác (tối đa 1).
-`brokers` theo thứ tự nhập. Tab Link affiliate: một form `POST links_action`, mỗi dòng `name="url_{{ k.id }}"`; một dòng sai → flash `invalid_url`/`too_long`, không lưu dòng nào. `link_url` (lưu từng dòng) vẫn còn. Cột Click = `clicks`, `clicks_30d`. Thiết kế có cột “Đăng ký” nhưng không có nguồn dữ liệu.
+`brokers` theo thứ tự nhập. Tab Link affiliate: một form `POST links_action`, mỗi dòng `name="url_{{ k.id }}"`. Dòng hợp lệ được lưu; dòng lỗi không lưu, HTTP 400 + flash `bulk_errors`, `k.affiliate_url` giữ chữ vừa nhập, lỗi ở `k.errors.affiliate_url`. Dòng không đổi không bị kiểm tra. `link_url` (lưu từng dòng) vẫn còn. Cột Click = `clicks`, `clicks_30d`. Thiết kế có cột “Đăng ký” nhưng không có nguồn dữ liệu.
 Form drawer: `name`*, `slug` (trống = tự tạo từ tên), `mono` (trống = tự lấy 2 ký tự), `kind`, `tagline`, `summary` (textarea),
 `license`, `min_deposit`, `leverage`, `platforms`, `spread`, `withdrawal`, `founded`, `affiliate_url` (http/https),
 `logo_path` + `logo_path_file` (0.4), `pros` (textarea, mỗi dòng 1 ý), `cons` (như pros),
@@ -453,11 +453,11 @@ như mục 2.2. Lỗi có thể ở: `name, slug, license, kind, affiliate_url, 
 
 ### `/admin/ads?tab=banner|stats` → `admin/ads.html`
 | `subtabs` | Banner / Thống kê |
-| `banners` | `list[{"id","name","image_path","placement","target_url","broker": {"id","name"}|None,"start_date": date|None,"end_date": date|None,"dates": str (`01/11 – 30/11`, ghi năm khi khác năm nay, rỗng nếu không giới hạn),"is_active","state","views","clicks","edit_url","toggle_url","delete_url"}]` – `state|banner_state_label`, CTR = `ctr(b.clicks, b.views)`. `state`: `running`, `paused`, `scheduled`, `ended`, `no_link` (không có link đích, không hiện ở site), `broker_hidden` (sàn đang ẩn) |
+| `banners` | `list[{"id","name","image_path","placement","target_url","broker": {"id","name"}|None,"start_date": date|None,"end_date": date|None,"dates": str (dạng ngắn nhất đọc lại đúng ngày: `01/11 – 30/11`, `01/01/2025 – 30/11/2026`; rỗng nếu không giới hạn),"errors": dict,"is_active","state","views","clicks","edit_url","toggle_url","delete_url"}]` – `state|banner_state_label`, CTR = `ctr(b.clicks, b.views)`. `state`: `running`, `paused`, `scheduled`, `ended`, `no_link` (không có link đích, không hiện ở site), `broker_hidden` (sàn đang ẩn) |
 | `totals` | `{"views", "clicks"}` |
 | `ad_click_days` | `list[{"day": date, "clicks": int, "percent": int 0–100}]` – 30 ngày, chỉ click quảng cáo; cột cuối = hôm nay |
 | `broker_options`, `placement_options` (`list[{"id","label"}]`) | |
-| `ads_action` | `/admin/ads/bulk` – lưu cả tab Banner: `placement_<id>`, `target_url_<id>`, `dates_<id>` (một ô chữ, `01/11 – 30/11`, thiếu năm = năm nay, trống = không giới hạn). Một thẻ sai → flash `invalid_url`/`invalid_dates`/`too_long`, không lưu thẻ nào |
+| `ads_action` | `/admin/ads/bulk` – lưu cả tab Banner: `placement_<id>`, `target_url_<id>`, `dates_<id>` (một ô chữ, `01/11 – 30/11`; ngày từ thiếu năm = năm nay, ngày đến thiếu năm = năm của ngày từ, nhỏ hơn thì năm sau; trống = không giới hạn). Thẻ hợp lệ được lưu; thẻ lỗi không lưu, HTTP 400 + flash `bulk_errors`, `b.placement`, `b.target_url`, `b.dates` giữ chữ vừa nhập, lỗi ở `b.errors`. Phần không đổi không bị kiểm tra, trường không gửi thì giữ nguyên |
 | `add_url`, `add_label`, `drawer`, `media_library` (khi drawer mở) | |
 Form drawer: `name`*, `broker_id` (select, có lựa chọn rỗng), `placement`*, `target_url` (http/https; trống = dùng link
 affiliate của sàn), `image_path` + `image_path_file`, `start_date`, `end_date` (`type=date`), `is_active`.
@@ -473,26 +473,27 @@ Form drawer: `title`*, `slug`, `category`, `excerpt` (textarea), `body_md` (text
 `status` (`draft`|`published`), `published_at` (`type=date`; trống + đăng → đăng ngay; ngày tương lai → chỉ hiện từ 00:00 giờ VN ngày đó), `show_home`.
 Số phút đọc tự tính. Lỗi: `title, slug, category, status, published_at, cover_path`.
 
-### `/admin/home?tab=sections|hero|about|why|types|contact|menu` → `admin/home.html` (Nội dung trang chủ)
+### `/admin/home?tab=sections|hero|menu|hero_extra|headings|footer|about|why|types|contact` → `admin/home.html` (Nội dung trang chủ)
 | `settings` | dict = toàn bộ `site` (mục 2.1) – đọc giá trị hiện tại từ đây |
 | `sections` | `list[{"id","label","on","n": "01","toggle_url","move_url","first": bool,"last": bool}]` |
 | `form` | `{"action": "/admin/home/<tab>", "data": dict (xem 0.5; rỗng khi không lỗi), "errors": dict}` |
 | `view_url` | link “Xem trên site ↗” |
 | `media_library` | tab `hero, about, why, types, contact`; tab khác là `[]` |
 Mọi form tab là `POST {{ form.action }}` + csrf + `enctype="multipart/form-data"`. Trường theo tab:
-- **sections** (thêm ô `compare_featured_label`, hiện tại `settings.home_compare.featured_label`): công tắc từng dòng `POST s.toggle_url`; lên/xuống `POST s.move_url` với `direction=up|down`
-  (ẩn nút up khi `first`, down khi `last`). Thêm form tiêu đề section: `bonus_eyebrow`, `bonus_title`,
-  `compare_eyebrow`, `compare_title`, `blog_eyebrow`, `blog_title` (→ `settings.home_bonus/home_compare/home_blog`).
-- **hero**: `eyebrow`, `headline`, `sub` (textarea), `cta`, `card_label`, `image_path` + `image_path_file`.
+- **sections**: công tắc từng dòng `POST s.toggle_url`; lên/xuống `POST s.move_url` với `direction=up|down`. Không có form riêng; POST tab này thiếu ô nào thì giữ giá trị ô đó.
+- **headings** (Tiêu đề section): `bonus_eyebrow`, `bonus_title`, `compare_eyebrow`, `compare_title`, `blog_eyebrow`, `blog_title`, `compare_featured_label` (→ `settings.home_bonus/home_compare/home_blog`).
+- **hero**: `eyebrow`, `headline`, `sub` (textarea), `cta`, `image_path` + `image_path_file`.
+- **hero_extra** (Hero nâng cao): `card_label`.
 - **about**: `eyebrow`, `title`, `text`, `badge`, `count_label`, điểm nổi bật lặp `point_title` + `point_text`,
   ảnh `image_0`, `image_1`, `image_2` (+ `_file`).
 - **why**: `eyebrow`, `title`, `text`, `stat_value`, `stat_label`, lý do lặp `reason_title` + `reason_text`, ảnh `image_0`, `image_1`.
 - **types**: `eyebrow`, `title`, `image` (+ `image_file`); với mỗi loại `id` trong `settings.bonus_types`:
   `<id>_short`, `<id>_label`, `<id>_desc`, `<id>_points` (textarea, mỗi dòng 1 ý). Không thêm/xóa loại.
 - **contact**: `eyebrow`, `title`, `text`, `success_title`, `success_text`, `image` (+ `image_file`).
-- **menu**: menu lặp `menu_label` + `menu_url`; footer: `about_text`, `risk_note`, `copyright`, `affiliate_note`
+- **menu**: menu lặp `menu_label` + `menu_url`; `risk_note`. Trường khác của chân trang không gửi thì giữ nguyên.
+- **footer** (Chân trang): `about_text`, `copyright`, `affiliate_note`
   (hiện tại `settings.footer.*`); ghi chú: `cta_note`, `ads_note` (hiện tại `settings.cta_note`, `settings.ads_note`); mỗi cột footer:
-  `footer_col_title` + `footer_col_links` (textarea, mỗi dòng `Nhãn | /url`), lặp theo số cột.
+  `footer_col_title` + `footer_col_links` (textarea, mỗi dòng `Nhãn | /url`), lặp theo số cột. Không gửi cột nào = xóa hết cột.
   Link hợp lệ: `/đường-dẫn` (không khoảng trắng), `http(s)://`, `mailto:`, `#neo`. Lỗi: `menu`, `footer_col_links`.
 
 ### `/admin/pages?tab=bonus|san|compare|tin|gioithieu|method|affiliate|lienhe|terms|privacy|system` → `admin/pages.html` (Trang)
@@ -515,7 +516,8 @@ không gửi trường đó; gửi rỗng = xóa (public ẩn dòng tương ứn
 - **terms** / **privacy**: `body_md` (Markdown; hiện tại `settings.legal.terms_md` / `privacy_md`).
 
 ### `/admin/media?q=` → `admin/media.html` (Thư viện ảnh)
-| `media` | `list[{"id","path","alt","width","height","size": int bytes,"created_at","in_use": bool,"edit_url","delete_url"}]` |
+| `media` | `list[{"id","path","alt","width","height","size": int bytes,"created_at","in_use": bool,"edit_url","delete_url","errors": dict}]` |
+| `media_action` | `/admin/media/bulk` (giữ `q`) – nút Xuất bản: `alt_<id>`. Ảnh hợp lệ được lưu; ảnh lỗi không lưu, HTTP 400 + flash `bulk_errors`, `m.alt` giữ chữ vừa nhập, lỗi ở `m.errors.alt` |
 | `q` | str (tìm theo alt) |
 | `upload_action` | `/admin/media/upload` |
 | `errors` | dict (`files`) – lỗi upload, HTTP 400 |

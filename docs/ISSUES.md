@@ -288,7 +288,7 @@ Chi tiết cuối cùng nằm trong `docs/VIEW_CONTEXT.md`. Phần "bỏ biến"
 
 
 ## [Phase 6 Admin FE] Trả về đúng thiết kế: phần còn khác và việc cần user chọn (05/11)
-Đã xử lý mọi dòng A, C trong `docs/design-diff/admin.md`. Các khác biệt dưới đây còn lại, kèm lý do.
+**[Lỗi thời: câu "đã xử lý mọi dòng" đo lại vòng 2 không đúng. Xem `docs/design-diff/admin.md` mục Vòng 2 và mục Phase 6.1 Admin FE cuối file.]**
 
 **Không khôi phục được (thiếu dữ liệu)**
 - Sàn › Link affiliate, cột "Đăng ký": giữ tên cột đúng thiết kế, ô hiện "—". Sàn không báo số đăng ký về site. Số click 30 ngày chuyển vào tooltip ô Click.
@@ -313,3 +313,53 @@ Chi tiết cuối cùng nằm trong `docs/VIEW_CONTEXT.md`. Phần "bỏ biến"
 - Tổng quan: bỏ dải tin nhắn chưa đọc (số chưa đọc vẫn ở sidebar). Thẻ có tiêu đề luôn hiện; số 0 để trống; hết dữ liệu hiện "Không có bonus nào sắp hết hạn.", "Chưa có banner nào.".
 - Câu rỗng ở các danh sách: thiết kế không có, giữ theo brief mục 5, bỏ nút "+ Thêm" trùng đầu trang.
 - Trang › So sánh, Cách đánh giá, Công bố affiliate, Liên hệ: bỏ ô nhãn breadcrumb (A11), tiêu đề và mô tả có ghi chú chỉ dùng cho thẻ title, meta.
+
+
+## [Phase 6.1 Backend → FE] Đợt sửa cuối theo brief 13.1 (06/11)
+Chi tiết trong `docs/VIEW_CONTEXT.md`. Chưa sửa template thì trang vẫn chạy, các tab mới hiện form trống.
+
+**Admin FE**
+- B1. Bulk lưu từng dòng: `POST links_action`, `ads_action` không còn redirect khi có lỗi. Dòng hợp lệ được lưu; dòng lỗi không lưu, trả **HTTP 400**, render lại đúng tab, hàng đó giữ chữ vừa nhập (`k.affiliate_url`; `b.placement`, `b.target_url`, `b.dates`). Mỗi hàng có `errors` (dict, rỗng nếu không lỗi): `k.errors.affiliate_url`; `b.errors.target_url`, `b.errors.dates`, `b.errors.placement`. Nên in dưới ô bằng `ui.err`. Flash `bulk_errors` đã nêu tên dòng ("Chưa lưu: ..."), hiện ở alert sẵn có. Dòng không đổi thì không bị kiểm tra, nên banner "Thiếu link đích" không còn chặn banner khác. Bỏ flash `invalid_dates`.
+- B2. Thư viện ảnh: `media_action` (`POST`, đã giữ `q`), trường `alt_<id>`. Đặt `page_form` trỏ form này, ô mô tả dùng `form="page-form"`, bỏ form và nút Lưu từng thẻ để không lồng form. Lỗi cùng kiểu B1: `m.errors.alt`, `m.alt` giữ chữ vừa nhập. Không gõ gì thì vẫn POST, báo "Đã lưu" đúng thực tế.
+- B3. Gửi email: **xóa đoạn chặn trong `initPublish` của `static/js/admin.js`** (nút Xuất bản khi chưa soạn). Để form POST `action=draft`: server trả 400, lỗi ở `subject`, `body`, giữ nguyên nhóm đã chọn. Backend không lưu riêng nhóm, vì nháp cần tiêu đề và nội dung.
+- B4. `/admin/home`, thứ tự tab mới: `sections`, `hero`, `menu`, rồi `hero_extra` (Hero nâng cao), `headings` (Tiêu đề section), `footer` (Chân trang), `about`, `why`, `types`, `contact`.
+  - `sections`: bỏ form tiêu đề; nút Xuất bản dùng `data-publish`. Các ô `bonus_*`, `compare_*`, `blog_*`, `compare_featured_label` chuyển sang tab `headings`, cùng tên trường.
+  - `hero`: bỏ ô `card_label`, chuyển sang tab `hero_extra`, cùng tên trường.
+  - `menu`: chỉ còn dòng menu và `risk_note`. `about_text`, `copyright`, `affiliate_note`, `cta_note`, `ads_note`, cột footer chuyển sang tab `footer`, cùng tên trường.
+  - Form gốc không gửi các ô đó thì giá trị giữ nguyên. Tab `footer` không gửi dòng cột nào = xóa hết cột.
+- B5. Không cần tab SEO nâng cao: tab `seo` gốc chỉ có 4 ô đúng thiết kế, SEO từng trang nằm ở Trang. Việc còn lại là bỏ cột xem trước. Drawer: khối "Thông tin chi tiết" chỉ là việc của template, tên trường không đổi.
+- B6. Số 0 ở `nav`: `count` là 0 cho mục có đếm, None cho mục không đếm. Đổi `{% if i.count %}` theo quyết định 13.1 nếu áp dụng cho sidebar (thiết kế dùng `count ?? ''`, nên in 0).
+
+**Public FE**
+- C1. Backend đã truyền số 0 (int), None chỉ dành cho tab không có số (So sánh, tab Giới thiệu, tab chi tiết sàn trừ Bonus). Sửa template:
+  - `base_public.html:52`: `{% if t.count is not none %}`.
+  - `bonus_list.html:6`: luôn in `{{ bonus_count }} ưu đãi`.
+  - `broker_list.html:17`: `{{ k.bonus_count }}`, bỏ `or "—"`.
+  - Bảng so sánh: `cells` có số 0, kiểm tra template không đổi thành "—".
+
+## [Phase 6.1 Public FE] Cập nhật so với mục "[Phase 6 Public FE]" (06/11)
+- Dòng 42 pages.md không còn giữ câu "Chưa chọn sàn nào...": bỏ chọn hết hiện bảng nhãn như thiết kế. DB chưa có sàn nào vẫn là "Chưa có sàn nào." (dòng 90).
+- Đã chốt theo thiết kế: tab danh sách (Bonus, Sàn, Tin, Giới thiệu) về đầu trang; sort, chọn sàn, tab chi tiết sàn giữ vị trí cuộn; dải tab luôn giữ vị trí.
+- Đã chốt: in "0 ưu đãi đang hoạt động" ở khung chi tiết sàn và ô "0+" ở trang chủ như thiết kế.
+
+
+## [Phase 6.1 Admin FE] Dòng còn lệch thiết kế sau đợt 13.1 (06/11)
+Số dòng theo `docs/design-diff/admin.md` mục Vòng 2. Các dòng không nêu ở đây và thuộc bảng CÒN của vòng 2 đã sửa; chưa có đo độc lập lại sau đợt này.
+
+**Thuộc danh sách GIỮ (13, 13.1), không sửa:** 5 font nút; 10 Đăng xuất; 86 "Tin sàn" (brief mục 6); 97, 120 hộp xác nhận; 119 Esc; câu báo rỗng.
+
+**Còn lệch, cần user quyết:**
+- 15 "Xuất bản thay đổi" không có nháp/xuất bản thật: lưu form, lưu nhiều dòng, hoặc chỉ báo "Đã lưu" ở màn lưu ngay. Ở Gửi email là lưu nháp.
+- 44 công tắc: đã đổi tại chỗ, không tải lại, không báo gì. Bản chất vẫn là POST + đọc trang trả về; dưới tab con có lọc (vd. Đang hiển thị) số dòng đổi thì tải lại trang.
+- Mũi tên Section vẫn tải lại trang, giữ vị trí cuộn. Thiết kế không tải lại.
+- 57 banner: link "Sửa" chỉ hiện khi rê hoặc focus; 80, 88 nút "Lọc"; 93 link "Lịch sử gửi"; 108, 109 nút Sửa khi rê và "+ Thêm tài khoản"; 77 "+ Thêm mục menu" và ↑ ↓ ✕ nằm ngoài thẻ, trên nền trang. Không có trong thiết kế, giữ vì 13.1 cấm bỏ chức năng và các nút này không làm đổi khung.
+- 107 cột Tên hiện "—", cột Đăng ký (Link affiliate) hiện "—": không có dữ liệu.
+- 114 ô Sàn là select, ô Hết hạn là ô ngày: dữ liệu là khóa ngoại và kiểu ngày; ô cao đúng 45px. Muốn ô chữ như thiết kế ("Liên tục", "31/12") cần backend nhận chữ.
+- 118 drawer Sửa, Thêm mở bằng tải trang (form server-side), nhìn không khác.
+- Khối "Thông tin chi tiết" đóng sẵn cuối drawer Sửa bonus, Sửa sàn: 13.1 yêu cầu, thiết kế không có.
+- Vùng ảnh Hero, SEO: thêm link nhỏ "Chọn từ thư viện", "Bỏ ảnh" trên hàng nhãn, không đổi bố cục.
+- Trang chủ có 10 tab, ở 1440 tab cuối "Liên hệ" bị khuất, cuộn ngang trong hàng tab (hàng tab của thiết kế cũng `overflow-x: auto`).
+- Ô Chung, SEO là textarea như thiết kế, Enter gửi form thay vì xuống dòng; ô Email không còn kiểm tra phía trình duyệt, server vẫn kiểm tra.
+- Sidebar: Thư viện ảnh, Tin nhắn in 0 theo 13.1 (mục mới, thiết kế không có).
+
+**Không đổi nghĩa:** công tắc trong drawer Tài khoản, Sửa sàn vẫn POST và tải lại. Mọi màn chạy được khi tắt JS, trừ "Bỏ ảnh" (xóa ô đường dẫn thay thế).

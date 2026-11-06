@@ -1,6 +1,8 @@
 {% extends "admin/_base.html" %}
 {% import "admin/_macros.html" as ui with context %}
+{% set page_form = 'page-form' %}
 {% block content %}
+<form id="page-form" method="post" action="{{ media_action }}">{{ ui.csrf() }}</form>
 <div class="stack-lg">
   <form class="upload-box" method="post" action="{{ upload_action }}" enctype="multipart/form-data">
     {{ ui.csrf() }}
@@ -34,11 +36,10 @@
       </a>
       <div class="media-info">
         <div class="media-meta"><span>{{ m.width }}×{{ m.height }} · {{ ui.size(m.size) }}</span><span>{{ m.created_at|date_vn }}</span></div>
-        <form class="media-alt" method="post" action="{{ m.edit_url }}">
-          {{ ui.csrf() }}
-          <input type="text" name="alt" value="{{ m.alt }}" maxlength="255" placeholder="Mô tả ảnh (alt)" aria-label="Mô tả ảnh">
-          <button type="submit" class="btn-sm">Lưu</button>
-        </form>
+        <div class="media-alt field{% if m.errors and m.errors.alt %} has-error{% endif %}">
+          <input type="text" form="page-form" name="alt_{{ m.id }}" value="{{ m.alt }}" maxlength="255" placeholder="Mô tả ảnh (alt)" aria-label="Mô tả ảnh">
+          {{ ui.err(m.errors, 'alt') }}
+        </div>
         <div class="media-actions">
           <button type="button" class="btn-sm js-only" data-copy="{{ m.path }}">Copy link</button>
           <input class="nojs-only media-path" type="text" value="{{ m.path }}" readonly aria-label="Đường dẫn ảnh">

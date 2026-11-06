@@ -22,10 +22,10 @@
     {% elif current_tab == "accounts" %}
       {% if broker.accounts %}
       <div class="table-wrap">
-        <table class="table">
-          <thead><tr><th scope="col">Tài khoản</th><th scope="col">Nạp tối thiểu</th><th scope="col">Spread từ</th><th scope="col">Hoa hồng</th></tr></thead>
-          <tbody>
-            {% for a in broker.accounts %}<tr><td>{{ a.name }}</td><td>{{ a.min_deposit or "—" }}</td><td>{{ a.spread or "—" }}</td><td>{{ a.commission or "—" }}</td></tr>{% endfor %}
+        <table class="table" role="table">
+          <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Tài khoản</th><th scope="col" role="columnheader">Nạp tối thiểu</th><th scope="col" role="columnheader">Spread từ</th><th scope="col" role="columnheader">Hoa hồng</th></tr></thead>
+          <tbody role="rowgroup">
+            {% for a in broker.accounts %}<tr role="row"><td role="cell">{{ a.name }}</td><td role="cell">{{ a.min_deposit or "—" }}</td><td role="cell">{{ a.spread or "—" }}</td><td role="cell">{{ a.commission or "—" }}</td></tr>{% endfor %}
           </tbody>
         </table>
       </div>
@@ -34,10 +34,10 @@
     {% elif current_tab == "pay" %}
       {% if broker.payment_methods %}
       <div class="table-wrap">
-        <table class="table">
-          <thead><tr><th scope="col">Phương thức</th><th scope="col">Nạp</th><th scope="col">Rút</th><th scope="col">Thời gian rút</th></tr></thead>
-          <tbody>
-            {% for p in broker.payment_methods %}<tr><td>{{ p.method }}</td><td>{{ p.deposit or "—" }}</td><td>{{ p.withdraw or "—" }}</td><td>{{ p.time or "—" }}</td></tr>{% endfor %}
+        <table class="table" role="table">
+          <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Phương thức</th><th scope="col" role="columnheader">Nạp</th><th scope="col" role="columnheader">Rút</th><th scope="col" role="columnheader">Thời gian rút</th></tr></thead>
+          <tbody role="rowgroup">
+            {% for p in broker.payment_methods %}<tr role="row"><td role="cell">{{ p.method }}</td><td role="cell">{{ p.deposit or "—" }}</td><td role="cell">{{ p.withdraw or "—" }}</td><td role="cell">{{ p.time or "—" }}</td></tr>{% endfor %}
           </tbody>
         </table>
       </div>
@@ -67,9 +67,7 @@
         {% if broker.license %}<div class="broker-aside__license">{{ broker.license }}</div>{% endif %}
       </div>
     </div>
-    {% if broker.bonus_count or broker.min_deposit %}
-    <p class="broker-aside__text">{% if broker.bonus_count %}{{ broker.bonus_count }} ưu đãi đang hoạt động.{% endif %}{% if broker.bonus_count and broker.min_deposit %} {% endif %}{% if broker.min_deposit %}Nạp tối thiểu {{ broker.min_deposit }}.{% endif %}</p>
-    {% endif %}
+    <p class="broker-aside__text">{{ broker.bonus_count }} ưu đãi đang hoạt động.{% if broker.min_deposit %} Nạp tối thiểu {{ broker.min_deposit }}.{% endif %}</p>
     {% if broker.go_url %}<a href="{{ broker.go_url }}" class="broker-aside__cta" rel="sponsored nofollow noopener" target="_blank">Mở tài khoản {{ broker.name }}</a>{% endif %}
     {% if broker.go_url and site.cta_note %}<p class="broker-aside__note">{{ site.cta_note }}</p>{% endif %}
   </aside>

@@ -28,6 +28,28 @@
     });
   }
 
+  // Như thiết kế: sắp xếp, chọn sàn, tab chi tiết sàn giữ vị trí cuộn; tab danh sách về đầu trang; dải tab luôn giữ vị trí.
+  // Tắt JS thì link vẫn chạy.
+  var POS_KEY = 'tbh-keep-pos';
+  var tabStrip = document.querySelector('.tabs');
+  try {
+    var pos = JSON.parse(sessionStorage.getItem(POS_KEY));
+    sessionStorage.removeItem(POS_KEY);
+    if (pos && pos.url === location.href) {
+      if (tabStrip) tabStrip.scrollLeft = pos.left;
+      window.scrollTo(0, pos.top);
+    }
+  } catch (e) { /* trình duyệt chặn lưu trữ: bỏ qua */ }
+  function keepsTop(a) { return !a.closest('.tabs') || !!document.querySelector('.detail'); }
+  document.querySelectorAll('.tabs a, .toolbar a, .compare-pick a').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+      try {
+        sessionStorage.setItem(POS_KEY, JSON.stringify({ url: a.href, top: keepsTop(a) ? window.scrollY : 0, left: tabStrip ? tabStrip.scrollLeft : 0 }));
+      } catch (err) { /* bỏ qua */ }
+    });
+  });
+
   // Lọc "Bonus mới nhất" theo loại (trang chủ)
   var filterGroup = document.querySelector('[data-filter-group]');
   function applyFilter(type) {

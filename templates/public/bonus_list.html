@@ -3,17 +3,14 @@
 {% block content %}
 <div class="stack">
   <div class="toolbar">
-    <div class="toolbar__count">{% if bonus_count %}{{ bonus_count }} ưu đãi{% endif %}</div>
+    <div class="toolbar__count">{{ bonus_count }} ưu đãi</div>
     <nav class="pills" aria-label="Sắp xếp">
       {% for o in sorts %}<a href="{{ o.url }}" class="pill{% if o.active %} is-active{% endif %}"{% if o.active %} aria-current="true"{% endif %}>{{ o.label }}</a>{% endfor %}
     </nav>
   </div>
-  {% if bonuses %}
   <div class="grid-cards grid-cards--290">
     {% for b in bonuses %}{{ bonus_card(b) }}{% endfor %}
   </div>
-  {% else %}
-  {{ empty("Chưa có ưu đãi trong mục này.") }}
-  {% endif %}
+  {% if not bonuses %}{{ empty("Chưa có ưu đãi trong mục này.") }}{% endif %}
 </div>
 {% endblock %}

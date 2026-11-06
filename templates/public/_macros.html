@@ -63,7 +63,7 @@
 {% macro ad_block(ad) -%}
 <aside class="ad" aria-label="Tài trợ">
   <div class="ad__label"><span>Tài trợ</span>{% if ad.broker %}<span>{{ ad.broker.name }}</span>{% endif %}</div>
-  <a href="{{ ad.url }}" class="ad__image" rel="sponsored nofollow noopener" target="_blank">{% if ad.image_path %}<img src="{{ ad.image_path }}" alt="{{ ad.name }}" loading="lazy" decoding="async">{% endif %}</a>
+  <a href="{{ ad.url }}" class="ad__image" rel="sponsored nofollow noopener" target="_blank"{% if not ad.image_path %} aria-label="{{ ad.name }}"{% endif %}>{% if ad.image_path %}<img src="{{ ad.image_path }}" alt="{{ ad.name }}" loading="lazy" decoding="async">{% endif %}</a>
 </aside>
 {%- endmacro %}
 

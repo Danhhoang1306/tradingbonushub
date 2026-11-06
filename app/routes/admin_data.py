@@ -9,8 +9,8 @@ from sqlalchemy.orm import joinedload
 
 from app import content, queries
 from app.models import BONUS_TYPES, BROKER_KINDS, KIND_LABELS, PLACEMENTS, POST_CATEGORIES, Banner, Bonus, Broker, ClickLog, Post, utcnow
-from app.routes.admin_base import (Admin, _tab, admin_get, admin_post, done, get_or_404, media_library, render_admin, subtabs,
-                                   with_query)
+from app.routes.admin_base import (Admin, _tab, admin_get, admin_post, bulk_errors_flash, done, get_or_404, media_library,
+                                   render_admin, subtabs, with_query)
 from app.security import is_http_url
 from app.templating import PLACEMENT_LABELS
 from app.utils import (VN_TZ, as_utc_naive, date_range_label, mono_from_name, parse_date, parse_date_range, parse_float,
@@ -201,7 +201,7 @@ def _broker_values(k: Broker | None) -> dict:
         "is_active": k.is_active}
 
 
-def _broker_page(a: Admin, tab: str = "list", drawer: dict | None = None, status_code=200):
+def _broker_page(a: Admin, tab: str = "list", drawer: dict | None = None, status_code=200, typed: dict | None = None, **extra):
     db, tab = a.db, _tab(tab, BROKER_TABS)
     counts = queries.bonus_count_by_broker(db)
     start = today_vn() - timedelta(days=29)
@@ -215,14 +215,16 @@ def _broker_page(a: Admin, tab: str = "list", drawer: dict | None = None, status
         "logo_path": k.logo_path, "in_compare": k.in_compare, "featured": k.featured, "is_active": k.is_active,
         "clicks": k.clicks, "clicks_30d": int(clicks30.get(k.id, 0)), "bonus_count": counts.get(k.id, 0),
         "view_url": f"/san/{k.slug}", "edit_url": with_query(f"/admin/brokers/{k.id}/edit", **keep), "toggle_url": f"/admin/brokers/{k.id}/toggle",
-        "link_url": f"/admin/brokers/{k.id}/link", "delete_url": f"/admin/brokers/{k.id}/delete"} for k in brokers]
+        "link_url": f"/admin/brokers/{k.id}/link", "delete_url": f"/admin/brokers/{k.id}/delete", "errors": {}}
+        | (typed or {}).get(k.id, {}) for k in brokers]
     return render_admin(
         a, "admin/brokers.html", "brokers", "Sàn", status_code,
         subtabs=subtabs("/admin/brokers", BROKER_TABS, tab), current_tab=tab, brokers=rows,
         compare_count=sum(1 for k in brokers if k.in_compare and k.is_active), max_compare=3,
         add_url=with_query("/admin/brokers/new", **keep), add_label="Thêm sàn", links_action="/admin/brokers/links",
         kind_options=[{"id": k, "label": KIND_LABELS[k]} for k in BROKER_KINDS],
-        drawer=_scoped(drawer, with_query("/admin/brokers", **keep), keep), media_library=media_library(db) if drawer else [])
+        drawer=_scoped(drawer, with_query("/admin/brokers", **keep), keep), media_library=media_library(db) if drawer else [],
+        **extra)
 
 
 @router.get("/brokers")
@@ -240,6 +242,12 @@ def broker_edit(kid: int, a: Admin = Depends(admin_get)):
     k = get_or_404(a.db, Broker, kid)
     return _broker_page(a, **a.filters("tab"), drawer=_drawer("Sửa sàn", f"/admin/brokers/{kid}/edit", _broker_values(k),
                                                               delete_url=f"/admin/brokers/{kid}/delete", view_url=f"/san/{k.slug}"))
+
+
+def _link_error(url: str) -> str | None:
+    if len(url) > 1000:
+        return "Tối đa 1000 ký tự."
+    return "Link phải bắt đầu bằng http:// hoặc https://" if url and not is_http_url(url) else None
 
 
 def _compare_full(db, exclude_id: int | None) -> bool:
@@ -345,15 +353,23 @@ def broker_toggle(kid: int, a: Admin = Depends(admin_post)):
 
 @router.post("/brokers/links")
 def broker_links(a: Admin = Depends(admin_post)):
-    """Nút Xuất bản ở tab Link affiliate: `url_<id>` cho mỗi sàn. Một dòng sai thì không lưu dòng nào."""
-    urls = {k: a.text(f"url_{k.id}", 1000) for k in a.db.scalars(select(Broker)) if f"url_{k.id}" in a.form}
-    if any(len(u) > 1000 for u in urls.values()):
-        return done("/admin/brokers?tab=links", "too_long")
-    if any(u and not is_http_url(u) for u in urls.values()):
-        return done("/admin/brokers?tab=links", "invalid_url")
-    for k, u in urls.items():
-        k.affiliate_url = u
+    """Nút Xuất bản ở tab Link affiliate: `url_<id>`. Dòng hợp lệ được lưu; dòng lỗi giữ chữ vừa nhập và được nêu tên."""
+    typed, names = {}, []
+    for k in a.db.scalars(select(Broker).order_by(Broker.id)):
+        if f"url_{k.id}" not in a.form:
+            continue
+        url = a.text(f"url_{k.id}", 1000)
+        if url == k.affiliate_url:
+            continue
+        error = _link_error(url)
+        if error:
+            typed[k.id] = {"affiliate_url": url, "errors": {"affiliate_url": error}}
+            names.append(k.name)
+        else:
+            k.affiliate_url = url
     a.db.commit()
+    if typed:
+        return _broker_page(a, "links", status_code=400, typed=typed, flash=bulk_errors_flash(names))
     return done("/admin/brokers?tab=links")
 
 
@@ -389,7 +405,7 @@ def _banner_values(b: Banner | None) -> dict:
             "end_date": b.end_date.isoformat() if b.end_date else "", "is_active": b.is_active}
 
 
-def _ads_page(a: Admin, tab: str = "banner", drawer: dict | None = None, status_code=200):
+def _ads_page(a: Admin, tab: str = "banner", drawer: dict | None = None, status_code=200, typed: dict | None = None, **extra):
     db, tab, today = a.db, _tab(tab, ADS_TABS), today_vn()
     keep = {"tab": "" if tab == "banner" else tab}
     banners = db.scalars(select(Banner).options(joinedload(Banner.broker))
@@ -400,7 +416,7 @@ def _ads_page(a: Admin, tab: str = "banner", drawer: dict | None = None, status_
         "end_date": b.end_date, "dates": date_range_label(b.start_date, b.end_date, today), "is_active": b.is_active,
         "state": queries.banner_state(b, today), "views": b.views, "clicks": b.clicks,
         "edit_url": with_query(f"/admin/ads/{b.id}/edit", **keep), "toggle_url": f"/admin/ads/{b.id}/toggle",
-        "delete_url": f"/admin/ads/{b.id}/delete"} for b in banners]
+        "delete_url": f"/admin/ads/{b.id}/delete", "errors": {}} | (typed or {}).get(b.id, {}) for b in banners]
     return render_admin(
         a, "admin/ads.html", "ads", "Quảng cáo", status_code,
         subtabs=subtabs("/admin/ads", ADS_TABS, tab), current_tab=tab, banners=rows,
@@ -409,7 +425,8 @@ def _ads_page(a: Admin, tab: str = "banner", drawer: dict | None = None, status_
         add_url=with_query("/admin/ads/new", **keep), add_label="Thêm banner", ads_action="/admin/ads/bulk",
         broker_options=_broker_options(db),
         placement_options=[{"id": p, "label": PLACEMENT_LABELS[p]} for p in PLACEMENTS],
-        drawer=_scoped(drawer, with_query("/admin/ads", **keep), keep), media_library=media_library(db) if drawer else [])
+        drawer=_scoped(drawer, with_query("/admin/ads", **keep), keep), media_library=media_library(db) if drawer else [],
+        **extra)
 
 
 
@@ -478,26 +495,39 @@ def ads_create(a: Admin = Depends(admin_post)):
 
 @router.post("/ads/bulk")
 def ads_bulk(a: Admin = Depends(admin_post)):
-    """Nút Xuất bản ở tab Banner: `placement_<id>`, `target_url_<id>`, `dates_<id>`. Một thẻ sai thì không lưu thẻ nào."""
-    today, rows = today_vn(), []
-    for b in a.db.scalars(select(Banner).options(joinedload(Banner.broker))):
-        if f"placement_{b.id}" not in a.form:
+    """Nút Xuất bản ở tab Banner: `placement_<id>`, `target_url_<id>`, `dates_<id>`. Thẻ hợp lệ được lưu; thẻ lỗi giữ chữ vừa
+    nhập và được nêu tên. Chỉ kiểm tra phần có đổi: banner đang thiếu link không chặn việc lưu thẻ khác."""
+    today, typed, names = today_vn(), {}, []
+    for b in a.db.scalars(select(Banner).options(joinedload(Banner.broker)).order_by(Banner.id)):
+        if not any(f"{field}_{b.id}" in a.form for field in ("placement", "target_url", "dates")):
             continue
-        placement, url = a.text(f"placement_{b.id}"), a.text(f"target_url_{b.id}", 1000)
-        if len(url) > 1000:
-            return done("/admin/ads", "too_long")
+        shown_dates = date_range_label(b.start_date, b.end_date, today)
+        placement = a.keep(f"placement_{b.id}", b.placement, 20)
+        url = a.keep(f"target_url_{b.id}", b.target_url)
+        dates = a.keep(f"dates_{b.id}", shown_dates, 60)
+        start, end, errors = b.start_date, b.end_date, {}
         if placement not in PLACEMENTS:
-            raise HTTPException(400, "placement không hợp lệ")
-        if (url and not is_http_url(url)) or not (url or (b.broker and b.broker.affiliate_url)):
-            return done("/admin/ads", "invalid_url")
-        try:
-            start, end = parse_date_range(a.text(f"dates_{b.id}", 60), today)
-        except ValueError:
-            return done("/admin/ads", "invalid_dates")
-        rows.append((b, placement, url, start, end))
-    for b, placement, url, start, end in rows:
-        b.placement, b.target_url, b.start_date, b.end_date = placement, url, start, end
+            errors["placement"] = "Chọn vị trí."
+        if url != b.target_url:
+            error = _link_error(url)
+            if not error and not url and not (b.broker and b.broker.affiliate_url):
+                error = "Nhập link đích hoặc chọn sàn có link affiliate."
+            if error:
+                errors["target_url"] = error
+        if dates != shown_dates:
+            try:
+                start, end = parse_date_range(dates, today)
+            except ValueError:
+                errors["dates"] = "Ngày chạy không hợp lệ, ví dụ 01/11 – 30/11."
+        if errors:
+            typed[b.id] = {"placement": b.placement if "placement" in errors else placement, "target_url": url,
+                           "dates": dates, "errors": errors}
+            names.append(f"{b.broker.name if b.broker else b.name} · {PLACEMENT_LABELS.get(b.placement, b.placement)}")
+        else:
+            b.placement, b.target_url, b.start_date, b.end_date = placement, url, start, end
     a.db.commit()
+    if typed:
+        return _ads_page(a, status_code=400, typed=typed, flash=bulk_errors_flash(names))
     return done("/admin/ads")
 
 

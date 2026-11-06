@@ -21,7 +21,7 @@
   --c-line-strong: rgba(2, 22, 35, 0.15);
   --c-line-dark: rgba(255, 255, 255, 0.15);
   --c-glass: rgba(255, 255, 255, 0.12);
-  --c-media-empty: rgba(127, 127, 127, 0.12); /* khối ảnh trống */
+  --c-media-empty: rgba(127, 127, 127, 0.08); /* khối ảnh trống */
   --c-success: #0F7B4A;
   --c-success-bg: #E6F4EC;
   --c-danger: #C62828;

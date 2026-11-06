@@ -6,7 +6,7 @@
     {% for s in stats %}
     <div class="stat">
       <div class="stat-label">{{ s.label }}</div>
-      <div class="stat-value">{% if s.value in ('0', '0/0') %}&nbsp;{% else %}{{ s.value }}{% endif %}</div>
+      <div class="stat-value">{{ s.value }}</div>
     </div>
     {% endfor %}
   </div>

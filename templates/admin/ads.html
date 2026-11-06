@@ -39,14 +39,17 @@
         <div class="ad-state{% if b.state in ('no_link', 'broker_hidden') %} status-bad{% endif %}">{{ b.state|banner_state_label }}{{ ui.toggle(b.toggle_url, b.is_active, 'Bật banner ' ~ b.name) }}</div>
       </div>
       <div class="ad-fields">
-        <label class="field"><span class="field-label">Vị trí</span>
+        <label class="field{% if b.errors and b.errors.placement %} has-error{% endif %}"><span class="field-label">Vị trí</span>
           <select form="page-form" name="placement_{{ b.id }}">{% for p in placement_options %}<option value="{{ p.id }}"{% if p.id == b.placement %} selected{% endif %}>{{ p.label }}</option>{% endfor %}</select>
+          {{ ui.err(b.errors, 'placement') }}
         </label>
-        <label class="field"><span class="field-label">Link affiliate</span>
+        <label class="field{% if b.errors and b.errors.target_url %} has-error{% endif %}"><span class="field-label">Link affiliate</span>
           <input type="url" form="page-form" name="target_url_{{ b.id }}" value="{{ b.target_url }}" maxlength="1000">
+          {{ ui.err(b.errors, 'target_url') }}
         </label>
-        <label class="field"><span class="field-label">Chạy từ – đến</span>
+        <label class="field{% if b.errors and b.errors.dates %} has-error{% endif %}"><span class="field-label">Chạy từ – đến</span>
           <input type="text" form="page-form" name="dates_{{ b.id }}" value="{{ b.dates }}">
+          {{ ui.err(b.errors, 'dates') }}
         </label>
       </div>
       <div class="ad-stats"><span>{{ b.views|num }} lượt hiển thị</span><span>{{ b.clicks|num }} click</span><span>CTR {{ ctr(b.clicks, b.views) }}</span><a class="ad-edit" href="{{ b.edit_url }}">Sửa</a></div>

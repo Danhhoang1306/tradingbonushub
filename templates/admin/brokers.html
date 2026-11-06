@@ -1,6 +1,7 @@
 {% extends "admin/_base.html" %}
 {% import "admin/_macros.html" as ui with context %}
 {% if current_tab == 'links' %}{% set page_form = 'page-form' %}{% endif %}
+{% set drawer_view_in_body = true %}
 {% set drawer_inline = ['name','slug','mono','kind','tagline','summary','license','min_deposit','leverage','platforms','spread','withdrawal','founded','affiliate_url','logo_path','pros','cons','in_compare','featured'] %}
 {% block content %}
 {% if current_tab == 'links' %}
@@ -12,7 +13,7 @@
     {% for k in brokers %}
     <div class="t-row t-row-tight">
       <span class="cell-strong cell-ellipsis">{{ k.name }}</span>
-      <input type="url" form="page-form" name="url_{{ k.id }}" value="{{ k.affiliate_url }}" maxlength="1000" aria-label="Link affiliate {{ k.name }}">
+      <div class="field{% if k.errors and k.errors.affiliate_url %} has-error{% endif %}"><input type="url" form="page-form" name="url_{{ k.id }}" value="{{ k.affiliate_url }}" maxlength="1000" aria-label="Link affiliate {{ k.name }}">{{ ui.err(k.errors, 'affiliate_url') }}</div>
       <span title="30 ngày qua: {{ k.clicks_30d|num }} click">{{ k.clicks|num }}</span>
       <span>{{ k.signups|num if k.signups is defined and k.signups else '—' }}</span>
     </div>
@@ -49,8 +50,14 @@
 
 {% block drawer_fields %}
 {% set d = drawer.data %}{% set e = drawer.errors %}
-<div class="drawer-section">Thông tin chung</div>
-{{ ui.field('name', 'Tên sàn', d.name, e, required=true) }}
+{{ ui.field('name', 'Tên sàn', d.name, e) }}
+{{ ui.field('license', 'Giấy phép', d.license, e) }}
+{{ ui.field('min_deposit', 'Nạp tối thiểu', d.min_deposit, e) }}
+{{ ui.field('leverage', 'Đòn bẩy tối đa', d.leverage, e) }}
+{{ ui.field('platforms', 'Nền tảng', d.platforms, e) }}
+{{ ui.field('affiliate_url', 'Link affiliate', d.affiliate_url, e, type='url') }}
+{% call ui.more(e, ['slug','mono','kind','tagline','summary','logo_path','spread','withdrawal','founded','pros','cons','in_compare']) %}
+{% if drawer.view_url %}<a href="{{ drawer.view_url }}" target="_blank" rel="noopener" class="btn-sm drawer-view">Xem trên site ↗</a>{% endif %}
 <div class="fields-2">
   {{ ui.field('slug', 'Slug (đường dẫn)', d.slug, e, hint='Trống = tự tạo từ tên.') }}
   {{ ui.field('mono', 'Chữ viết tắt', d.mono, e, hint='2 ký tự, hiện khi chưa có logo.') }}
@@ -59,35 +66,21 @@
 {{ ui.field('tagline', 'Mô tả ngắn', d.tagline, e) }}
 {{ ui.field('summary', 'Giới thiệu', d.summary, e, rows=4) }}
 {{ ui.image_field('logo_path', 'Logo', d.logo_path, e, ratio='1/1') }}
-
-<div class="drawer-section">Thông số</div>
-{{ ui.field('license', 'Giấy phép', d.license, e, required=true) }}
-<div class="fields-2">
-  {{ ui.field('min_deposit', 'Nạp tối thiểu', d.min_deposit, e) }}
-  {{ ui.field('leverage', 'Đòn bẩy tối đa', d.leverage, e) }}
-</div>
-{{ ui.field('platforms', 'Nền tảng', d.platforms, e) }}
 <div class="fields-2">
   {{ ui.field('spread', 'Spread / phí', d.spread, e) }}
   {{ ui.field('withdrawal', 'Rút tiền', d.withdrawal, e) }}
 </div>
 {{ ui.field('founded', 'Năm thành lập', d.founded, e) }}
-
-<div class="drawer-section">Link affiliate</div>
-{{ ui.field('affiliate_url', 'Link affiliate', d.affiliate_url, e, type='url', placeholder='https://…', hint='Trống = ẩn nút "Mở tài khoản".') }}
-
-<div class="drawer-section">Ưu / nhược điểm</div>
 {{ ui.lines_field('pros', 'Ưu điểm', d.pros, e, hint='Mỗi dòng một ý.', add_label='+ Thêm ưu điểm') }}
 {{ ui.lines_field('cons', 'Nhược điểm', d.cons, e, hint='Mỗi dòng một ý.', add_label='+ Thêm nhược điểm') }}
-
 <div class="drawer-section">Tài khoản</div>
 {{ ui.rows_editor('account', [('name','Tên tài khoản','text'),('min_deposit','Nạp tối thiểu','text'),('spread','Spread','text'),('commission','Phí hoa hồng','text')], d.accounts, add_label='+ Thêm tài khoản') }}
-
 <div class="drawer-section">Nạp &amp; rút</div>
 {{ ui.rows_editor('payment', [('method','Phương thức','text'),('deposit','Nạp','text'),('withdraw','Rút','text'),('time','Thời gian','text')], d.payment_methods, add_label='+ Thêm phương thức') }}
-
 <div class="drawer-section">Hiển thị</div>
 {{ ui.switch_input('in_compare', 'Đưa vào So sánh (tối đa 3 sàn)', d.in_compare, errors=e) }}
 {{ ui.switch_input('featured', 'Nổi bật (chỉ 1 sàn, tự tắt sàn khác)', d.featured) }}
 {{ ui.switch_input('is_active', 'Hiển thị trên site', d.is_active) }}
+<p class="field-hint">Link affiliate trống = ẩn nút "Mở tài khoản".</p>
+{% endcall %}
 {% endblock %}

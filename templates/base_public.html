@@ -49,7 +49,7 @@
     {% if page.desc %}<p class="page-head__desc">{{ page.desc }}</p>{% endif %}
     <div class="tabs">
       {% for t in tabs|default([]) %}
-      <a href="{{ t.url }}" class="tabs__tab{% if t.active %} is-active{% endif %}"{% if t.active %} aria-current="page"{% endif %}>{{ t.label }}{% if t.count %}<span class="tabs__count">{{ t.count }}</span>{% endif %}</a>
+      <a href="{{ t.url }}" class="tabs__tab{% if t.active %} is-active{% endif %}"{% if t.active %} aria-current="page"{% endif %}>{{ t.label }}{% if t.count is not none %}<span class="tabs__count">{{ t.count }}</span>{% endif %}</a>
       {% endfor %}
     </div>
   </div>

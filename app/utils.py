@@ -3,6 +3,7 @@ import math
 import re
 import unicodedata
 from datetime import date, datetime, timedelta, timezone
+from itertools import product
 
 import markdown as md
 import nh3
@@ -64,25 +65,45 @@ def _day_month(value: str, year: int) -> date | None:
 
 
 def parse_date_range(value: str, today: date) -> tuple[date | None, date | None]:
-    """Ô "Chạy từ – đến" của thiết kế: `01/11 – 30/11`, năm mặc định là năm nay. Ngày đến nhỏ hơn ngày từ
-    mà không ghi năm thì hiểu là năm sau. Rỗng -> (None, None). Sai -> ValueError."""
+    """Ô "Chạy từ – đến" của thiết kế: `01/11 – 30/11`. Ngày từ thiếu năm là năm nay. Ngày đến thiếu năm là năm của
+    ngày từ, nhỏ hơn ngày từ thì sang năm sau. Rỗng -> (None, None). Sai -> ValueError."""
     parts = re.split(r"\s*[–—-]\s*", (value or "").strip())
     if len(parts) > 2:
         raise ValueError(value)
     start = _day_month(parts[0], today.year)
-    end = _day_month(parts[1], start.year if start else today.year) if len(parts) == 2 else None
-    if start and end and end < start:
-        if parts[1].count("/") == 2:
-            raise ValueError(value)
-        end = end.replace(year=end.year + 1)
+    if len(parts) == 1 or not parts[1]:
+        return start, None
+    if start and parts[1].count("/") == 1:
+        for year in (start.year, start.year + 1):
+            try:
+                end = _day_month(parts[1], year)
+            except ValueError:  # gồm 29/02 của năm không nhuận
+                continue
+            if end >= start:
+                return start, end
+        raise ValueError(value)
+    end = _day_month(parts[1], today.year)
+    if start and end < start:
+        raise ValueError(value)
     return start, end
 
 
 def date_range_label(start: date | None, end: date | None, today: date) -> str:
-    """Ngược lại của parse_date_range; chỉ ghi năm khi khác năm nay để lưu lại không làm đổi ngày."""
-    def fmt(d: date | None) -> str:
-        return "" if d is None else d.strftime("%d/%m" if d.year == today.year else "%d/%m/%Y")
-    return f"{fmt(start)} – {fmt(end)}".strip() if start or end else ""
+    """Dạng ngắn nhất mà parse_date_range đọc lại đúng ngày đó, nên lưu lại không làm đổi giá trị."""
+    if not start and not end:
+        return ""
+
+    def text(start_fmt: str, end_fmt: str) -> str:
+        return f"{start.strftime(start_fmt) if start else ''} – {end.strftime(end_fmt) if end else ''}".strip()
+
+    for start_fmt, end_fmt in product(("%d/%m", "%d/%m/%Y"), repeat=2):
+        label = text(start_fmt, end_fmt)
+        try:
+            if parse_date_range(label, today) == (start, end):
+                return label
+        except ValueError:
+            pass
+    return text("%d/%m/%Y", "%d/%m/%Y")
 
 
 def parse_float(value: str) -> float | None:

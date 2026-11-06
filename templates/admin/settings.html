@@ -16,9 +16,9 @@
     {% for u in users %}
     <div class="t-row">
       <span class="cell-medium cell-ellipsis">{{ u.name or '—' }}</span>
-      <span class="cell-ellipsis" title="{{ 'Đang hoạt động' if u.is_active else 'Đã khóa' }}">{{ u.email }}</span>
+      <span class="has-tools"><span class="cell-ellipsis" title="{{ 'Đang hoạt động' if u.is_active else 'Đã khóa' }}">{{ u.email }}</span><span class="row-tools"><a class="btn-sm" href="#user-{{ u.id }}">Sửa</a></span></span>
       <span>{{ (role_options|selectattr('id', 'equalto', u.role)|first).label }}</span>
-      <span class="cell-muted has-tools">{{ u.last_login_at|login_day or '—' }}<span class="row-tools"><a class="btn-sm" href="#user-{{ u.id }}">Sửa</a></span></span>
+      <span class="cell-muted">{{ u.last_login_at|login_day or '—' }}</span>
     </div>
     {% else %}
     {{ ui.empty('Chưa có tài khoản nào.') }}
@@ -28,14 +28,14 @@
 
 {% else %}
 {{ ui.form_errors(e, ['site_name', 'contact_email', 'partner_email', 'telegram', 'logo_path', 'favicon_path', 'meta_title', 'meta_desc', 'meta_keywords', 'og_image', 'social', 'analytics_head']) }}
-<div class="page-form-layout{% if current_tab == 'seo' %} has-preview{% endif %}">
+<div class="page-form-layout">
   <form id="page-form" method="post" action="{{ form.action }}" enctype="multipart/form-data">
     {{ ui.csrf() }}
     {% if current_tab == 'general' %}
     <div class="form-block form-card">
-      {{ ui.field('site_name', 'Tên website', fd.get('site_name', s.site_name), e, attrs='required') }}
-      {{ ui.field('contact_email', 'Email liên hệ', fd.get('contact_email', s.contact_email), e, type='email') }}
-      {{ ui.field('telegram', 'Telegram', fd.get('telegram', s.telegram), e) }}
+      {{ ui.field('site_name', 'Tên website', fd.get('site_name', s.site_name), e, rows=1, attrs='required') }}
+      {{ ui.field('contact_email', 'Email liên hệ', fd.get('contact_email', s.contact_email), e, rows=1) }}
+      {{ ui.field('telegram', 'Telegram', fd.get('telegram', s.telegram), e, rows=1) }}
     </div>
 
     {% elif current_tab == 'brand' %}
@@ -51,10 +51,10 @@
 
     {% elif current_tab == 'seo' %}
     <div class="form-block form-card">
-      {{ ui.field('meta_title', 'Meta title', fd.get('meta_title', s.meta_title), e, preview='meta_title') }}
-      {{ ui.field('meta_desc', 'Meta description', fd.get('meta_desc', s.meta_desc), e, rows=3, preview='meta_desc') }}
-      {{ ui.field('meta_keywords', 'Từ khoá', fd.get('meta_keywords', s.meta_keywords), e) }}
-      {{ ui.image_field('og_image', 'Ảnh chia sẻ (1200×630)', fd.get('og_image', s.branding.og_image), e, ratio='1200/630', preview='og') }}
+      {{ ui.field('meta_title', 'Meta title', fd.get('meta_title', s.meta_title), e, rows=1) }}
+      {{ ui.field('meta_desc', 'Meta description', fd.get('meta_desc', s.meta_desc), e, rows=3) }}
+      {{ ui.field('meta_keywords', 'Từ khoá', fd.get('meta_keywords', s.meta_keywords), e, rows=1) }}
+      {{ ui.image_drop('og_image', 'Ảnh chia sẻ (1200×630)', fd.get('og_image', s.branding.og_image), e, placeholder='Ảnh chia sẻ mạng xã hội', height=200, max_width=380) }}
     </div>
 
     {% elif current_tab == 'social' %}
@@ -72,23 +72,13 @@
     </div>
     {% endif %}
 
+    {% if current_tab not in ('general', 'seo') %}
     <div class="form-actions">
       <button type="submit" class="btn-primary">Lưu thay đổi</button>
     </div>
+    {% endif %}
   </form>
 
-  {% if current_tab == 'seo' %}
-  <aside class="preview" aria-label="Xem trước">
-    <div class="preview-label"><span>Kết quả tìm kiếm Google</span></div>
-    <div class="pv pv-serp">
-      <div class="pv-serp-url">{{ s.site_name }}</div>
-      <div class="pv-serp-title" data-pv="meta_title">{{ s.meta_title }}</div>
-      <div class="pv-serp-desc" data-pv="meta_desc">{{ s.meta_desc }}</div>
-    </div>
-    <div class="preview-label"><span>Ảnh chia sẻ</span></div>
-    <div class="pv-img pv-og" data-pv-img="og">{% if s.branding.og_image %}<img src="{{ s.branding.og_image }}" alt="">{% endif %}</div>
-  </aside>
-  {% endif %}
 </div>
 {% endif %}
 {% endblock %}

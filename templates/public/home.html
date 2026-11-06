@@ -75,13 +75,11 @@
       </div>
       <div class="about-gallery">
         {{ media(a.images[1], a.title, "about-gallery__a") }}
-        {% if active_bonus_count %}
         {%- set n = active_bonus_count|num %}
         <div class="stat-dark">
           <div class="stat-dark__value" style="--n: {{ n|length + 1 }}">{{ n }}+</div>
           {% if a.count_label %}<div class="stat-dark__label">{{ a.count_label }}</div>{% endif %}
         </div>
-        {% endif %}
         {{ media(a.images[2], a.title, "about-gallery__b") }}
       </div>
     </div>

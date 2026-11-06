@@ -46,8 +46,8 @@
     <div class="t-row">
       <span class="cell-medium cell-ellipsis">{{ u.name or '—' }}</span>
       <span class="cell-ellipsis" title="{{ u.status|subscriber_status_label }}">{{ u.email }}</span>
-      <span class="cell-muted cell-ellipsis">{{ u.interest_labels|join(', ') or 'Tất cả' }}</span>
-      <span class="cell-muted has-tools">{{ u.created_at|date_vn }}<span class="row-tools">{{ ui.delete_form(u.delete_url, 'Xóa người đăng ký ' ~ u.email ~ '?') }}</span></span>
+      <span class="cell-muted has-tools"><span class="cell-ellipsis">{{ u.interest_labels|join(', ') or 'Tất cả' }}</span><span class="row-tools">{{ ui.delete_form(u.delete_url, 'Xóa người đăng ký ' ~ u.email ~ '?') }}</span></span>
+      <span class="cell-muted">{{ u.created_at|date_vn }}</span>
     </div>
     {% else %}
       {{ ui.empty('Không có người đăng ký phù hợp.' if q or current_status != 'all' else 'Chưa có người đăng ký nào.') }}

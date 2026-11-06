@@ -24,6 +24,11 @@ class LoginRequired(Exception):
         self.next_path = next_path
 
 
+def _clean(value: str) -> str:
+    """Trình duyệt gửi xuống dòng của textarea là CRLF: đưa về LF để lưu lại không làm đổi dữ liệu."""
+    return value.replace("\r\n", "\n").strip()
+
+
 @dataclass
 class Admin:
     request: Request
@@ -46,7 +51,7 @@ class Admin:
 
     def text(self, name: str, max_len: int = 255) -> str:
         v = self.form.get(name, "") if self.form is not None else ""
-        return self._limit(name, (v if isinstance(v, str) else "").strip(), max_len)
+        return self._limit(name, _clean(v) if isinstance(v, str) else "", max_len)
 
     def raw(self, name: str) -> str:
         """Giá trị nguyên văn, không bỏ khoảng trắng (mật khẩu phải khớp đúng chuỗi người dùng gõ khi đăng nhập)."""
@@ -72,7 +77,7 @@ class Admin:
         self._repeated.add(name)
         if self.form is None:
             return []
-        return [self._limit(name, v.strip(), max_len) if isinstance(v, str) else "" for v in self.form.getlist(name)]
+        return [self._limit(name, _clean(v), max_len) if isinstance(v, str) else "" for v in self.form.getlist(name)]
 
     def lines(self, name: str) -> list[str]:
         return [x.strip() for x in self.long_text(name).splitlines() if x.strip()]
@@ -247,6 +252,11 @@ def media_library(db: Session) -> list[dict]:
     """Ảnh cho hộp chọn trong form: mới nhất trước, tối đa MEDIA_PICKER_LIMIT dòng."""
     stmt = select(MediaFile).order_by(MediaFile.created_at.desc(), MediaFile.id.desc()).limit(MEDIA_PICKER_LIMIT)
     return [{"id": m.id, "path": m.path, "alt": m.alt, "width": m.width, "height": m.height} for m in db.scalars(stmt)]
+
+
+def bulk_errors_flash(names: list[str]) -> dict:
+    """Lưu nhiều dòng: dòng hợp lệ đã lưu, dòng lỗi được nêu tên."""
+    return {"kind": "error", "code": "bulk_errors", "text": f"Chưa lưu: {', '.join(names)}. Các dòng khác đã lưu."}
 
 
 def done(url: str, flash: str = "saved") -> RedirectResponse:

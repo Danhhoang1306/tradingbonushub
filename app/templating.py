@@ -33,7 +33,6 @@ FLASH_MESSAGES = {
     "send_partial": ("error", "Mới gửi được một phần. Bấm gửi lại để gửi tiếp cho người còn lại."),
     "too_long": ("error", "Nội dung quá dài."),
     "invalid_url": ("error", "Link phải bắt đầu bằng http:// hoặc https://"),
-    "invalid_dates": ("error", "Ngày chạy không hợp lệ, ví dụ 01/11 – 30/11."),
 }
 
 PLACEMENT_LABELS = {"after-bonus": "Sau Bonus mới nhất", "before-blog": "Trước Tin tức",

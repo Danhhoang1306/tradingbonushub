@@ -86,13 +86,41 @@
       timer = setTimeout(function () { note.hidden = true; }, 1800);
     }
     on(document, 'click', '[data-publish]', show);
-    // Gửi email: nút này lưu nháp; chưa soạn gì thì không có gì để lưu.
-    var mail = $('#mail-form');
-    var draftBtn = mail && $('button[form="mail-form"]');
-    if (draftBtn) draftBtn.addEventListener('click', function (e) {
-      if (mail.elements.subject.value.trim() || mail.elements.body.value.trim()) return;
+  }
+
+  /* ---------- Công tắc đổi tại chỗ như thiết kế (tắt JS vẫn POST thường) ---------- */
+  function initSwitches() {
+    document.addEventListener('submit', function (e) {
+      var form = e.target, sw = $('button.switch', form);
+      if (e.defaultPrevented || !sw || !form.classList.contains('toggle-form') || form.closest('.panel, .drawer')) return;
       e.preventDefault();
-      show();
+      sw.disabled = true;
+      fetch(form.action, { method: 'POST', body: new FormData(form), credentials: 'same-origin' })
+        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text().then(function (t) { return [r, t]; }); })
+        .then(function (res) {
+          var next = new DOMParser().parseFromString(res[1], 'text/html');
+          var mine = $$('form.toggle-form button.switch'), fresh = $$('form.toggle-form button.switch', next);
+          // Trang đích khác trang đang xem (hết phiên), hoặc số dòng đổi theo lọc: tải lại thật.
+          if (new URL(res[0].url).pathname !== location.pathname || mine.length !== fresh.length) { location.reload(); return; }
+          mine.forEach(function (b, i) {
+            b.className = fresh[i].className;
+            b.setAttribute('aria-checked', fresh[i].getAttribute('aria-checked'));
+          });
+          var rows = $$('.t-row'), newRows = $$('.t-row', next);
+          rows.forEach(function (r, i) { if (newRows[i]) r.className = newRows[i].className; });
+          $$('.ad-state').forEach(function (el, i) {
+            var f = $$('.ad-state', next)[i];
+            if (!f) return;
+            el.className = f.className;
+            el.firstChild.textContent = f.firstChild.textContent;
+          });
+          $('.nav').innerHTML = $('.nav', next).innerHTML;
+          $$('.main > .alert-error').forEach(function (a) { a.remove(); });
+          var alert = $('.main > .alert-error', next);
+          if (alert) $('.page-head').after(alert);
+          sw.disabled = false;
+          sw.focus();
+        }).catch(function () { form.submit(); });
     });
   }
 
@@ -188,6 +216,74 @@
     });
   }
 
+  /* ---------- Drawer tại chỗ (Lọc, Lịch sử gửi, Tài khoản): focus, Esc ---------- */
+  function initPanels() {
+    var opener = null;
+    function current() { return $('.panel:target') || $('.panel.is-open'); }
+    function enter() {
+      var p = current();
+      if (!p) return;
+      var d = $('.drawer', p);
+      d.setAttribute('tabindex', '-1');
+      ($('.has-error :is(input, select, textarea)', p) || d).focus();
+    }
+    function close(p) {
+      if (p.dataset.dirty && !window.confirm('Bỏ các thay đổi chưa lưu?')) return;
+      delete p.dataset.dirty;
+      var link = $('.btn-close', p);
+      if (link.getAttribute('href') !== '#') { window.location.href = link.href; return; }
+      var y = window.scrollY;
+      location.hash = '';
+      window.scrollTo(0, y);
+      if (opener && document.contains(opener)) opener.focus();
+    }
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest('a[href^="#"]');
+      if (a && !a.closest('.panel') && $(a.getAttribute('href').length > 1 ? a.getAttribute('href') + '.panel' : '.none')) opener = a;
+      var c = e.target.closest('.panel .btn-close, .panel .drawer-overlay');
+      if (c) { e.preventDefault(); close(c.closest('.panel')); }
+    });
+    document.addEventListener('input', function (e) {
+      var p = e.target.closest('.panel');
+      if (p && !e.target.closest('[role=search]')) p.dataset.dirty = '1';
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape' || $('dialog[open]')) return;
+      var p = current();
+      if (p) close(p);
+    });
+    window.addEventListener('hashchange', enter);
+    enter();
+  }
+
+  /* ---------- Mọi drawer: Tab không ra khỏi drawer ---------- */
+  function initTrap() {
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Tab' || $('dialog[open]')) return;
+      var wrap = $('[data-drawer]') || $('.panel:target') || $('.panel.is-open');
+      if (!wrap) return;
+      var items = $$('a[href], button:not([disabled]), input:not([type=hidden]), select, textarea, summary', wrap).filter(function (el) {
+        return el.offsetParent !== null && el.tabIndex >= 0;
+      });
+      if (!items.length) return;
+      var first = items[0], last = items[items.length - 1], inside = wrap.contains(document.activeElement);
+      if (e.shiftKey && (document.activeElement === first || !inside || document.activeElement === $('.drawer', wrap))) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && (document.activeElement === last || !inside)) { e.preventDefault(); first.focus(); }
+    });
+  }
+
+  /* ---------- Ô một dòng là textarea như thiết kế: Enter gửi form, không xuống dòng ---------- */
+  function initOneLine() {
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' || !e.target.matches('textarea[rows="1"]') || e.isComposing) return;
+      e.preventDefault();
+      if (e.target.form) e.target.form.requestSubmit();
+    });
+    document.addEventListener('input', function (e) {
+      if (e.target.matches('textarea[rows="1"]') && /[\r\n]/.test(e.target.value)) e.target.value = e.target.value.replace(/[\r\n]+/g, ' ');
+    });
+  }
+
   /* ---------- Danh sách lặp: thêm dòng ---------- */
   function rowsInit() {
     $$('[data-rows]').forEach(function (box) {
@@ -262,7 +358,7 @@
     var pathInput = $('[data-img-path]', field);
     if (path !== undefined) pathInput.value = path;
     putImg($('[data-img-thumb]', field), src);
-    if (note) $('[data-img-name]', field).textContent = note;
+    if (note !== undefined) $('[data-img-name]', field).textContent = note;
     fire(pathInput);  // báo cho drawer biết form đã đổi (hộp chọn ảnh nằm ngoài drawer)
     var key = pathInput.getAttribute('data-bind-img');
     if (!key) return;
@@ -415,7 +511,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    initScroll(); initFlash(); initPublish(); initLiveSearch(); initConfirm(); initDrawer(); initReorder(); rowsInit(); linesInit(document);
+    initScroll(); initFlash(); initPublish(); initLiveSearch(); initConfirm(); initSwitches(); initPanels(); initTrap(); initOneLine(); initDrawer(); initReorder(); rowsInit(); linesInit(document);
     initImages(); initPreview(); initCopy(); initDropzone(); initAudience(); initNav(); syncPreview();
   });
 })();

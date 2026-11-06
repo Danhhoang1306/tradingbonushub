@@ -5,15 +5,17 @@ from starlette.datastructures import UploadFile
 
 from app import content, uploads
 from app.models import ROLES, AdminUser, MediaFile
-from app.routes.admin_base import (Admin, _tab, admin_get, admin_post, done, get_or_404, media_library, render_admin,
-                                   require_admin_role, subtabs)
+from app.routes.admin_base import (Admin, _tab, admin_get, admin_post, bulk_errors_flash, done, get_or_404, media_library,
+                                   render_admin, require_admin_role, subtabs, with_query)
 from app.security import SESSION_COOKIE, hash_password, is_http_url, is_link, revoke_sessions
 from app.utils import EMAIL_RE
 
 router = APIRouter()
 
-HOME_TABS = (("sections", "Section"), ("hero", "Hero"), ("about", "Về chúng tôi"), ("why", "Tại sao chọn"),
-             ("types", "Loại bonus"), ("contact", "Liên hệ"), ("menu", "Menu & chân trang"))
+# 3 tab đầu đúng thiết kế, chỉ có các ô của thiết kế; ô bổ sung nằm ở các tab sau (brief 13.1).
+HOME_TABS = (("sections", "Section"), ("hero", "Hero"), ("menu", "Menu & chân trang"), ("hero_extra", "Hero nâng cao"),
+             ("headings", "Tiêu đề section"), ("footer", "Chân trang"), ("about", "Về chúng tôi"), ("why", "Tại sao chọn"),
+             ("types", "Loại bonus"), ("contact", "Liên hệ"))
 PAGE_TABS = (("bonus", "Bonus"), ("san", "Sàn"), ("compare", "So sánh"), ("tin", "Tin tức"), ("gioithieu", "Giới thiệu"),
              ("method", "Cách đánh giá"), ("affiliate", "Công bố affiliate"), ("lienhe", "Liên hệ"),
              ("terms", "Điều khoản"), ("privacy", "Bảo mật"), ("system", "Chữ hệ thống"))
@@ -26,7 +28,7 @@ SETTINGS_TABS = (("general", "Chung"), ("seo", "SEO"), ("users", "Tài khoản q
 HOME_IMAGE_TABS = ("hero", "about", "why", "types", "contact")
 PAGE_IMAGE_TABS = ("gioithieu",)
 SETTINGS_IMAGE_TABS = ("brand", "seo")
-HOME_VIEW = {"sections": "/", "hero": "/", "about": "/", "why": "/", "types": "/", "contact": "/#lien-he", "menu": "/"}
+HOME_VIEW = {"hero_extra": "/", "headings": "/", "footer": "/", "sections": "/", "hero": "/", "about": "/", "why": "/", "types": "/", "contact": "/#lien-he", "menu": "/"}
 
 
 def _check_links(rows: list[dict], errors: dict, field: str) -> None:
@@ -95,11 +97,14 @@ def home_save(tab: str, a: Admin = Depends(admin_post)):
     if tab not in dict(HOME_TABS):
         raise HTTPException(404)
     s, errors, updates, parsed = content.get_all(a.db), {}, {}, {}
-    if tab == "sections":  # tiêu đề các section có dữ liệu
+    if tab in ("sections", "headings"):  # tiêu đề các section có dữ liệu; form không gửi ô nào thì giữ nguyên
         for key in ("home_bonus", "home_compare", "home_blog"):
             prefix = key.split("_", 1)[1]
-            updates[key] = s[key] | {"eyebrow": a.text(f"{prefix}_eyebrow"), "title": a.text(f"{prefix}_title")}
+            updates[key] = s[key] | {"eyebrow": a.keep(f"{prefix}_eyebrow", s[key]["eyebrow"], 255),
+                                     "title": a.keep(f"{prefix}_title", s[key]["title"], 255)}
         updates["home_compare"]["featured_label"] = a.keep("compare_featured_label", s["home_compare"]["featured_label"], 120)
+    elif tab == "hero_extra":
+        updates["hero"] = s["hero"] | {"card_label": a.keep("card_label", s["hero"]["card_label"], 120)}
     elif tab == "hero":
         hero = _text_fields(a, s["hero"], ("eyebrow", "headline", "sub", "cta"), ("sub",))
         hero["image_path"] = a.image("image_path", errors, s["hero"]["image_path"])
@@ -130,25 +135,29 @@ def home_save(tab: str, a: Admin = Depends(admin_post)):
         c = _text_fields(a, s["home_contact"], ("eyebrow", "title", "text", "success_title", "success_text"))
         c["image"] = a.image("image", errors, s["home_contact"]["image"])
         updates["home_contact"] = c
-    elif tab == "menu":
-        menu = a.rows("menu", ("label", "url"))
-        _check_links(menu, errors, "menu")
-        columns = parsed["columns"] = []
-        parsed["menu"] = menu
-        titles, links = a.many("footer_col_title", 120), a.many("footer_col_links", 5000)
-        for i, title in enumerate(titles):
-            rows = []
-            for line in (links[i] if i < len(links) else "").splitlines():
-                if line.strip():
-                    label, _, url = line.partition("|")
-                    rows.append({"label": label.strip(), "url": url.strip()})
-            if title or rows:
-                _check_links(rows, errors, "footer_col_links")
-                columns.append({"title": title, "links": rows})
-        updates["menu"] = menu
-        updates["footer"] = s["footer"] | {"about_text": a.text("about_text", 2000), "risk_note": a.text("risk_note", 2000),
-                                           "copyright": a.text("copyright", 500), "columns": columns,
-                                           "affiliate_note": a.keep("affiliate_note", s["footer"]["affiliate_note"], 500)}
+    elif tab in ("menu", "footer"):
+        if tab == "menu":
+            menu = parsed["menu"] = a.rows("menu", ("label", "url"))
+            _check_links(menu, errors, "menu")
+            updates["menu"] = menu
+        columns = s["footer"]["columns"]
+        if tab == "footer" or "footer_col_title" in a.form:  # tab Chân trang không gửi cột nào = xóa hết cột
+            columns = parsed["columns"] = []
+            titles, links = a.many("footer_col_title", 120), a.many("footer_col_links", 5000)
+            for i, title in enumerate(titles):
+                rows = []
+                for line in (links[i] if i < len(links) else "").splitlines():
+                    if line.strip():
+                        label, _, url = line.partition("|")
+                        rows.append({"label": label.strip(), "url": url.strip()})
+                if title or rows:
+                    _check_links(rows, errors, "footer_col_links")
+                    columns.append({"title": title, "links": rows})
+        f = s["footer"]
+        updates["footer"] = f | {"about_text": a.keep("about_text", f["about_text"], 2000),
+                                 "risk_note": a.keep("risk_note", f["risk_note"], 2000),
+                                 "copyright": a.keep("copyright", f["copyright"], 500), "columns": columns,
+                                 "affiliate_note": a.keep("affiliate_note", f["affiliate_note"], 500)}
         updates["cta_note"] = a.keep("cta_note", s["cta_note"], 500)
         updates["ads_note"] = a.keep("ads_note", s["ads_note"], 500)
     a.check_lengths(errors)
@@ -212,7 +221,10 @@ def pages_save(tab: str, a: Admin = Depends(admin_post)):
                                    "success_title": a.keep("success_title", s["contact_page"]["success_title"], 120),
                                    "success_text": a.text("success_text", 1000)}
     elif tab in ("terms", "privacy"):
-        updates["legal"] = s["legal"] | {f"{tab}_md": a.long_text("body_md")}
+        current = s["legal"][f"{tab}_md"]
+        body = a.long_text("body_md")
+        # Chữ không đổi (chỉ khác kiểu xuống dòng, dòng trống cuối): giữ nguyên dữ liệu đã lưu.
+        updates["legal"] = s["legal"] | {f"{tab}_md": current if body == current.replace("\r\n", "\n").strip() else body}
     a.check_lengths(errors)
     if errors:
         return _pages_page(a, tab, errors, a.form_data(**parsed), 400)
@@ -224,17 +236,18 @@ def pages_save(tab: str, a: Admin = Depends(admin_post)):
 
 # ======================= THƯ VIỆN ẢNH =======================
 
-def _media_page(a: Admin, q: str = "", errors: dict | None = None, status_code=200):
+def _media_page(a: Admin, q: str = "", errors: dict | None = None, status_code=200, typed: dict | None = None, **extra):
     stmt = select(MediaFile).order_by(MediaFile.created_at.desc(), MediaFile.id.desc())
     if q.strip():
         stmt = stmt.where(MediaFile.alt.ilike(f"%{q.strip()}%"))
     used = uploads.used_text(a.db)
     items = [{"id": m.id, "path": m.path, "alt": m.alt, "width": m.width, "height": m.height, "size": m.size,
               "created_at": m.created_at, "in_use": m.path in used,
-              "edit_url": f"/admin/media/{m.id}/edit", "delete_url": f"/admin/media/{m.id}/delete"}
-             for m in a.db.scalars(stmt)]
+              "edit_url": f"/admin/media/{m.id}/edit", "delete_url": f"/admin/media/{m.id}/delete", "errors": {}}
+             | (typed or {}).get(m.id, {}) for m in a.db.scalars(stmt)]
     return render_admin(a, "admin/media.html", "media", "Thư viện ảnh", status_code, q=q, media=items,
-                        upload_action="/admin/media/upload", errors=errors or {})
+                        upload_action="/admin/media/upload", media_action=with_query("/admin/media/bulk", q=q.strip()),
+                        errors=errors or {}, **extra)
 
 
 @router.get("/media")
@@ -258,6 +271,25 @@ def media_upload(a: Admin = Depends(admin_post)):
         except uploads.UploadError as e:  # các ảnh trước đó đã được lưu
             return _media_page(a, errors={"files": f"{f.filename}: {e}"}, status_code=400)
     return done("/admin/media", "uploaded")
+
+
+@router.post("/media/bulk")
+def media_bulk(q: str = "", a: Admin = Depends(admin_post)):
+    """Nút Xuất bản: `alt_<id>`. Ảnh hợp lệ được lưu; ảnh lỗi giữ chữ vừa nhập và được nêu tên."""
+    typed, names = {}, []
+    for m in a.db.scalars(select(MediaFile).order_by(MediaFile.id)):
+        if f"alt_{m.id}" not in a.form:
+            continue
+        alt = a.text(f"alt_{m.id}", 255)
+        if len(alt) > 255:
+            typed[m.id] = {"alt": alt, "errors": {"alt": "Tối đa 255 ký tự."}}
+            names.append(m.path.rsplit("/", 1)[-1])
+        else:
+            m.alt = alt
+    a.db.commit()
+    if typed:
+        return _media_page(a, q, status_code=400, typed=typed, flash=bulk_errors_flash(names))
+    return done(with_query("/admin/media", q=q.strip()))
 
 
 @router.post("/media/{mid}/edit")

@@ -1,6 +1,8 @@
 {% extends "admin/_base.html" %}
 {% import "admin/_macros.html" as ui with context %}
-{% set page_form = 'page-form' %}
+{% set design_tab = current_tab in ('sections', 'hero', 'menu') %}
+{% if current_tab != 'sections' %}{% set page_form = 'page-form' %}{% endif %}
+{% if design_tab %}{% set hide_view = true %}{% endif %}
 {% set fd = form.data or {} %}
 {% set e = form.errors %}
 {% block content %}
@@ -13,26 +15,48 @@
 
 {% if current_tab == 'sections' %}
 <div class="page-form-layout">
-  <div>
-    <div class="card">
-      <div class="card-title">Thứ tự và hiển thị section</div>
-      <p class="card-desc">Dùng mũi tên để đổi thứ tự.</p>
-      {% for sec in sections %}
-      <div class="sec-row">
-        <span class="sec-n">{{ sec.n }}</span>
-        <span class="sec-label">{{ sec.label }}</span>
-        {% for dir, arrow, word, edge in [('up', '↑', 'lên', sec.first), ('down', '↓', 'xuống', sec.last)] %}
-          {% if edge %}<button type="button" class="icon-btn" aria-disabled="true" aria-label="Đưa {{ sec.label }} {{ word }}">{{ arrow }}</button>{% else %}
-          <form method="post" action="{{ sec.move_url }}" class="toggle-form">{{ ui.csrf() }}<input type="hidden" name="direction" value="{{ dir }}"><button type="submit" class="icon-btn" aria-label="Đưa {{ sec.label }} {{ word }}">{{ arrow }}</button></form>
-          {% endif %}
-        {% endfor %}
-        {{ ui.toggle(sec.toggle_url, sec.on, 'Hiện ' ~ sec.label) }}
-      </div>
+  <div class="card">
+    <div class="card-title card-title-sm">Thứ tự và hiển thị section</div>
+    <p class="card-desc">Dùng mũi tên để đổi thứ tự.</p>
+    {% for sec in sections %}
+    <div class="sec-row">
+      <span class="sec-n">{{ sec.n }}</span>
+      <span class="sec-label">{{ sec.label }}</span>
+      {% for dir, arrow, word, edge in [('up', '↑', 'lên', sec.first), ('down', '↓', 'xuống', sec.last)] %}
+        {% if edge %}<button type="button" class="icon-btn" aria-disabled="true" aria-label="Đưa {{ sec.label }} {{ word }}">{{ arrow }}</button>{% else %}
+        <form method="post" action="{{ sec.move_url }}" class="toggle-form">{{ ui.csrf() }}<input type="hidden" name="direction" value="{{ dir }}"><button type="submit" class="icon-btn" aria-label="Đưa {{ sec.label }} {{ word }}">{{ arrow }}</button></form>
+        {% endif %}
       {% endfor %}
+      {{ ui.toggle(sec.toggle_url, sec.on, 'Hiện ' ~ sec.label) }}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% else %}
+<div class="page-form-layout{% if current_tab in ('about', 'why', 'types', 'contact', 'footer') %} has-preview{% endif %}">
+  <form id="page-form" method="post" action="{{ form.action }}" enctype="multipart/form-data">
+    {{ ui.csrf() }}
+
+    {% if current_tab == 'hero' %}
+    {% set h = s.hero %}
+    <div class="form-block">
+      <div class="form-block-title">Nội dung hero</div>
+      {{ ui.field('eyebrow', 'Nhãn nhỏ', fd.get('eyebrow', h.eyebrow), e, rows=1) }}
+      {{ ui.field('headline', 'Tiêu đề', fd.get('headline', h.headline), e, rows=2) }}
+      {{ ui.field('sub', 'Mô tả', fd.get('sub', h.sub), e, rows=3) }}
+      {{ ui.field('cta', 'Chữ trên nút', fd.get('cta', h.cta), e, rows=1) }}
+      {{ ui.image_drop('image_path', 'Ảnh nền hero', fd.get('image_path', h.image_path), e, placeholder='Kéo ảnh nền hero vào đây') }}
     </div>
 
-    <form id="page-form" method="post" action="{{ form.action }}" enctype="multipart/form-data" class="form-block form-block-gap">
-      {{ ui.csrf() }}
+    {% elif current_tab == 'hero_extra' %}
+    <div class="form-block">
+      <div class="form-block-title">Hero nâng cao</div>
+      {{ ui.field('card_label', 'Nhãn thẻ bonus nổi bật', fd.get('card_label', s.hero.card_label), e, hint='Hiện trên thẻ bonus của sàn nổi bật ở hero.') }}
+    </div>
+
+    {% elif current_tab == 'headings' %}
+    <div class="form-block">
       <div class="form-block-title">Tiêu đề các section có dữ liệu</div>
       {% for key, label in [('bonus', 'Bonus mới nhất'), ('compare', 'So sánh 3 sàn'), ('blog', 'Tin tức')] %}
       {% set cur = s['home_' ~ key] %}
@@ -42,29 +66,6 @@
       </div>
       {% endfor %}
       {{ ui.field('compare_featured_label', 'Nhãn sàn nổi bật', fd.get('compare_featured_label', s.home_compare.featured_label), e, hint='Hiện trên thẻ sàn nổi bật ở mục So sánh. Để trống = ẩn.') }}
-      <div class="form-actions"><button type="submit" class="btn-primary">Lưu thay đổi</button></div>
-    </form>
-  </div>
-</div>
-
-{% else %}
-<div class="page-form-layout has-preview">
-  <form id="page-form" method="post" action="{{ form.action }}" enctype="multipart/form-data">
-    {{ ui.csrf() }}
-
-    {% if current_tab == 'hero' %}
-    {% set h = s.hero %}
-    <div class="form-block">
-      <div class="form-block-title">Nội dung hero</div>
-      {{ ui.field('eyebrow', 'Nhãn nhỏ', fd.get('eyebrow', h.eyebrow), e, rows=1, preview='eyebrow') }}
-      {{ ui.field('headline', 'Tiêu đề', fd.get('headline', h.headline), e, rows=2, preview='headline') }}
-      {{ ui.field('sub', 'Mô tả', fd.get('sub', h.sub), e, rows=3, preview='sub') }}
-      {{ ui.field('cta', 'Chữ trên nút', fd.get('cta', h.cta), e, rows=1, preview='cta') }}
-      {{ ui.field('card_label', 'Nhãn thẻ bonus nổi bật', fd.get('card_label', h.card_label), e, hint='Hiện trên thẻ bonus của sàn nổi bật ở hero.') }}
-    </div>
-    <div class="form-block">
-      <div class="form-block-title">Ảnh nền hero</div>
-      {{ ui.image_field('image_path', 'Ảnh nền', fd.get('image_path', h.image_path), e, hint='Ảnh ngang, nên rộng ≥ 1600px. PNG/JPEG/WEBP ≤ 5MB.', preview='hero_img') }}
     </div>
 
     {% elif current_tab == 'about' %}
@@ -153,12 +154,14 @@
     </div>
 
     {% elif current_tab == 'menu' %}
-    {% set f = s.footer %}
-    <div class="form-block">
+    <div class="form-block menu-card">
       <div class="form-block-title">Menu chính</div>
       {{ ui.rows_editor('menu', [('label','Nhãn','text'),('url','Đường dẫn','text')], fd.get('menu', s.menu), add_label='+ Thêm mục menu', errors=e, error_key='menu', numbered=true) }}
-      {{ ui.field('risk_note', 'Cảnh báo rủi ro ở chân trang', fd.get('risk_note', f.risk_note), e, rows=3, preview='risk_note') }}
+      {{ ui.field('risk_note', 'Cảnh báo rủi ro ở chân trang', fd.get('risk_note', s.footer.risk_note), e, rows=3) }}
     </div>
+
+    {% elif current_tab == 'footer' %}
+    {% set f = s.footer %}
     <div class="form-block">
       <div class="form-block-title">Chân trang</div>
       {{ ui.field('about_text', 'Giới thiệu ngắn', fd.get('about_text', f.about_text), e, rows=3) }}
@@ -182,21 +185,17 @@
     </div>
     {% endif %}
 
+    {% if not design_tab %}
     <div class="form-actions">
       <button type="submit" class="btn-primary">Lưu thay đổi</button>
     </div>
+    {% endif %}
   </form>
 
+  {% if current_tab in ('about', 'why', 'types', 'contact', 'footer') %}
   <aside class="preview" aria-label="Xem trước">
     <div class="preview-label"><span>Xem trước</span></div>
-    {% if current_tab == 'hero' %}
-      <div class="pv-hero pv-dark" data-pv-img="hero_img" data-pv-bg{% if s.hero.image_path %} style="background-image: url('{{ s.hero.image_path }}')"{% endif %}>
-        <div class="pv-eyebrow" data-pv="eyebrow">{{ s.hero.eyebrow }}</div>
-        <div class="pv-title" data-pv="headline">{{ s.hero.headline }}</div>
-        <div class="pv-text" data-pv="sub">{{ s.hero.sub }}</div>
-        <span class="pv-btn" data-pv="cta">{{ s.hero.cta }}</span>
-      </div>
-    {% elif current_tab in ('about', 'why') %}
+    {% if current_tab in ('about', 'why') %}
       {% set a = s.home_about if current_tab == 'about' else s.home_why %}
       <div class="pv">
         <div class="pv-imgs">{% for img in a.images %}<div class="pv-img" data-pv-img="img{{ loop.index0 }}">{% if img %}<img src="{{ img }}" alt="">{% endif %}</div>{% endfor %}</div>
@@ -225,18 +224,19 @@
         <div class="pv-text" data-pv="text">{{ s.home_contact.text }}</div>
         <span class="pv-btn">Đăng ký</span>
       </div>
-    {% elif current_tab == 'menu' %}
+    {% elif current_tab == 'footer' %}
       <div class="pv">
         <div class="pv-eyebrow">Menu</div>
         <div>{% for m in s.menu %}{{ m.label }}{% if not loop.last %} · {% endif %}{% endfor %}</div>
       </div>
       <div class="pv pv-dark">
         {% for col in s.footer.columns %}<div><strong>{{ col.title }}</strong><div class="pv-text">{% for l in col.links %}{{ l.label }}{% if not loop.last %} · {% endif %}{% endfor %}</div></div>{% endfor %}
-        <div class="pv-text" data-pv="risk_note">{{ s.footer.risk_note }}</div>
+        <div class="pv-text">{{ s.footer.risk_note }}</div>
         <div class="pv-text">{{ s.footer.copyright }}</div>
       </div>
     {% endif %}
   </aside>
+  {% endif %}
 </div>
 {% endif %}
 {% endblock %}

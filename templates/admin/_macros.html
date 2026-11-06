@@ -127,6 +127,36 @@
 </div>
 {% endmacro %}
 
+{# Vùng kéo thả ảnh như image-slot của thiết kế: trường `name` (ẩn) + file `<name>_file`. #}
+{% macro image_drop(name, label, value='', errors=none, placeholder='', height=160, max_width=0) %}
+<div class="field img-drop-field{% if errors and errors[name] %} has-error{% endif %}" data-image-field>
+  <div class="img-drop-head">
+    <span class="field-label">{{ label }}</span>
+    <span class="img-drop-tools js-only"><button type="button" class="link-btn" data-pick>Chọn từ thư viện</button><button type="button" class="link-btn" data-img-clear>Bỏ ảnh</button></span>
+  </div>
+  <div class="img-drop" style="height: {{ height }}px{% if max_width %}; max-width: {{ max_width }}px{% endif %}">
+    <div class="img-drop-empty">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      <span>{{ placeholder }}</span>
+    </div>
+    <div class="img-drop-thumb" data-img-thumb>{% if value %}<img src="{{ value }}" alt="">{% endif %}</div>
+    <input type="file" name="{{ name }}_file" accept="image/png,image/jpeg,image/webp" aria-label="{{ label }}" data-img-file>
+  </div>
+  <input type="text" class="img-drop-path" name="{{ name }}" value="{{ value or '' }}" aria-label="{{ label }} – đường dẫn" data-img-path>
+  <span class="field-hint" data-img-name></span>
+  {{ err(errors, name) }}
+</div>
+{% endmacro %}
+
+{# Khối thu gọn cuối drawer: ô ngoài thiết kế. `open` khi có lỗi ở một ô bên trong. #}
+{% macro more(errors, names) %}
+{% set has_err = namespace(v=false) %}{% for n in names %}{% if errors and errors[n] %}{% set has_err.v = true %}{% endif %}{% endfor %}
+<details class="drawer-more"{% if has_err.v %} open{% endif %}>
+  <summary>Thông tin chi tiết</summary>
+  <div class="drawer-more-body">{{ caller() }}</div>
+</details>
+{% endmacro %}
+
 {# Công tắc bật/tắt trong form (checkbox value=1). #}
 {% macro switch_input(name, label, checked, hint='', errors=none) %}
 <div class="field">
